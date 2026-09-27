@@ -202,7 +202,9 @@ fn counts(path: &Path) -> Option<(u64, u64)> {
 /// The advice before an expensive tool call, or nothing.
 fn pre_tool_line(input: &str, ctx: &HookContext) -> Option<String> {
     let call: Value = serde_json::from_str(input).ok()?;
-    let tool = first_string(&call, &["tool_name", "toolName", "tool", "name"])?;
+    // Folded here, where it is compared against a list of names, and nowhere else.
+    let tool =
+        first_string(&call, &["tool_name", "toolName", "tool", "name"])?.to_ascii_lowercase();
     let empty = Value::Object(serde_json::Map::new());
     let args = [
         "tool_input",
@@ -225,11 +227,17 @@ fn pre_tool_line(input: &str, ctx: &HookContext) -> Option<String> {
     Some(ADVICE.to_owned())
 }
 
-/// The first of these keys whose value is a string.
+/// The first of these keys whose value is a string, **exactly as it was written**.
+///
+/// It used to lower-case what it returned, which suited the one caller that matches a tool name
+/// and silently broke the one that does not: a file path was lower-cased and then handed to the
+/// file system. On a case-insensitive file system that works by accident, so it passed on macOS
+/// and Windows while the advice before a large read never appeared on Linux for any path with a
+/// capital letter in it. Case folding belongs at the comparison, never before touching the disk.
 fn first_string(value: &Value, keys: &[&str]) -> Option<String> {
     keys.iter()
         .find_map(|key| value.get(*key).and_then(Value::as_str))
-        .map(str::to_ascii_lowercase)
+        .map(str::to_owned)
 }
 
 /// Whether this call is one a recall would answer for fewer tokens: a search across the whole
@@ -249,15 +257,19 @@ fn is_expensive(tool: &str, args: &Value, ctx: &HookContext) -> bool {
 /// Whether a search covers the whole repository: no narrowing path, or a pattern that walks
 /// everything.
 fn is_wide_search(args: &Value, ctx: &HookContext) -> bool {
-    let pattern =
-        first_string(args, &["pattern", "query", "glob", "regex", "q"]).unwrap_or_default();
+    let pattern = first_string(args, &["pattern", "query", "glob", "regex", "q"])
+        .unwrap_or_default()
+        .to_ascii_lowercase();
     if pattern.contains("**") {
         return true;
     }
     let Some(path) = first_string(args, &["path", "dir", "directory", "cwd", "root"]) else {
         return true;
     };
+    // Both sides folded for the comparison: an agent may spell the repository root with different
+    // case from the way it was configured, and this decides nothing but whether to say a sentence.
     let repo = ctx.repo.to_string_lossy().to_ascii_lowercase();
+    let path = path.to_ascii_lowercase();
     matches!(path.as_str(), "" | "." | "./" | "/") || path == repo
 }
 
@@ -324,7 +336,36 @@ fn claim_once(ctx: &HookContext, key: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{CONTEXT_KEY, HookContext, NOTHING, run_hook};
+    use super::{CONTEXT_KEY, HookContext, NOTHING, first_string, run_hook};
+    use serde_json::json;
+
+    /// A value comes back exactly as it was written.
+    ///
+    /// This is the guard the file-system tests cannot be: a lower-cased path resolves anyway on a
+    /// case-insensitive file system, so a test that writes a file and reads it back passes on
+    /// macOS and Windows while the same code is broken on Linux. Asserting on the string itself
+    /// fails everywhere.
+    #[test]
+    fn a_value_is_returned_as_written() {
+        let call = json!({
+            "tool_name": "Read",
+            "file_path": "/Users/Ada/Projects/MyApp/src/Main.rs",
+            "session_id": "AbC-123",
+        });
+        assert_eq!(
+            first_string(&call, &["file_path"]).as_deref(),
+            Some("/Users/Ada/Projects/MyApp/src/Main.rs"),
+            "a path must never be case-folded: the file system is asked for it verbatim"
+        );
+        assert_eq!(
+            first_string(&call, &["session_id"]).as_deref(),
+            Some("AbC-123")
+        );
+        assert_eq!(first_string(&call, &["missing"]), None);
+        // The first key that holds a string wins, and a non-string is passed over.
+        let mixed = json!({ "a": 7, "b": "Kept" });
+        assert_eq!(first_string(&mixed, &["a", "b"]).as_deref(), Some("Kept"));
+    }
 
     /// A context in a temporary directory, with no index in it.
     fn context() -> (tempfile::TempDir, HookContext) {

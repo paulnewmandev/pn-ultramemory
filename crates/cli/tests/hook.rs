@@ -23,10 +23,12 @@ pub mod hook;
 )]
 mod common;
 
+use std::path::Path;
 use std::time::Duration;
 
 use common::Repo;
 use hook::{CONTEXT_KEY, HookContext, run_hook};
+use serde_json::{Value, json};
 
 /// A repository, its data directory, and the context that points at both.
 fn setup() -> (Repo, HookContext) {
@@ -176,27 +178,54 @@ fn only_expensive_calls_are_advised_about() {
     }
 }
 
+/// A read call as an agent would send it, with the path encoded rather than pasted.
+///
+/// Pasting a path into a JSON string with `format!` is wrong on Windows, where a path is full of
+/// backslashes and a backslash in JSON starts an escape: `"C:\\Users\\..."` is not valid JSON, the
+/// call never parses, and the test fails for a reason that has nothing to do with what it checks.
+fn read_call(path: &Path, extra: Option<(&str, u32)>) -> String {
+    let mut input = serde_json::Map::new();
+    input.insert("file_path".into(), json!(path.to_string_lossy()));
+    if let Some((key, value)) = extra {
+        input.insert(key.to_owned(), json!(value));
+    }
+    json!({ "tool_name": "Read", "tool_input": Value::Object(input) }).to_string()
+}
+
+/// A path with a capital letter in it is advised about too. On a case-sensitive file system a
+/// folded path names nothing, so this is the case that caught the hook lower-casing a path before
+/// handing it to the file system: it passed on macOS and Windows and failed on Linux.
+#[test]
+fn a_path_with_capitals_is_not_folded() {
+    let (repo, ctx) = setup();
+    repo.write("repo/Big File.rs", &"// a line of source\n".repeat(8_000));
+    let call = read_call(&repo.at("repo/Big File.rs"), None);
+    assert!(
+        context_of(&run_hook("pre-tool", &call, &ctx)).is_some(),
+        "{call}"
+    );
+}
+
 /// A whole read of a large file is advised about; a windowed read and a small file are not.
 #[test]
 fn reading_a_whole_large_file_is_advised_about() {
     let (repo, ctx) = setup();
     repo.write("repo/big.rs", &"// a line of source\n".repeat(8_000));
     repo.write("repo/small.rs", "fn main() {}\n");
-    let big = repo.at("repo/big.rs").to_string_lossy().into_owned();
-    let small = repo.at("repo/small.rs").to_string_lossy().into_owned();
+    let big = repo.at("repo/big.rs");
+    let small = repo.at("repo/small.rs");
 
-    let whole = format!(r#"{{"tool_name":"Read","tool_input":{{"file_path":"{big}"}}}}"#);
+    let whole = read_call(&big, None);
     assert!(
         context_of(&run_hook("pre-tool", &whole, &ctx)).is_some(),
         "{whole}"
     );
 
     let (_repo2, ctx2) = setup();
-    let windowed =
-        format!(r#"{{"tool_name":"Read","tool_input":{{"file_path":"{big}","limit":50}}}}"#);
+    let windowed = read_call(&big, Some(("limit", 50)));
     assert_eq!(context_of(&run_hook("pre-tool", &windowed, &ctx2)), None);
 
-    let tiny = format!(r#"{{"tool_name":"Read","tool_input":{{"file_path":"{small}"}}}}"#);
+    let tiny = read_call(&small, None);
     assert_eq!(context_of(&run_hook("pre-tool", &tiny, &ctx2)), None);
 
     let missing = r#"{"tool_name":"Read","tool_input":{"file_path":"/no/such/file"}}"#;
