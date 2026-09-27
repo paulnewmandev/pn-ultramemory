@@ -40,7 +40,11 @@ jobs:
       - name: Lint
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Test
-        run: cargo test --workspace --locked
+        # `--no-fail-fast` so one failing crate does not hide the rest, and a backtrace so a
+        # failure that only happens on one platform can be read from the log instead of guessed at.
+        env:
+          RUST_BACKTRACE: 1
+        run: cargo test --workspace --locked --no-fail-fast
       - name: Documentation
         run: cargo doc --workspace --no-deps --locked
 

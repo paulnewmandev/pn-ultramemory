@@ -21,17 +21,15 @@ confidence-threshold = 0.9
 # The allow-list is exactly what the tree needs, not a wishlist. An entry no dependency uses any
 # more fails the check, so the upgrade that drops the last holder of a licence also drops its row.
 unused-allowed-license = "deny"
+# Exactly the licences this tree uses. `unused-allowed-license` above is set to deny, so an entry
+# that stops matching anything fails the check: the upgrade that drops the last holder of a licence
+# has to drop its row here too.
 allow = [
     "Apache-2.0",
     "MIT",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
     "Zlib",
-    "CC0-1.0",
     "Unlicense",
     "Unicode-3.0",
-    "Unicode-DFS-2016",
 ]
 
 [bans]

@@ -41,10 +41,13 @@ const SIZES: [usize; 4] = [8, 20, 40, 64];
 /// cost that grows, and this allows for it while still failing on anything proportional.
 const FLAT_SLACK: f64 = 0.25;
 
+/// The seed every generated repository in this file is built from.
+const SEED: u64 = 7;
+
 /// A generated repository of `files` files, indexed and ready to query.
 fn repo_of(files: usize) -> (tempfile::TempDir, Engine) {
     let dir = tempfile::tempdir().expect("temporary directory");
-    generated::generate_repo(dir.path(), files, 7);
+    generated::generate_repo(dir.path(), files, SEED);
     let engine = engine_at(dir.path(), EngineConfig::default());
     engine
         .index(&IndexOptions::default())
@@ -180,19 +183,13 @@ fn re_indexing_an_unchanged_repository_reads_nothing() {
 #[test]
 fn an_outline_costs_what_its_own_file_costs() {
     let tokens = sweep(|engine| {
-        // The map reports the files it knows about, which is the public way to name one.
-        let map = engine
-            .repo_map(&pn_ultramemory_engine::MapQuery {
-                budget: Some(4000),
-                path_prefix: None,
-            })
-            .expect("map");
-        let path = map
-            .files
-            .iter()
-            .map(|file| file.path.clone())
-            .min()
-            .expect("at least one file");
+        // The generator decides the paths, so ask it rather than writing one here: file zero
+        // exists at every size, so the same file is measured at every point of the sweep.
+        //
+        // Taking the first file out of a map would not do. A map is budget-limited, so which files
+        // it names changes with the repository, and the test would then be comparing the cost of
+        // describing *different* files while claiming to hold that cost constant.
+        let path = generated::plan_file(SEED, 0).path;
         let outline = engine.outline(&path, None).expect("outline");
         f64::from(outline.tokens)
     });
