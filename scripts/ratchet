@@ -1,0 +1,123 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: run every guard of the quality harness in one command, regenerate every baseline, or show
+#          exactly how a baseline would change. A thin driver over `cargo run -p xtask`; the guards
+#          themselves live in xtask/ and are documented in docs/quality.md.
+# Usage:   sh scripts/ratchet              run every guard, as CI does
+#          sh scripts/ratchet --update     regenerate every baseline under .ratchet/
+#          sh scripts/ratchet --diff NAME  show how .ratchet/NAME.txt would change
+#                                          (NAME is refusal, panics or docs)
+# Exit codes: 0 every guard passed, 1 at least one failed, 2 the command line was wrong.
+#
+# WHAT THIS SCRIPT DOES NOT PROVE:
+#   * Nothing on its own. It proves only what the guards it calls prove, and each of those states
+#     its own limits in its output and in docs/quality.md.
+#   * It does not run the test suite, the linter or the offline check. Use `cargo test --workspace`,
+#     `cargo clippy --workspace --all-targets -- -D warnings` and `sh scripts/check-offline`.
+#   * `--diff` shows what would change; it changes nothing itself, and restores the baseline even if
+#     the guard fails halfway.
+#
+# Comparisons below use `LC_ALL=C`, because comm(1) requires both inputs to be sorted in the same
+# collation and produces silently wrong output when they are not. The baselines are written in plain
+# byte order, which is what LC_ALL=C compares in.
+
+# Backticks inside the single-quoted messages below are deliberate: they quote a command for a
+# reader, and must not be expanded by the shell.
+# shellcheck disable=SC2016
+
+set -eu
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+
+# The ratchets, in the order CI runs them.
+readonly RATCHETS='refusal panics docs'
+# Exit code reported when the command line is wrong.
+readonly MISUSED=2
+
+usage() {
+    cat <<'TEXT'
+Run the quality harness of pn-ultramemory. The guards live in xtask/ and are described in
+docs/quality.md, which also lists what each one does not prove.
+
+Usage:
+  sh scripts/ratchet              run every guard, as CI does
+  sh scripts/ratchet --update     regenerate every baseline under .ratchet/
+  sh scripts/ratchet --diff NAME  show how .ratchet/NAME.txt would change, changing nothing
+                                  (NAME is refusal, panics or docs)
+  sh scripts/ratchet --help       print this text
+
+Exit codes: 0 every guard passed, 1 at least one failed, 2 the command line was wrong.
+TEXT
+}
+
+# Runs one guard, printing a separator first so a long run stays readable.
+guard() {
+    printf '\n=== %s ===\n' "$*"
+    cargo run --quiet -p xtask -- "$@"
+}
+
+case "${1-}" in
+    '')
+        status=0
+        guard headers || status=1
+        for name in $RATCHETS; do
+            guard "$name" || status=1
+        done
+        guard verify-tests .ratchet/release-blockers.txt || status=1
+        printf '\n'
+        if [ "$status" -eq 0 ]; then
+            echo 'ratchet: every guard passed'
+        else
+            echo 'ratchet: at least one guard failed; see above' >&2
+        fi
+        exit "$status"
+        ;;
+    --update)
+        for name in $RATCHETS; do
+            guard "$name" --update
+        done
+        printf '\nratchet: baselines rewritten. Check `git diff .ratchet/` before committing:\n'
+        printf 'a ratchet may only shrink, so a growing file needs a reason in the pull request.\n'
+        exit 0
+        ;;
+    --diff)
+        name=${2-}
+        case " $RATCHETS " in
+            *" $name "*) ;;
+            *)
+                printf 'ratchet: --diff needs one of: %s\n' "$RATCHETS" >&2
+                exit "$MISUSED"
+                ;;
+        esac
+        baseline=".ratchet/$name.txt"
+        [ -f "$baseline" ] || {
+            printf 'ratchet: %s does not exist yet; run `sh scripts/ratchet --update` first\n' \
+                "$baseline" >&2
+            exit 1
+        }
+        saved=$(mktemp)
+        fresh=$(mktemp)
+        # Restore the baseline whatever happens next, so a failed guard cannot leave it rewritten.
+        trap 'cp "$saved" "$baseline" 2>/dev/null || true; rm -f "$saved" "$fresh"' EXIT INT TERM
+        cp "$baseline" "$saved"
+        cargo run --quiet -p xtask -- "$name" --update >/dev/null
+        grep -v '^#' "$baseline" | LC_ALL=C sort > "$fresh"
+        grep -v '^#' "$saved" | LC_ALL=C sort > "$saved.sorted"
+        printf 'Findings that would be ADDED to %s:\n' "$baseline"
+        LC_ALL=C comm -13 "$saved.sorted" "$fresh" | sed 's/^/  + /'
+        printf 'Findings that would be REMOVED from %s:\n' "$baseline"
+        LC_ALL=C comm -23 "$saved.sorted" "$fresh" | sed 's/^/  - /'
+        rm -f "$saved.sorted"
+        exit 0
+        ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    *)
+        printf 'ratchet: unknown option `%s`\n\n' "$1" >&2
+        usage >&2
+        exit "$MISUSED"
+        ;;
+esac

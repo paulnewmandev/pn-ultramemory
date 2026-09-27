@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of pn-ultramemory-report: HTML, PDF and Markdown reports and graph export, in English and Spanish.
+
+[package]
+name = "pn-ultramemory-report"
+description = "Self-contained HTML, PDF and Markdown reports and code-graph export (Mermaid, DOT, SVG, JSON) in English and Spanish, with no external dependencies."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[dependencies]
+
+[lints]
+workspace = true

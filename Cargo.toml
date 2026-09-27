@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: Apache-2.0
+# Workspace manifest for pn-ultramemory: shared metadata, dependency versions and lint policy.
+# Every crate under `crates/` inherits from here (`[lints] workspace = true`).
+
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask"]
+
+[workspace.package]
+version = "1.2.36"
+edition = "2024"
+rust-version = "1.85"
+license = "Apache-2.0"
+repository = "https://github.com/paulnewmandev/pn-ultramemory"
+homepage = "https://github.com/paulnewmandev/pn-ultramemory"
+authors = ["Paul Newman <paul.newman.dev@gmail.com>"]
+keywords = ["agents", "memory", "mcp", "tokens", "code-graph"]
+categories = ["development-tools", "command-line-utilities"]
+readme = "README.md"
+
+[workspace.dependencies]
+pn-ultramemory-core = { path = "crates/core", version = "1.2.36" }
+pn-ultramemory-codec = { path = "crates/codec", version = "1.2.36" }
+pn-ultramemory-toon = { path = "crates/toon", version = "1.2.36" }
+pn-ultramemory-index = { path = "crates/index", version = "1.2.36" }
+pn-ultramemory-store = { path = "crates/store", version = "1.2.36" }
+pn-ultramemory-mcp = { path = "crates/mcp", version = "1.2.36" }
+pn-ultramemory-engine = { path = "crates/engine", version = "1.2.36" }
+pn-ultramemory-report = { path = "crates/report", version = "1.2.36" }
+serde_json = { version = "1.0.151", features = ["preserve_order"] }
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+tree-sitter = "0.27.0"
+tree-sitter-rust = "0.24.2"
+tree-sitter-python = "0.25.0"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-typescript = "0.23.2"
+tree-sitter-go = "0.25.0"
+tree-sitter-java = "0.23.5"
+tree-sitter-c = "0.24.2"
+tree-sitter-cpp = "0.23.4"
+tree-sitter-c-sharp = "0.23.5"
+tree-sitter-ruby = "0.23.1"
+tree-sitter-php = "0.24.2"
+ignore = "0.4.33"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+clap_complete = "4.6.11"
+tempfile = "3.27.0"
+
+[workspace.lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+missing_crate_level_docs = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_docs_in_private_items = "warn"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

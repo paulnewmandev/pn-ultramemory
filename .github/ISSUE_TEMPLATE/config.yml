@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: routes questions and security reports away from the issue tracker.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/paulnewmandev/pn-ultramemory/security/advisories/new
+    about: Private reporting. Please do not open a public issue for vulnerabilities.
+  - name: Ask a question or share an idea
+    url: https://github.com/paulnewmandev/pn-ultramemory/discussions
+    about: Usage questions, design discussion and show-and-tell.

@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release blockers: tests whose absence means the product is broken, whatever else is green.
+# One test name per line. Everything after a `#` is a comment.
+#
+# Why this file exists: `cargo test <name>` filters by substring and exits 0 when the filter
+# matches nothing. A curated list of release-blocking tests is therefore worthless on its own,
+# because renaming or deleting a test leaves every command that named it reporting success while
+# running nothing. `xtask verify-tests` asks cargo which tests exist and fails when a name here
+# is not among them.
+#
+# Check the list:  cargo run -p xtask -- verify-tests .ratchet/release-blockers.txt
+# Matching:        substring, exactly as `cargo test <name>` matches.
+#
+# Editing this file is legitimate when a test is deliberately renamed, split or replaced: name
+# the test that took over the responsibility. Deleting a line because the check is failing is
+# not: the guard is telling you the responsibility is now uncovered.
+#
+# What this guard does NOT prove:
+#   * that these tests PASS. It only proves they exist. `cargo test --workspace` proves the rest.
+#   * that the list is COMPLETE. No tool can decide that; it is a judgement, written down here so
+#     that it can be held to account.
+#   * anything about a test behind a feature flag that is off, or a target not built on this
+#     platform: such a test is not listed by cargo and so counts as missing.
+
+# --- TOON conformance: the wire format other tools read. A break here is a data-loss bug.
+all_encode_fixtures_pass
+all_decode_fixtures_pass
+strict_errors_are_lenient_successes
+corrupted_documents_never_panic
+nasty_strings_round_trip_everywhere
+canonical_number_text
+deep_nesting_round_trips_up_to_the_limit
+
+# --- The packer, checked against an exact dynamic-programming solver. Without this, the token
+#     budget is a guess.
+packer::tests::matches_exact_solver_within_the_theoretical_gap
+packer::tests::is_deterministic
+dominated_option_is_never_selected
+
+# --- The store, checked against a reference implementation of the edge-resolution rules, and for
+#     atomicity under churn. A break here corrupts memory that cannot be recovered.
+full_resolve_matches_the_reference_rules
+touching_resolve_matches_the_reference_rules_after_edits
+dense_project_matches_the_reference_rules
+a_failed_upsert_leaves_nothing_behind
+random_churn_keeps_the_database_consistent
+
+# --- The MCP server against hostile input. It reads untrusted bytes from an agent, so a panic or a
+#     hang here takes the editor session with it.
+corpus_has_more_than_200_inputs
+hostile_inputs_against_a_fresh_server
+hostile_stream_through_serve
+mutation_fuzzing_through_serve
+hostile_answers_are_deterministic
+
+# --- The index against hostile and enormous sources. It parses whatever is in the repository.
+random_bytes
+random_token_soup
+deeply_nested_input
+fifty_thousand_lines_of_garbage
+unicode_and_control_characters
+unterminated_constructs
+shared_between_threads

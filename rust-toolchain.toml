@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Pins the exact Rust toolchain so that every contributor and CI run builds with the same compiler.
+# Bump deliberately in its own pull request.
+
+[toolchain]
+channel = "1.98.1"
+profile = "minimal"
+components = ["clippy", "rustfmt"]

@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of the `pn-ultramemory` command-line binary (entry adapter of the hexagon).
+
+[package]
+name = "pn-ultramemory"
+description = "Code-aware, learning memory for coding agents: fewer tokens, sharper recall."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[[bin]]
+name = "pn-ultramemory"
+path = "src/main.rs"
+
+[dependencies]
+pn-ultramemory-core.workspace = true
+pn-ultramemory-codec.workspace = true
+pn-ultramemory-toon.workspace = true
+pn-ultramemory-engine.workspace = true
+pn-ultramemory-index.workspace = true
+pn-ultramemory-store.workspace = true
+pn-ultramemory-mcp.workspace = true
+pn-ultramemory-report.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

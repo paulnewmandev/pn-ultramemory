@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Baseline of the documentation ratchet: public items whose first documented sentence only
+# restates the item's own name.
+# One finding per line, as `<path>` TAB `<item path>`.
+# There is deliberately no line number: the item path is the stable identity, so a finding
+# survives an edit above it and survives the item moving inside its file.
+#
+# This file may only SHRINK. A new restating docstring fails the build. A line listed here
+# whose file is no longer analysed also fails the build, because `rewritten` and `no longer
+# seen by the analyser` are indistinguishable from this file's point of view.
+#
+# Run the guard:  cargo run -p xtask -- docs
+# Regenerate:     cargo run -p xtask -- docs --update
+# Sort order:     plain byte order. Post-process with LC_ALL=C or comm(1) will lie.
+#
+# What this guard does NOT prove:
+#   * that a docstring is true, current or useful, only that it adds a word to the name;
+#   * anything about the sentences after the first one;
+#   * anything about items that are not public, nor about examples, tests or benchmarks.
+crates/cli/src/args.rs	DelimiterArg::Comma
+crates/cli/src/args.rs	ShellArg::Bash
+crates/cli/src/args.rs	ShellArg::Elvish
+crates/cli/src/args.rs	ShellArg::Fish
+crates/cli/src/args.rs	ShellArg::Powershell
+crates/cli/src/args.rs	ShellArg::Zsh
+crates/cli/src/main.rs	agents
+crates/cli/src/main.rs	args
+crates/cli/src/main.rs	banner
+crates/cli/src/main.rs	dirs
+crates/cli/src/main.rs	doctor
+crates/cli/src/main.rs	error
+crates/cli/src/main.rs	hook
+crates/cli/src/main.rs	install
+crates/cli/src/main.rs	paths
+crates/cli/src/main.rs	reporting
+crates/cli/src/main.rs	simple
+crates/cli/src/main.rs	style
+crates/codec/src/capsule.rs	CapsuleMemory
+crates/codec/src/capsule.rs	SymbolView::qualified_name
+crates/codec/src/lib.rs	capsule
+crates/codec/src/lib.rs	packer
+crates/codec/src/lib.rs	tokens
+crates/core/src/language.rs	Language::C
+crates/core/src/language.rs	Language::CSharp
+crates/core/src/language.rs	Language::Go
+crates/core/src/language.rs	Language::Java
+crates/core/src/language.rs	Language::Php
+crates/core/src/language.rs	Language::Python
+crates/core/src/language.rs	Language::Ruby
+crates/core/src/language.rs	Language::Rust
+crates/core/src/learning.rs	Target::Memory
+crates/core/src/learning.rs	Target::Symbol
+crates/core/src/records.rs	ResolveStats::edges_written
+crates/core/src/symbol.rs	SymbolKind::Class
+crates/core/src/symbol.rs	SymbolKind::Macro
+crates/report/src/model.rs	Graph::nodes
+crates/toon/src/options.rs	Delimiter::Pipe

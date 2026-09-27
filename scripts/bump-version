@@ -1,0 +1,313 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: bump the single workspace version following Semantic Versioning 2.0.0 and
+#          keep Cargo.toml, Cargo.lock and CHANGELOG.md in sync. The workspace version in
+#          Cargo.toml is the only source of truth; every crate inherits it.
+# Usage:   scripts/bump-version <major|minor|patch|auto> [--dry-run] [--commit] [--tag]
+#                                [--allow-dirty] [--allow-empty]
+#          scripts/bump-version --check
+#          Run `scripts/bump-version --help` for the full description.
+# Exit codes: 0 success, 1 inconsistent state or failed check, 2 usage error,
+#             3 nothing releasable found (auto mode).
+
+set -eu
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+
+# Prints the help text.
+usage() {
+    cat <<'EOF'
+Bump the workspace version following Semantic Versioning 2.0.0.
+
+USAGE
+    scripts/bump-version <major|minor|patch|auto> [OPTIONS]
+    scripts/bump-version --check
+
+BUMP TYPES (X.Y.Z)
+    major   X+1.0.0   incompatible change to the public API (resets minor and patch)
+    minor   X.Y+1.0   new backward-compatible functionality (resets patch)
+    patch   X.Y.Z+1   backward-compatible bug fix
+    auto    choose from the Conventional Commits made since the last v<X.Y.Z> tag:
+              "type!:" or a "BREAKING CHANGE:" footer  -> major
+              "feat:"                                  -> minor
+              "fix:" or "perf:"                        -> patch
+              only other types (docs, chore, ci, ...)  -> nothing releasable (exit 3)
+
+OPTIONS
+    --dry-run      show what would change, modify nothing
+    --commit       commit Cargo.toml, Cargo.lock and CHANGELOG.md as "chore(release): vX.Y.Z"
+                   using the repository's own git identity (no extra trailers are added)
+    --tag          also create the annotated tag vX.Y.Z (requires --commit)
+    --allow-dirty  allow --commit on a working tree with other uncommitted changes
+    --allow-empty  allow a release whose [Unreleased] changelog section has no entries
+    --check        verify that Cargo.toml, every crate, Cargo.lock and CHANGELOG.md agree
+    -h, --help     show this help
+
+FILES UPDATED
+    Cargo.toml   [workspace.package] version and the internal [workspace.dependencies]
+    Cargo.lock   refreshed with `cargo update --workspace --offline` when cargo exists
+    CHANGELOG.md the [Unreleased] entries move under the new version heading
+
+Nothing is ever pushed. After a release commit and tag, publish with:
+    git push && git push --tags
+EOF
+}
+
+# Prints an error message and exits with the given code.
+fail() {
+    printf 'bump-version: %s\n' "$1" >&2
+    exit "${2:-1}"
+}
+
+# Prints a usage error and exits 2.
+usage_error() {
+    printf 'bump-version: %s\n\n' "$1" >&2
+    usage >&2
+    exit 2
+}
+
+# Succeeds when the argument is a plain X.Y.Z version without leading zeros.
+is_semver() {
+    printf '%s\n' "$1" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+}
+
+# Prints the version declared in [workspace.package] of Cargo.toml.
+read_version() {
+    awk '
+        /^\[/ { in_pkg = ($0 == "[workspace.package]") }
+        in_pkg && /^version[ \t]*=/ { sub(/^[^"]*"/, ""); sub(/".*$/, ""); print; exit }
+    ' Cargo.toml
+}
+
+# Prints the repository URL declared in [workspace.package] of Cargo.toml.
+read_repository() {
+    awk '
+        /^\[/ { in_pkg = ($0 == "[workspace.package]") }
+        in_pkg && /^repository[ \t]*=/ { sub(/^[^"]*"/, ""); sub(/".*$/, ""); print; exit }
+    ' Cargo.toml
+}
+
+# Prints the next version. $1 = major|minor|patch, $2 = current X.Y.Z.
+next_version() {
+    major=${2%%.*}
+    rest=${2#*.}
+    minor=${rest%%.*}
+    patch=${rest#*.}
+    case "$1" in
+        major) printf '%s.0.0\n' $((major + 1)) ;;
+        minor) printf '%s.%s.0\n' "$major" $((minor + 1)) ;;
+        patch) printf '%s.%s.%s\n' "$major" "$minor" $((patch + 1)) ;;
+    esac
+}
+
+# Prints the bump type implied by Conventional Commits since the last release tag.
+# $1 = current version. Returns 3 when no commit warrants a release.
+detect_kind() {
+    tag="v$1"
+    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
+        range="$tag..HEAD"
+    else
+        range="HEAD"
+    fi
+    subjects=$(git log --format=%s "$range" 2>/dev/null || true)
+    [ -n "$subjects" ] || return 3
+    bodies=$(git log --format=%B "$range" 2>/dev/null || true)
+    if printf '%s\n' "$subjects" | grep -Eq '^[a-z]+(\([^)]*\))?!:' \
+        || printf '%s\n' "$bodies" | grep -Eq '^BREAKING[ -]CHANGE:'; then
+        echo major
+    elif printf '%s\n' "$subjects" | grep -Eq '^feat(\([^)]*\))?:'; then
+        echo minor
+    elif printf '%s\n' "$subjects" | grep -Eq '^(fix|perf)(\([^)]*\))?:'; then
+        echo patch
+    else
+        return 3
+    fi
+}
+
+# Succeeds when the [Unreleased] section of CHANGELOG.md has at least one bullet.
+unreleased_has_entries() {
+    awk '
+        /^## \[Unreleased\]/ { in_unreleased = 1; next }
+        /^## \[/ { in_unreleased = 0 }
+        in_unreleased && /^[-*] / { entries++ }
+        END { exit entries ? 0 : 1 }
+    ' CHANGELOG.md
+}
+
+# Writes the updated Cargo.toml to stdout. $1 = new version.
+render_manifest() {
+    awk -v new="$1" '
+        /^\[/ { section = $0 }
+        section == "[workspace.package]" && /^version[ \t]*=/ { print "version = \"" new "\""; next }
+        section == "[workspace.dependencies]" && /^pn-ultramemory/ {
+            sub(/version = "[^"]*"/, "version = \"" new "\"")
+        }
+        { print }
+    ' Cargo.toml
+}
+
+# Writes the updated CHANGELOG.md to stdout.
+# $1 = new version, $2 = old version, $3 = date, $4 = repository URL.
+render_changelog() {
+    awk -v new="$1" -v old="$2" -v date="$3" -v repo="$4" '
+        /^## \[Unreleased\]/ && !moved {
+            print; print ""; print "## [" new "] - " date; moved = 1; next
+        }
+        /^\[Unreleased\]:/ {
+            print "[Unreleased]: " repo "/compare/v" new "...HEAD"
+            print "[" new "]: " repo "/compare/v" old "...v" new
+            next
+        }
+        { print }
+    ' CHANGELOG.md
+}
+
+# Verifies that every place that carries the version agrees. Exits 1 on any mismatch.
+check() {
+    status=0
+    current=$(read_version)
+    is_semver "$current" || fail "workspace version '$current' is not a plain X.Y.Z version"
+
+    for manifest in crates/*/Cargo.toml; do
+        if ! grep -Eq '^version\.workspace[ \t]*=[ \t]*true' "$manifest"; then
+            printf '%s: must declare version.workspace = true\n' "$manifest" >&2
+            status=1
+        fi
+    done
+
+    stale=$(awk -v cur="$current" '
+        /^\[/ { section = $0 }
+        section == "[workspace.dependencies]" && /^pn-ultramemory/ \
+            && index($0, "version = \"" cur "\"") == 0 { print }
+    ' Cargo.toml)
+    if [ -n "$stale" ]; then
+        printf 'internal dependency versions differ from %s:\n%s\n' "$current" "$stale" >&2
+        status=1
+    fi
+
+    if [ -f Cargo.lock ]; then
+        drift=$(awk -v cur="$current" '
+            /^name = "pn-ultramemory/ { name = $0; getline
+                if ($0 != "version = \"" cur "\"") print name " / " $0 }
+        ' Cargo.lock)
+        if [ -n "$drift" ]; then
+            printf 'Cargo.lock is out of date for %s:\n%s\n' "$current" "$drift" >&2
+            status=1
+        fi
+    fi
+
+    if ! awk -v v="$current" 'index($0, "## [" v "]") == 1 { found = 1 } END { exit !found }' \
+        CHANGELOG.md; then
+        printf 'CHANGELOG.md has no section for %s\n' "$current" >&2
+        status=1
+    fi
+
+    if [ "$status" -eq 0 ]; then
+        printf 'version %s is consistent\n' "$current"
+    fi
+    return "$status"
+}
+
+kind=""
+dry_run=0
+do_commit=0
+do_tag=0
+allow_dirty=0
+allow_empty=0
+check_only=0
+
+for arg in "$@"; do
+    case "$arg" in
+        major | minor | patch | auto)
+            [ -z "$kind" ] || usage_error "give only one bump type"
+            kind=$arg
+            ;;
+        --dry-run) dry_run=1 ;;
+        --commit) do_commit=1 ;;
+        --tag) do_tag=1 ;;
+        --allow-dirty) allow_dirty=1 ;;
+        --allow-empty) allow_empty=1 ;;
+        --check) check_only=1 ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *) usage_error "unknown argument: $arg" ;;
+    esac
+done
+
+if [ "$check_only" -eq 1 ]; then
+    [ -z "$kind" ] || usage_error "--check does not take a bump type"
+    check
+    exit $?
+fi
+
+[ -n "$kind" ] || usage_error "missing bump type (major, minor, patch or auto)"
+[ "$do_tag" -eq 0 ] || [ "$do_commit" -eq 1 ] || usage_error "--tag requires --commit"
+
+current=$(read_version)
+is_semver "$current" || fail "workspace version '$current' is not a plain X.Y.Z version"
+
+if [ "$kind" = "auto" ]; then
+    rc=0
+    kind=$(detect_kind "$current") || rc=$?
+    if [ "$rc" -ne 0 ]; then
+        fail "no feat, fix, perf or breaking commits since v$current: nothing to release" 3
+    fi
+    printf 'auto: detected a %s change\n' "$kind"
+fi
+
+new=$(next_version "$kind" "$current")
+
+if [ "$allow_empty" -eq 0 ] && ! unreleased_has_entries; then
+    fail "the [Unreleased] section of CHANGELOG.md has no entries; add them or pass --allow-empty"
+fi
+
+if [ "$do_commit" -eq 1 ] && [ "$dry_run" -eq 0 ] && [ "$allow_dirty" -eq 0 ]; then
+    if [ -n "$(git status --porcelain)" ]; then
+        fail "working tree is not clean; commit or stash first, or pass --allow-dirty"
+    fi
+fi
+
+repository=$(read_repository)
+today=$(date -u +%Y-%m-%d)
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+render_manifest "$new" >"$tmp/Cargo.toml"
+render_changelog "$new" "$current" "$today" "$repository" >"$tmp/CHANGELOG.md"
+
+printf '%s -> %s (%s)\n' "$current" "$new" "$kind"
+
+if [ "$dry_run" -eq 1 ]; then
+    diff -u Cargo.toml "$tmp/Cargo.toml" || true
+    diff -u CHANGELOG.md "$tmp/CHANGELOG.md" || true
+    echo "dry run: no files were modified"
+    exit 0
+fi
+
+cat "$tmp/Cargo.toml" >Cargo.toml
+cat "$tmp/CHANGELOG.md" >CHANGELOG.md
+
+if command -v cargo >/dev/null 2>&1; then
+    cargo update --workspace --offline >/dev/null 2>&1 \
+        || printf 'warning: could not refresh Cargo.lock; run `cargo check`\n' >&2
+else
+    printf 'warning: cargo not found; run `cargo check` to refresh Cargo.lock\n' >&2
+fi
+
+check
+
+if [ "$do_commit" -eq 1 ]; then
+    name=$(git config user.name || true)
+    email=$(git config user.email || true)
+    [ -n "$name" ] && [ -n "$email" ] || fail "set git user.name and user.email first"
+    git add Cargo.toml Cargo.lock CHANGELOG.md
+    git commit -q -m "chore(release): v$new"
+    printf 'committed chore(release): v%s as %s <%s>\n' "$new" "$name" "$email"
+    if [ "$do_tag" -eq 1 ]; then
+        git tag -a "v$new" -m "v$new"
+        printf 'tagged v%s\n' "$new"
+    fi
+fi

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of pn-ultramemory-store.
+
+[package]
+name = "pn-ultramemory-store"
+description = "SQLite storage adapter for pn-ultramemory: index, memories and learning."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[dependencies]
+pn-ultramemory-core.workspace = true
+rusqlite.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

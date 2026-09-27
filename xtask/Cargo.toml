@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of `xtask`, the development-only quality harness. It is never published and never
+# shipped, so its dependencies do not affect the footprint of pn-ultramemory itself.
+
+[package]
+name = "xtask"
+description = "Development-only quality harness for pn-ultramemory (ratchets, headers, guards)."
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "xtask"
+path = "src/main.rs"
+
+[dependencies]
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+syn = { version = "3.0.6", features = ["full", "visit", "extra-traits", "parsing"] }
+
+[lints]
+workspace = true

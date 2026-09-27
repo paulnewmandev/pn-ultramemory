@@ -1,0 +1,318 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Baseline of the panic ratchet: constructs in non-test code that can abort the process.
+# One finding per line, as `<path>` TAB `<expression>` TAB `<enclosing function>`.
+# There is deliberately no line number, so a finding does not move when the code above it is
+# edited. The enclosing function is part of the key instead.
+#
+# This file may only SHRINK. A construct not listed here fails the build. A line listed here
+# whose file is no longer analysed also fails the build, because `fixed` and `invisible to
+# the analyser` are indistinguishable from this file's point of view.
+#
+# Run the guard:  cargo run -p xtask -- panics
+# Regenerate:     cargo run -p xtask -- panics --update
+# Sort order:     plain byte order. Post-process with LC_ALL=C or comm(1) will lie.
+#
+# What this guard does NOT prove:
+#   * that the code cannot panic: overflow, division by zero and dependencies are not seen;
+#   * that a recorded cast truncates, or that a recorded index is out of range. The guard has
+#     no type information, so it records every integer cast and every index expression.
+crates/cli/src/install.rs	chars[index + 1..]	blank_trailing_commas
+crates/cli/src/install.rs	lines[1..]	toml_shape
+crates/cli/src/install.rs	obj.members[index - 1]	cut_member
+crates/cli/src/install.rs	obj.members[index]	cut_member
+crates/cli/src/install.rs	self.text[self.pos + 2..]	Scan::trivia
+crates/cli/src/install.rs	self.text[self.pos..]	Scan::string
+crates/cli/src/install.rs	self.text[self.pos..]	Scan::trivia
+crates/cli/src/install.rs	self.text[self.pos..]	Scan::value
+crates/cli/src/install.rs	self.text[start..self.pos]	Scan::string
+crates/cli/src/install.rs	text[..at]	line_indent
+crates/cli/src/install.rs	text[..bom_len(text)]	write_entry
+crates/cli/src/install.rs	text[..found.value.start]	toml_removals
+crates/cli/src/install.rs	text[..range.start]	splice
+crates/cli/src/install.rs	text[bom_len(text)..]	locate_entry
+crates/cli/src/install.rs	text[bom_len(text)..]	read_json
+crates/cli/src/install.rs	text[bom_len(text)..]	write_entry
+crates/cli/src/install.rs	text[entry.span.clone()]	write_entry
+crates/cli/src/install.rs	text[entry.span.start..entry.value.start]	write_entry
+crates/cli/src/install.rs	text[found.member]	remove_entry
+crates/cli/src/install.rs	text[found.value.clone()]	toml_write
+crates/cli/src/install.rs	text[obj.open + 1..obj.close]	cut_member
+crates/cli/src/install.rs	text[obj.open + 1..obj.close]	insert_member
+crates/cli/src/install.rs	text[range.end..]	splice
+crates/cli/src/install.rs	text[start..at]	line_indent
+crates/cli/src/install.rs	trimmed[from..end]	toml_tables
+crates/cli/src/style.rs	(fraction * f64::from(BAR_WIDTH)).round() as u32	Progress::set
+crates/cli/src/style.rs	line[indent.len()..]	highlight_line
+crates/cli/src/style.rs	rest[..colon]	highlight_line
+crates/cli/src/style.rs	rest[bracket..]	highlight_line
+crates/codec/src/packer.rs	chosen[index]	fill_leftover
+crates/codec/src/packer.rs	envelopes[index]	pack
+crates/codec/src/packer.rs	envelopes[index][count - 1]	pack
+crates/codec/src/packer.rs	envelopes[step.candidate]	pack
+crates/codec/src/packer.rs	hull[hull.len() - 1]	envelope
+crates/codec/src/packer.rs	hull[hull.len() - 2]	envelope
+crates/codec/src/packer.rs	taken[step.candidate]	pack
+crates/codec/src/packer.rs	vertices[i]	step_to
+crates/codec/src/packer.rs	vertices[index]	step_to
+crates/codec/src/tokens.rs	bytes[i]	Features::of
+crates/codec/src/tokens.rs	bytes[start..i]	Features::of
+crates/codec/src/tokens.rs	raw.min(f64::from(u32::MAX)) as u32	estimate_tokens
+crates/codec/src/tokens.rs	word[i]	count_pieces
+crates/core/src/symbol.rs	flat[..=end]	first_sentence
+crates/engine/src/guard/reasons.rs	self as u32	Reason::bit
+crates/engine/src/guard/scanner.rs	bytes[i.saturating_sub(512)..i]	line_prefix
+crates/engine/src/guard/scanner.rs	bytes[i]	classify_high
+crates/engine/src/guard/scanner.rs	rest[..5]	Scanner::on_bracket
+crates/engine/src/guard/scanner.rs	rest[..6]	Scanner::on_bracket
+crates/engine/src/guard/scanner.rs	rest[..len]	word_at
+crates/engine/src/guard/scanner.rs	rest[..name]	Scanner::on_less_than
+crates/engine/src/guard/scanner.rs	rest[..rest.len().min(40)]	Scanner::on_less_than
+crates/engine/src/guard/scanner.rs	rest[1 + name..]	Scanner::on_less_than
+crates/engine/src/guard/scanner.rs	rest[1..5]	Scanner::on_less_than
+crates/engine/src/guard/scanner.rs	rest[1..]	Scanner::on_less_than
+crates/engine/src/guard/scanner.rs	self.bytes[..start]	Scanner::on_fetch_substitution
+crates/engine/src/guard/scanner.rs	self.bytes[i + 1..]	Scanner::on_bracket
+crates/engine/src/guard/scanner.rs	self.bytes[i + 1..]	Scanner::on_less_than
+crates/engine/src/guard/scanner.rs	self.bytes[i + 1..]	Scanner::symbol
+crates/engine/src/guard/scanner.rs	self.bytes[i]	Scanner::run
+crates/engine/src/guard/scanner.rs	self.bytes[start - 1]	Scanner::on_call
+crates/engine/src/guard/scanner.rs	self.ring[(self.words - 1 - k) % RING]	Scanner::back
+crates/engine/src/guard/scanner.rs	self.ring[self.words % RING]	Scanner::push
+crates/engine/src/guard/scanner.rs	window[start..]	line_prefix
+crates/engine/src/guard/secrets.rs	authority[..at]	url_passwords
+crates/engine/src/guard/secrets.rs	b"sk_live_"[..]	secret_key
+crates/engine/src/guard/secrets.rs	b"sk_test_"[..]	secret_key
+crates/engine/src/guard/secrets.rs	body[..len]	secret_key
+crates/engine/src/guard/secrets.rs	bytes[..marker]	url_passwords
+crates/engine/src/guard/secrets.rs	bytes[i - 1]	prefixed_keys
+crates/engine/src/guard/secrets.rs	bytes[i..]	prefixed_keys
+crates/engine/src/guard/secrets.rs	bytes[i]	assignments
+crates/engine/src/guard/secrets.rs	bytes[inner + offset]	assigned_value
+crates/engine/src/guard/secrets.rs	bytes[inner..]	assigned_value
+crates/engine/src/guard/secrets.rs	bytes[p..]	assigned_value
+crates/engine/src/guard/secrets.rs	bytes[range.clone()]	assignments
+crates/engine/src/guard/secrets.rs	bytes[start..]	url_passwords
+crates/engine/src/guard/secrets.rs	bytes[start..end]	assigned_value
+crates/engine/src/guard/secrets.rs	bytes[start..i]	assignments
+crates/engine/src/guard/secrets.rs	bytes[start..start + authority_len]	url_passwords
+crates/engine/src/guard/secrets.rs	line[..close]	pem_blocks
+crates/engine/src/guard/secrets.rs	rest[11..]	github_token
+crates/engine/src/guard/secrets.rs	rest[3..]	secret_key
+crates/engine/src/guard/secrets.rs	rest[3]	github_token
+crates/engine/src/guard/secrets.rs	rest[4..]	aws_key
+crates/engine/src/guard/secrets.rs	rest[4..]	github_token
+crates/engine/src/guard/secrets.rs	rest[4..]	google_key
+crates/engine/src/guard/secrets.rs	rest[4]	slack_token
+crates/engine/src/guard/secrets.rs	rest[5..]	slack_token
+crates/engine/src/guard/secrets.rs	rest[after_second + 1..]	json_web_token
+crates/engine/src/guard/secrets.rs	rest[first + 1..]	json_web_token
+crates/engine/src/guard/secrets.rs	rest[prefix.len()..]	secret_key
+crates/engine/src/guard/secrets.rs	userinfo[colon + 1..]	url_passwords
+crates/engine/src/guard/secrets.rs	value[0]	is_path_like
+crates/engine/src/guard/secrets.rs	value[1]	is_path_like
+crates/engine/src/guard/words.rs	(hash & (TABLE_SIZE as u64 - 1)) as usize	first_slot
+crates/engine/src/guard/words.rs	TABLE[slot]	classify
+crates/engine/src/guard/words.rs	TABLE_SIZE as u64	first_slot
+crates/engine/src/guard/words.rs	WORDS[i]	build_table
+crates/engine/src/guard/words.rs	lower as u64	fold_letter
+crates/engine/src/guard/words.rs	table[slot]	build_table
+crates/engine/src/guard/words.rs	word[i]	hash_word
+crates/engine/src/indexer.rs	self.files[index]	Workload::process
+crates/engine/src/indexer.rs	value["skipped"]	IndexReport::to_value
+crates/engine/src/indexer.rs	work[index]	Engine::index_reporting
+crates/engine/src/indexer/pipeline.rs	self.prefix[consumed]	Shared::within_window
+crates/engine/src/indexer/pipeline.rs	self.prefix[index]	Shared::within_window
+crates/engine/src/memory.rs	raw.min(f64::from(MAX_CORROBORATIONS)) as u32	corroborations_of
+crates/engine/src/memory/similarity.rs	current[index + 1]	longest_common_subsequence
+crates/engine/src/memory/similarity.rs	current[index]	longest_common_subsequence
+crates/engine/src/memory/similarity.rs	left[..left.len().min(MAX_SEQUENCE_WORDS)]	longest_common_subsequence
+crates/engine/src/memory/similarity.rs	previous[index + 1]	longest_common_subsequence
+crates/engine/src/memory/similarity.rs	previous[index]	longest_common_subsequence
+crates/engine/src/memory/similarity.rs	previous[right.len()]	longest_common_subsequence
+crates/engine/src/memory/similarity.rs	right[..right.len().min(MAX_SEQUENCE_WORDS)]	longest_common_subsequence
+crates/engine/src/outline.rs	flat[..stop]	first_sentence
+crates/engine/src/recall/assemble.rs	chosen[*index]	notes
+crates/engine/src/recall/assemble.rs	chosen[*index]	relations
+crates/engine/src/recall/assemble.rs	chosen[index]	cheapest_step_down
+crates/engine/src/recall/assemble.rs	chosen[index]	compose
+crates/engine/src/recall/assemble.rs	chosen[index]	finish
+crates/engine/src/recall/assemble.rs	chosen[index]	shrink_symbols
+crates/engine/src/recall/assemble.rs	chosen[selection.key]	run_pack
+crates/engine/src/recall/assemble.rs	p.options[below]	cheapest_step_down
+crates/engine/src/recall/assemble.rs	p.options[level]	cheapest_step_down
+crates/engine/src/recall/assemble.rs	p.options[level]	compose
+crates/engine/src/recall/assemble.rs	p.options[level]	finish
+crates/engine/src/recall/assemble.rs	prepared[from]	relations
+crates/engine/src/recall/assemble.rs	prepared[selection.key]	run_pack
+crates/engine/src/recall/assemble.rs	prepared[to]	relations
+crates/engine/src/render.rs	row[column]	table_lines
+crates/engine/src/render.rs	widths[column]	table_lines
+crates/engine/src/sources.rs	symbol.span.end_byte as usize	SourceCache::slice
+crates/engine/src/sources.rs	symbol.span.start_byte as usize	SourceCache::slice
+crates/index/src/doc.rs	extras[index]	DocComments::insert_doc
+crates/index/src/doc.rs	source[..insertion.at]	DocComments::insert_doc
+crates/index/src/doc.rs	source[insertion.at..]	DocComments::insert_doc
+crates/index/src/extract/engine.rs	inner[0]	Walker::enter_children
+crates/index/src/extract/engine.rs	outer[self.depth - 1]	Walker::enter_children
+crates/index/src/extract/engine.rs	positions[at]	Walker::extend_outlines
+crates/index/src/extract/engine.rs	self.frames[depth]	Walker::leave
+crates/index/src/extract/engine.rs	self.frames[self.depth.saturating_sub(decl.outer_up)]	Walker::place
+crates/index/src/extract/engine.rs	self.scopes[last]	Walker::scope_mut
+crates/index/src/extract/engine.rs	self.scopes[self.scopes.len() - 1]	Walker::scope
+crates/index/src/extract/engine.rs	self.symbols[*i]	Walker::find_in_scope
+crates/index/src/extract/go.rs	rest[word.len()..]	is_doc_comment
+crates/index/src/extract/text.rs	line[cut..]	dedent
+crates/index/src/extract/text.rs	lines[skip..]	join_doc_lines
+crates/index/src/extract/text.rs	text[open + 9..close]	xml_doc_text
+crates/index/src/fallback/mod.rs	buffer[..cut]	Lexer::signature
+crates/index/src/fallback/mod.rs	self.lines[end_line]	Lexer::close_top
+crates/index/src/fallback/mod.rs	self.lines[first_line]	Lexer::push_declaration
+crates/index/src/fallback/mod.rs	self.lines[hash_line]	Lexer::push_declaration
+crates/index/src/fallback/mod.rs	self.lines[index]	Lexer::mode_for
+crates/index/src/fallback/mod.rs	self.lines[index]	Lexer::push_declaration
+crates/index/src/fallback/mod.rs	self.lines[index]	Lexer::signature
+crates/index/src/fallback/mod.rs	self.lines[index]	Lexer::step_line
+crates/index/src/fallback/mod.rs	self.lines[next]	Lexer::signature
+crates/index/src/fallback/mod.rs	self.symbols[open.symbol]	Lexer::close_top
+crates/index/src/fallback/mod.rs	text[open.len()..]	Lexer::run_doc
+crates/index/src/fallback/scan.rs	before[..before.len() - separator]	make_call
+crates/index/src/fallback/scan.rs	head[begin..]	make_call
+crates/index/src/fallback/scan.rs	line[..start]	make_call
+crates/index/src/fallback/scan.rs	line[i..]	scan_line
+crates/index/src/fallback/scan.rs	line[start..end]	make_call
+crates/index/src/fallback/shapes.rs	after[used..]	zig_const
+crates/index/src/fallback/shapes.rs	after[word_len..]	strip_annotations
+crates/index/src/fallback/shapes.rs	lower[consumed..]	sql_create
+crates/index/src/fallback/shapes.rs	part[..end]	take_name
+crates/index/src/fallback/shapes.rs	rest[full.len()..]	clojure_form
+crates/index/src/fallback/shapes.rs	rest[word.len()..]	keyword_shape
+crates/index/src/fallback/shapes.rs	text[..end]	take_word
+crates/index/src/fallback/shapes.rs	text[consumed..]	sql_create
+crates/index/src/fallback/shapes.rs	text[consumed..]	take_name
+crates/index/src/fallback/shapes.rs	text[i + close.len_utf8()..]	skip_group
+crates/index/src/fallback/shapes.rs	text[used..]	r_function
+crates/index/src/fallback/shapes.rs	text[used..]	shell_function
+crates/index/src/fallback/shapes.rs	text[word.len()..]	elixir_form
+crates/index/src/fallback/shapes.rs	text[word.len()..]	haskell_signature
+crates/index/src/tree.rs	MINIFIED_LINE_CHARS as u64	is_minified
+crates/index/src/tree.rs	buffer[..filled]	is_minified
+crates/index/src/tree.rs	buffer[filled..]	is_minified
+crates/index/src/tree.rs	probe[..end]	is_minified
+crates/mcp/src/framing.rs	chunk[..content]	read_frame
+crates/mcp/src/tools.rs	value as u32	whole_f64_to_u32
+crates/report/src/content.rs	all[..all.len().min(max)]	Window::new
+crates/report/src/graph/json.rs	prep.nodes[edge.from]	render
+crates/report/src/graph/json.rs	prep.nodes[edge.to]	render
+crates/report/src/graph/layout.rs	angles[*a]	share_within_bundles
+crates/report/src/graph/layout.rs	angles[*b]	share_within_bundles
+crates/report/src/graph/layout.rs	angles[*first]	share_within_bundles
+crates/report/src/graph/layout.rs	angles[*i]	share_within_bundles
+crates/report/src/graph/layout.rs	angles[*index]	mean_angle
+crates/report/src/graph/layout.rs	angles[*previous]	share_within_bundles
+crates/report/src/graph/layout.rs	angles[index]	share_within_bundles
+crates/report/src/graph/layout.rs	arrive[index]	edge_shapes
+crates/report/src/graph/layout.rs	emerge[index]	edge_shapes
+crates/report/src/graph/layout.rs	flags[index]	label_flags
+crates/report/src/graph/layout.rs	forces[a]	run_forces
+crates/report/src/graph/layout.rs	forces[b]	run_forces
+crates/report/src/graph/layout.rs	forces[i]	repel
+crates/report/src/graph/layout.rs	forces[j]	repel
+crates/report/src/graph/layout.rs	labeled[index]	fit
+crates/report/src/graph/layout.rs	layout.nodes[edge.from]	bundled
+crates/report/src/graph/layout.rs	layout.nodes[edge.from]	edge_shapes
+crates/report/src/graph/layout.rs	layout.nodes[edge.to]	bundled
+crates/report/src/graph/layout.rs	layout.nodes[edge.to]	edge_shapes
+crates/report/src/graph/layout.rs	members[node.group_index]	initial_positions
+crates/report/src/graph/layout.rs	out[index]	share_within_bundles
+crates/report/src/graph/layout.rs	pos[a]	run_forces
+crates/report/src/graph/layout.rs	pos[b]	run_forces
+crates/report/src/graph/layout.rs	pos[i]	repel
+crates/report/src/graph/layout.rs	pos[i]	separate
+crates/report/src/graph/layout.rs	pos[j]	repel
+crates/report/src/graph/layout.rs	pos[j]	separate
+crates/report/src/graph/layout.rs	pos[node]	initial_positions
+crates/report/src/graph/layout.rs	prep.nodes[a]	label_flags
+crates/report/src/graph/layout.rs	prep.nodes[b]	label_flags
+crates/report/src/graph/layout.rs	prep.nodes[index]	fit
+crates/report/src/graph/layout.rs	radii[i]	separate
+crates/report/src/graph/layout.rs	radii[index]	fit
+crates/report/src/graph/layout.rs	radii[j]	separate
+crates/report/src/graph/layout.rs	size[g]	cohesion
+crates/report/src/graph/layout.rs	size[node.group_index]	cohesion
+crates/report/src/graph/layout.rs	sum[g]	cohesion
+crates/report/src/graph/layout.rs	sum[node.group_index]	cohesion
+crates/report/src/graph/palette.rs	DARK[index % COLORS]	dark
+crates/report/src/graph/palette.rs	MAIN[index % COLORS]	main
+crates/report/src/graph/palette.rs	SOFT[index % COLORS]	soft
+crates/report/src/graph/prepare.rs	degree[a]	choose_nodes
+crates/report/src/graph/prepare.rs	degree[b]	choose_nodes
+crates/report/src/graph/prepare.rs	degree[from]	choose_nodes
+crates/report/src/graph/prepare.rs	degree[to]	choose_nodes
+crates/report/src/graph/prepare.rs	edges[a]	prepare
+crates/report/src/graph/prepare.rs	edges[b]	prepare
+crates/report/src/graph/prepare.rs	edges[index]	prepare
+crates/report/src/graph/prepare.rs	graph.nodes[a]	choose_nodes
+crates/report/src/graph/prepare.rs	graph.nodes[b]	choose_nodes
+crates/report/src/graph/prepare.rs	graph.nodes[source_index]	prepare
+crates/report/src/graph/prepare.rs	remap[*from]	prepare
+crates/report/src/graph/prepare.rs	remap[*to]	prepare
+crates/report/src/graph/prepare.rs	remap[from]	prepare
+crates/report/src/graph/prepare.rs	remap[old_index]	prepare
+crates/report/src/graph/prepare.rs	remap[to]	prepare
+crates/report/src/html/table.rs	rows[..rows.len().min(MAX_LANGUAGE_BARS)]	language_chart
+crates/report/src/i18n.rs	after[..close]	fill
+crates/report/src/i18n.rs	after[close + 1..]	fill
+crates/report/src/i18n.rs	rest[..open]	fill
+crates/report/src/i18n.rs	rest[open + 1..]	fill
+crates/report/src/pdf/doc.rs	items[0]	write_outline
+crates/report/src/pdf/doc.rs	items[items.len() - 1]	write_outline
+crates/report/src/pdf/doc.rs	page_ids[index]	assemble
+crates/report/src/pdf/doc.rs	streams[index]	assemble
+crates/report/src/pdf/fonts.rs	widths[usize::from(BULLET) - 32]	glyph_width
+crates/report/src/pdf/fonts.rs	widths[usize::from(code) - 32]	glyph_width
+crates/report/src/pdf/fonts.rs	word[start..]	break_word
+crates/report/src/pdf/fonts.rs	word[start..index]	break_word
+crates/report/src/pdf/table.rs	cells[column]	Doc::table_row
+crates/report/src/pdf/table.rs	widths[column]	Doc::table
+crates/store/src/convert.rs	text[..end]	truncate_utf8
+crates/store/src/edges.rs	candidates[position]	best_candidates
+crates/store/src/ids.rs	part.len() as u64	push_part
+crates/store/src/upsert.rs	extract.symbols[owner]	Writer::write_references
+crates/store/src/upsert.rs	plan.attempts[index]	Writer::write_symbols
+crates/store/src/upsert.rs	plan.ids[index]	Writer::write_symbols
+crates/store/src/upsert.rs	plan.ids[owner]	Writer::write_references
+crates/store/src/upsert.rs	plan.ids[parent]	Writer::write_symbols
+crates/store/src/upsert.rs	plan.keys[index]	Writer::write_symbols
+crates/store/src/upsert.rs	plan.survivor[index]	Writer::write_symbols
+crates/store/src/upsert.rs	plan.text_unchanged[index]	Writer::write_symbols
+crates/store/src/upsert.rs	values[..]	Writer::write_symbols
+crates/toon/src/decode.rs	content[..colon]	split_entry
+crates/toon/src/decode.rs	content[colon + 1..]	split_entry
+crates/toon/src/decode.rs	content[end..]	split_entry
+crates/toon/src/decode.rs	line.content[2..]	Parser::list_item
+crates/toon/src/encode.rs	keys[i]	detect
+crates/toon/src/encode.rs	kinds[column]	detect
+crates/toon/src/header.rs	content[..bracket]	classify
+crates/toon/src/header.rs	content[..colon]	classify
+crates/toon/src/header.rs	content[..i]	key_value_fallthrough
+crates/toon/src/header.rs	content[colon + 1..]	classify
+crates/toon/src/header.rs	content[digits_start..i]	scan_header
+crates/toon/src/header.rs	content[end..]	classify
+crates/toon/src/header.rs	content[i + 1..]	key_value_fallthrough
+crates/toon/src/header.rs	content[i + 1..]	scan_header
+crates/toon/src/header.rs	content[i..]	parse_fields
+crates/toon/src/header.rs	content[name_start..i]	parse_fields
+crates/toon/src/lines.rs	rest[1..]	lenient_indentation
+crates/toon/src/number.rs	bytes[int_start]	scan_number
+crates/toon/src/number.rs	x as i64	number_from_f64
+crates/toon/src/number.rs	x as u64	number_from_f64
+crates/toon/src/quote.rs	bytes[from..]	is_numeric_like
+crates/toon/src/quote.rs	s[i..]	parse_quoted
+crates/toon/src/quote.rs	s[run_start..]	push_escaped
+crates/toon/src/quote.rs	s[run_start..i]	parse_quoted
+crates/toon/src/quote.rs	s[run_start..i]	push_escaped
+crates/toon/src/token.rs	bytes[i]	is_row_line
+crates/toon/src/token.rs	bytes[i]	split_cells_into
+crates/toon/src/token.rs	s[start..]	split_cells_into
+crates/toon/src/token.rs	s[start..i]	split_cells_into

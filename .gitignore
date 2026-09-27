@@ -1,0 +1,21 @@
+# Build output
+/target
+
+# Local data created by the tool while it runs on a repository
+/.pn-ultramemory/
+*.db
+*.db-wal
+*.db-shm
+
+# Benchmark results (the harness and its inputs are versioned, the outputs are not)
+/bench/results/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.env
+.env.*

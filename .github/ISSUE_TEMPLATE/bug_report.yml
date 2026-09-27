@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: structured form for reporting bugs.
+name: Bug report
+description: Something does not behave as documented
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+        **Security problems must not be reported here.** Follow the [security policy](https://github.com/paulnewmandev/pn-ultramemory/security/policy) instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `pn-ultramemory --version`, or the commit hash if you built from source.
+      placeholder: "1.2.36"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what did you see?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps or the smallest repository that shows the problem.
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output or logs
+      description: Paste relevant output. Remove secrets first.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and found no duplicate
+          required: true
+        - label: This is not a security vulnerability
+          required: true

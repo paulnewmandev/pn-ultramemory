@@ -1,0 +1,42 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: fail when a source file lacks the SPDX license header, or a Rust file lacks its
+#          module-level `//!` documentation. Enforces the "documentation in every file" rule.
+# Usage:   scripts/check-headers   (run from anywhere inside the repository)
+# Exit codes: 0 all files comply, 1 at least one file is missing a header.
+
+set -eu
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+
+status=0
+
+# Tracked and untracked (but not ignored) files, so the check also works before the first commit.
+for file in $(git ls-files --cached --others --exclude-standard); do
+    case "$file" in
+        *.rs | *.sh | *.toml | *.yml | *.yaml | *.sql | *.scm) ;;
+        scripts/*) ;;
+        *) continue ;;
+    esac
+    [ -f "$file" ] || continue
+
+    if ! head -n 5 "$file" | grep -q 'SPDX-License-Identifier: Apache-2.0'; then
+        printf 'missing SPDX header: %s\n' "$file" >&2
+        status=1
+    fi
+
+    case "$file" in
+        *.rs)
+            if ! head -n 12 "$file" | grep -q '^//!'; then
+                printf 'missing //! module documentation: %s\n' "$file" >&2
+                status=1
+            fi
+            ;;
+    esac
+done
+
+if [ "$status" -eq 0 ]; then
+    echo "all file headers are present"
+fi
+exit "$status"

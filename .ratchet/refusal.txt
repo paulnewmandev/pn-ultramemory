@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Baseline of the refusal ratchet: error messages that do not yet name a way forward.
+# One finding per line, as `<crate>/<path>` TAB `<message, whitespace-normalised>`.
+# There is deliberately no line number: a finding must not move when the line above it is
+# edited, or the guard breaks on unrelated changes and somebody switches it off.
+#
+# This file may only SHRINK. A message not listed here fails the build. A line listed here
+# whose file is no longer analysed also fails the build, because `fixed` and `invisible to
+# the analyser` are indistinguishable from this file's point of view.
+#
+# Run the guard:  cargo run -p xtask -- refusal
+# Regenerate:     cargo run -p xtask -- refusal --update
+# Sort order:     plain byte order. Post-process with LC_ALL=C or comm(1) will lie.
+#
+# What this guard does NOT prove:
+#   * that a named continuation is the right one, only that one is named;
+#   * anything about messages built at run time, or coming from a dependency, or held in data;
+#   * anything about messages that reach a user by a carrier this guard does not read.
+cli/src/install.rs	unknown agent `{name}`; known agents: {}
+cli/src/main.rs	`{}` parsed but reached no handler, which is a defect in this build; please report it at https://github.com/paulnewmandev/pn-ultramemory/issues
+cli/src/main.rs	cannot create the data directory `{}`: {error}. Pass --data-dir to choose another one
+cli/src/main.rs	cannot write `{}`: {e}. Check that the folder exists and that you may write to it, or choose another file with --out
+cli/src/main.rs	{message}. Pass --repo <PATH> to name the repository
+cli/src/simple.rs	cannot read `{file}`: {error}
+cli/src/simple.rs	cannot read standard input: {error}
+cli/src/simple.rs	the input is not valid JSON: {error}
+cli/src/simple.rs	the input is not valid TOON (line {}): {}
+core/src/ports.rs	`{path}` is not UTF-8 text
+core/src/ports.rs	`{path}` is outside the repository
+core/src/ports.rs	could not parse the source: {reason}
+core/src/ports.rs	documentation cannot be inserted for `{language}`
+core/src/ports.rs	file system error: {message}
+core/src/ports.rs	language `{language}` is not supported
+core/src/ports.rs	not found: {message}
+core/src/ports.rs	storage backend error: {message}
+core/src/ports.rs	stored data is unusable: {message}
+core/src/ports.rs	the documentation would break the code: {reason}
+engine/src/error.rs	`{query}` matches several symbols; use an id: {}
+engine/src/error.rs	invalid request: {message}
+engine/src/error.rs	not found: {message}
+engine/src/error.rs	refused: {message}
+engine/src/learn.rs	no memory with id {id}
+engine/src/naming.rs	`{reference}` is not a valid id
+engine/src/naming.rs	no symbol with id {id}
+engine/src/naming.rs	the symbol name is empty
+engine/src/recall.rs	the query is empty
+index/src/doc.rs	only functions and classes can hold a docstring
+index/src/doc.rs	the body is empty
+index/src/doc.rs	the body starts on the same line as the header
+index/src/doc.rs	the declaration already has documentation
+index/src/doc.rs	the declaration does not start its line
+index/src/doc.rs	the declaration has no body
+index/src/doc.rs	the documentation text is empty
+index/src/doc.rs	the inserted comment would introduce syntax errors
+index/src/extract/mod.rs	the parser gave up
+index/src/extract/mod.rs	the source is too large
+index/src/tree.rs	`{}` is not a valid path
+index/src/tree.rs	{path} has no directory
+index/src/tree.rs	{path} has no usable file name
+index/src/tree.rs	{path} is not a file
+index/src/tree.rs	{} is not a directory
+mcp/src/protocol.rs	`id` must be a string or an integer
+mcp/src/protocol.rs	`jsonrpc` must be "2.0"
+mcp/src/protocol.rs	`method` must be a string
+mcp/src/protocol.rs	a message must be a JSON object
+mcp/src/protocol.rs	missing `method`
+store/src/db.rs	could not create the directory `{}`: {error}
+store/src/db.rs	the file was not stored
+store/src/ids.rs	no free symbol id for `{}` in `{}` after {MAX_ATTEMPTS} attempts
+store/src/learning.rs	{what} must be a finite number
+store/src/memories.rs	symbol {symbol}
+store/src/schema.rs	the schema version {raw} is not valid
+store/src/upsert.rs	the file row was not stored
+toon/src/error.rs	line {}: {}

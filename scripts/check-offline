@@ -1,0 +1,131 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: prove that the test suite makes no network calls, by running it inside a network
+#          namespace that has no route to anywhere.
+# Usage:   sh scripts/check-offline    (run from anywhere inside the repository)
+#
+# How it works, and why in this order:
+#   1. Find out whether this platform can create a network namespace (`unshare -rn`, Linux only).
+#   2. FIRST prove the namespace really isolates the network: run a command inside it that would
+#      reach the network and require it to FAIL. If it succeeds, the sandbox is not a sandbox and
+#      the whole check would pass vacuously, so we exit non-zero and say so. A guard that cannot
+#      fail proves nothing.
+#   3. Only then run `cargo test --workspace --locked --offline` inside the namespace.
+#
+# Exit codes:
+#   0  the suite passed with no network, or the check is unavailable on this platform, which is
+#      reported with a distinct UNAVAILABLE note rather than as a pass
+#   1  the suite failed, or reached the network
+#   2  the sandbox does not isolate the network, so the check cannot be trusted
+#   3  the toolchain or the dependencies are missing, so nothing was proved
+#
+# WHAT THIS DOES NOT PROVE:
+#   * It proves that the code paths THE TESTS TAKE make no network calls. It does not prove that
+#     every code path is network-free: an untested path could open a socket and this check would
+#     stay green. Only a build-time ban on networking libraries could prove that.
+#   * It says nothing about the release binary, which is built with different features.
+#   * It says nothing about a dependency's build script, which runs before the namespace is entered.
+#   * It cannot run at all on macOS or Windows, where it exits 0 with a distinct note rather than a
+#     silent pass. The blocking check therefore runs on Linux only.
+#   * `--offline` forbids cargo from touching the registry, so a missing dependency is reported as a
+#     setup failure (exit 3) rather than as a network call.
+
+# Backticks inside the single-quoted messages below are deliberate: they quote a command for a
+# reader, and must not be expanded by the shell.
+# shellcheck disable=SC2016
+
+set -eu
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+
+# Exit code reported when the sandbox does not isolate the network.
+readonly SANDBOX_BROKEN=2
+# Exit code reported when the toolchain or the vendored dependencies are missing.
+readonly SETUP_INCOMPLETE=3
+# A host that must be unreachable inside the namespace. Chosen because it is a well-known address
+# that answers from almost anywhere, so reaching it means the namespace is not isolating anything.
+readonly PROBE_HOST=1.1.1.1
+
+note() {
+    printf 'check-offline: %s\n' "$1"
+}
+
+fail() {
+    printf 'check-offline: %s\n' "$1" >&2
+}
+
+# Reports that the check cannot run here, and says so distinctly rather than passing silently.
+unavailable() {
+    note "UNAVAILABLE on this platform: $1"
+    note 'No network isolation was applied, so nothing about network calls was proved here.'
+    note 'The blocking check runs in the `offline` job of .github/workflows/guards.yml on Linux.'
+    exit 0
+}
+
+# The platform is checked before the toolchain, so that a contributor on macOS or Windows always
+# reads the UNAVAILABLE note rather than a message about a missing compiler.
+command -v unshare >/dev/null 2>&1 \
+    || unavailable 'unshare(1) is not available, so no network namespace can be created'
+
+if ! unshare -rn true >/dev/null 2>&1; then
+    unavailable 'unshare -rn was refused, so no network namespace can be created'
+fi
+
+command -v cargo >/dev/null 2>&1 || {
+    fail 'cargo is not on PATH; install the toolchain pinned in rust-toolchain.toml'
+    exit "$SETUP_INCOMPLETE"
+}
+
+# --- Step 1: prove the sandbox isolates the network ---------------------------------------------
+# Inside the namespace there is only a down loopback interface and no route, so any attempt to
+# reach PROBE_HOST must fail. Several probes are tried because a minimal container may have none
+# of them; if none is available we cannot prove isolation and must not continue.
+note "checking that the sandbox really isolates the network (probe host $PROBE_HOST)"
+
+probe_reached_network=no
+probe_ran=no
+
+run_probe() {
+    tool=$1
+    shift
+    command -v "$tool" >/dev/null 2>&1 || return 0
+    probe_ran=yes
+    if unshare -rn "$tool" "$@" >/dev/null 2>&1; then
+        probe_reached_network=yes
+        fail "the sandbox did NOT isolate the network: \`$tool\` reached $PROBE_HOST inside it"
+    else
+        note "  $tool could not reach the network inside the sandbox, as required"
+    fi
+}
+
+run_probe curl --silent --show-error --max-time 5 "http://$PROBE_HOST/"
+run_probe wget --quiet --timeout=5 --tries=1 -O /dev/null "http://$PROBE_HOST/"
+run_probe ping -c 1 -W 2 "$PROBE_HOST"
+
+if [ "$probe_ran" = no ]; then
+    fail 'no network probe is installed (curl, wget or ping), so the sandbox cannot be verified.'
+    fail 'Install one of them, or run this check on a runner that has one. Without a probe the'
+    fail 'test run below would pass whether or not the namespace isolated anything.'
+    exit "$SANDBOX_BROKEN"
+fi
+
+if [ "$probe_reached_network" = yes ]; then
+    fail 'Refusing to continue: the result would say nothing about network calls.'
+    exit "$SANDBOX_BROKEN"
+fi
+
+# --- Step 2: run the suite with no network ------------------------------------------------------
+note 'sandbox verified; running the test suite inside it'
+if unshare -rn cargo test --workspace --locked --offline; then
+    note 'PASS: the whole test suite ran with no route to the network.'
+    note 'This proves the paths the tests take make no network calls. It does not prove that'
+    note 'every code path is network-free; see the header of this script.'
+    exit 0
+fi
+
+fail 'the test suite failed with no network available.'
+fail 'Either a test reaches the network, which breaks the local-only promise of the project, or'
+fail 'the suite is failing for an unrelated reason. Run `cargo test --workspace --locked` with the'
+fail 'network available to tell the two apart.'
+exit 1

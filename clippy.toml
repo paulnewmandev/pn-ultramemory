@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Clippy settings for the whole workspace. Tests may use unwrap/expect/panic; library code may not.
+
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true

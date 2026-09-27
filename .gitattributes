@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.svg text eol=lf
+*.png binary
+*.ico binary
+Cargo.lock text eol=lf linguist-generated

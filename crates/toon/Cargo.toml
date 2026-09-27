@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of pn-ultramemory-toon.
+
+[package]
+name = "pn-ultramemory-toon"
+description = "TOON (Token-Oriented Object Notation) encoder and decoder for compact, token-efficient structured text."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

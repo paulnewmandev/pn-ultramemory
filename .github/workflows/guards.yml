@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: the quality guards that no compiler can enforce: the refusal, panic and documentation
+#          ratchets, the header gate, the release-blocker manifest, and the offline proof.
+#
+# THESE JOBS MUST BE CONFIGURED AS REQUIRED STATUS CHECKS ON `main`.
+# A guard that cannot block a merge is decoration. Until `ratchets` and `offline` are required in
+# the branch protection rules for `main`, a pull request can be merged with every one of them red,
+# and the baselines under `.ratchet/` will drift until somebody deletes them.
+# Settings -> Branches -> main -> Require status checks to pass -> add `ratchets` and `offline`.
+#
+# Third-party actions are pinned by commit SHA, with the tag in a comment, so that a moved tag
+# cannot change what runs here. The SHA is the one already used by ci.yml.
+name: guards
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guards-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ratchets:
+    name: ratchets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the toolchain pinned in rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      # Each guard runs as its own step so that a red job names the promise that broke, rather
+      # than only the command that failed.
+      - name: SPDX headers and module documentation
+        run: cargo run -p xtask -- headers
+      - name: Refusal ratchet (every error message names a way forward)
+        run: cargo run -p xtask -- refusal
+      - name: Panic ratchet (library code does not abort the process)
+        run: cargo run -p xtask -- panics
+      - name: Documentation ratchet (a docstring says more than the item's name)
+        run: cargo run -p xtask -- docs
+      - name: Release-blocker manifest (every named test still exists)
+        run: cargo run -p xtask -- verify-tests .ratchet/release-blockers.txt
+
+  offline:
+    name: offline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the toolchain pinned in rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      # Warms the dependency cache before the network is taken away: `--offline` inside the
+      # namespace must not be the thing that fails.
+      - name: Fetch the locked dependencies
+        run: cargo fetch --locked
+      - name: Test suite with no route to the network
+        run: sh scripts/check-offline

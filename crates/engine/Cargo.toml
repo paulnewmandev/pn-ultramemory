@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of pn-ultramemory-engine: the use cases (indexing, recall, impact, memory, learning, docs).
+
+[package]
+name = "pn-ultramemory-engine"
+description = "Use cases of pn-ultramemory: indexing, recall, impact, memory, learning, documentation and repository map."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[dependencies]
+pn-ultramemory-core.workspace = true
+pn-ultramemory-codec.workspace = true
+pn-ultramemory-toon.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+pn-ultramemory-index.workspace = true
+pn-ultramemory-store.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+# rustfmt settings for the whole workspace (stable options only).
+
+max_width = 100

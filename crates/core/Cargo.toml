@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Manifest of pn-ultramemory-core: the pure domain vocabulary (no I/O, no other workspace crate).
+
+[package]
+name = "pn-ultramemory-core"
+description = "Pure domain vocabulary of pn-ultramemory: confidence, detail levels, memory kinds."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[lints]
+workspace = true

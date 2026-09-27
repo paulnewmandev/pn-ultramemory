@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: structured form for proposing features and improvements.
+name: Feature request
+description: Suggest an improvement or a new capability
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Indexing and language packs
+        - Recall and capsule packing
+        - Memory and learning
+        - Documentation generation
+        - Agent integration (MCP, hooks)
+        - Command line
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that is hard or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: measurement
+    attributes:
+      label: How would we know it works?
+      description: A metric, benchmark or test that would show the improvement (tokens, latency, accuracy).
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to send a pull request for this

@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+# cargo-deny policy: permissive licenses only, no yanked or known-vulnerable crates, and
+# dependencies only from crates.io. A dependency that breaks this fails CI.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+# Sound-but-unmaintained crates count too: an unmaintained dependency is a vulnerability that has
+# not been found yet, and the point of checking is to know before someone else does.
+unmaintained = "all"
+# An `ignore` entry that no longer matches anything fails the check. Without this an ignore
+# outlives the advisory it was written for, and the policy quietly stops meaning what it says.
+unused-ignored-advisory = "deny"
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+# The allow-list is exactly what the tree needs, not a wishlist. An entry no dependency uses any
+# more fails the check, so the upgrade that drops the last holder of a licence also drops its row.
+unused-allowed-license = "deny"
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+    "Unlicense",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
