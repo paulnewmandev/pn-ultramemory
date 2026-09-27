@@ -41,10 +41,23 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Test
         # `--no-fail-fast` so one failing crate does not hide the rest, and a backtrace so a
-        # failure that only happens on one platform can be read from the log instead of guessed at.
+        # failure that only happens on one platform can be read rather than guessed at.
+        #
+        # A failing test is also re-emitted as a workflow error, which GitHub turns into an
+        # annotation. Annotations are visible on the run's summary and through the public API,
+        # so anyone can see *which* test failed and why without permission to read the raw log.
         env:
           RUST_BACKTRACE: 1
-        run: cargo test --workspace --locked --no-fail-fast
+        run: |
+          set -o pipefail
+          if cargo test --workspace --locked --no-fail-fast 2>&1 | tee test-output.log; then
+            exit 0
+          fi
+          grep -E "^---- .* stdout ----|panicked at|^assertion|left:|right:|^test .*FAILED" \
+            test-output.log | head -40 | while IFS= read -r line; do
+            printf '::error::%s\n' "$(printf '%s' "$line" | sed 's/%/%25/g')"
+          done
+          exit 1
       - name: Documentation
         run: cargo doc --workspace --no-deps --locked
 
