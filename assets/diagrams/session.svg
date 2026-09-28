@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 392" width="760" height="392" role="img" aria-label="A session with no memory calls brief to learn the project, recall and outline to work, remember to keep a decision, and feedback to say what helped; the graph on disk survives the session">
+<title>A session that starts with nothing</title>
+<rect width="760" height="392" rx="14" fill="#0f172a"/>
+<text x="28" y="40" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#e8eced" text-anchor="start">What survives when the session does not</text>
+<text x="28" y="62" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#9aa4ad" text-anchor="start">A model's memory ends with its window. The graph and the decisions in it do not.</text>
+<rect x="28" y="88" width="704" height="128" rx="9" fill="#18202f" stroke="#2b3648"/>
+<text x="44" y="110" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#6b7684" text-anchor="start">a new session, knowing nothing</text>
+<rect x="44" y="128" width="156" height="58" rx="6" fill="#0f172a" stroke="#0fe58b" stroke-opacity="0.6"/>
+<text x="56" y="150" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13" font-weight="600" fill="#0fe58b" text-anchor="start">brief</text>
+<text x="56" y="170" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">what is this project</text>
+<path d="M204 157 L254 157" stroke="#6b7684" stroke-width="1.4"/>
+<path d="M254 157 l-5 -3.5 v7 z" fill="#6b7684"/>
+<rect x="216" y="128" width="156" height="58" rx="6" fill="#0f172a" stroke="#4da3e0" stroke-opacity="0.6"/>
+<text x="228" y="150" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13" font-weight="600" fill="#4da3e0" text-anchor="start">recall</text>
+<text x="228" y="170" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">the code for this question</text>
+<path d="M376 157 L426 157" stroke="#6b7684" stroke-width="1.4"/>
+<path d="M426 157 l-5 -3.5 v7 z" fill="#6b7684"/>
+<rect x="388" y="128" width="156" height="58" rx="6" fill="#0f172a" stroke="#4da3e0" stroke-opacity="0.6"/>
+<text x="400" y="150" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13" font-weight="600" fill="#4da3e0" text-anchor="start">outline</text>
+<text x="400" y="170" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">what is in this file</text>
+<path d="M548 157 L598 157" stroke="#6b7684" stroke-width="1.4"/>
+<path d="M598 157 l-5 -3.5 v7 z" fill="#6b7684"/>
+<rect x="560" y="128" width="156" height="58" rx="6" fill="#0f172a" stroke="#e39bc4" stroke-opacity="0.6"/>
+<text x="572" y="150" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13" font-weight="600" fill="#e39bc4" text-anchor="start">remember</text>
+<text x="572" y="170" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">keep this decision</text>
+<text x="44" y="205" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#f2b84b" text-anchor="start">feedback  —  says which of those actually helped, so the next session ranks better</text>
+<path d="M380 216 L380 250" stroke="#0fe58b" stroke-width="1.6" stroke-dasharray="4 3"/>
+<path d="M380 250 l-4 -6 h8 z" fill="#0fe58b"/>
+<rect x="28" y="256" width="704" height="72" rx="9" fill="#18202f" stroke="#0fe58b" stroke-opacity="0.45"/>
+<text x="44" y="280" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="600" fill="#0fe58b" text-anchor="start">on disk, outliving every session</text>
+<text x="44" y="302" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">the graph  ·  symbols, edges, how sure each one is</text>
+<text x="44" y="318" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">the memories  ·  anchored to the code, marked stale when it moves</text>
+<line x1="28" y1="348" x2="732" y2="348" stroke="#2b3648"/>
+<text x="28" y="370" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#e8eced" text-anchor="start">Close the window and the model forgets. Open a new one and brief tells it everything again.</text>
+</svg>

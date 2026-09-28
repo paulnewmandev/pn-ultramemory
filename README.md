@@ -131,11 +131,27 @@ it never touches the result you are capturing. Running in a terminal also prints
 > Asking an agent to install this for you? Give it the link to this repository and tell it to follow
 > [AGENTS.md](AGENTS.md) — it is written to be read by a model and carried out step by step.
 
+<p align="center">
+  <img src="assets/diagrams/install.svg" alt="Five install steps: get the binary, build the graph, register one agent, restart it, then check it with doctor" width="760">
+</p>
+
+**Download a binary. No toolchain needed.** Every release carries macOS (Apple silicon and Intel),
+Linux and Windows, each with a `.sha256` beside it.
+
+```bash
+# macOS, Apple silicon — see the releases page for Intel, Linux and Windows
+curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz | tar xz
+```
+
+Or build it, which needs a Rust toolchain:
+
 ```bash
 git clone https://github.com/paulnewmandev/pn-ultramemory
 cd pn-ultramemory
 cargo build --release          # Rust edition 2024
 ```
+
+Then, from the root of the project you want it to know:
 
 ```bash
 pn-ultramemory index           # build the graph
@@ -143,6 +159,8 @@ pn-ultramemory install --agents claude-code   # or cursor, codex, gemini, windsu
                                               # without --agents it registers with every
                                               # agent it finds; --dry-run shows what it
                                               # would touch and changes nothing
+                                              # then restart that agent — it reads its MCP
+                                              # servers at startup and only there
 pn-ultramemory doctor          # check it all worked
 ```
 
@@ -349,6 +367,45 @@ palette is colourblind-safe (Okabe–Ito), and the same input always produces th
 
 ---
 
+## It survives a change of session
+
+<p align="center">
+  <img src="assets/diagrams/session.svg" alt="A session with no memory calls brief to learn the project, recall and outline to work, remember to keep a decision, and feedback to say what helped; the graph on disk survives the session" width="760">
+</p>
+
+A model's memory ends with its window. Close the tab, switch tools, hit a context limit, and
+everything it learned about your codebase is gone — including the hour you spent explaining it. The
+next session rediscovers it by reading files, which is the expensive thing this exists to avoid.
+
+The graph on disk does not end. **`brief` is how a session picks it back up**: the repository's
+shape, its modules, its busiest symbols and every decision already recorded, in one budgeted call.
+
+### Nine tools
+
+<p align="center">
+  <img src="assets/diagrams/tools.svg" alt="Nine tools in three groups: four for reading the code, two for surveying it, three for writing to the memory" width="760">
+</p>
+
+| Tool | Ask it | Instead of |
+|---|---|---|
+| **`brief`** | What is this project | Reading a README and guessing |
+| `recall` | Which code matters for this question | Reading several files |
+| `outline` | What is in this file | Reading the whole file |
+| `expand` | The exact source of one symbol | Reading around it |
+| `impact` | What breaks if I change this | Grepping for the name |
+| `map` | Which files exist and what is in them | Listing the tree |
+| `remember` | Keep this decision, anchored to the code | A comment nobody reads |
+| `memories` | What do we already know; what went stale | Asking again |
+| `feedback` | That answer helped, or did not | Nothing — this had no equivalent |
+
+`feedback` is the one that closes the loop. Until it existed, the learning subsystem could only be
+fed from the command line, while the thing actually using `recall` was the agent — so in practice
+it never learned anything.
+
+The whole list costs **3,995 bytes** of context, read once per session — measured on the wire,
+not re-serialised. The ceiling is 4,200 and it is a test: a tool that cannot pay for its own
+description every session does not belong in the list.
+
 ## Works with the agent you already use
 
 `pn-ultramemory install` registers itself everywhere it finds an agent, writing **only its own
@@ -365,8 +422,7 @@ entry** and leaving the rest of the file byte for byte as it was.
 is what the installer's 60 tests check. Trae's path is marked *unverified*: it is offered with
 `--agents trae` and never written to by default.</sub>
 
-Five tools are offered over MCP — **`recall`**, **`outline`**, **`impact`**, **`remember`** and
-**`expand`** — and the whole tool list costs **2,139 bytes** of the agent's context.
+Nine tools are offered over MCP, described above.
 
 ---
 

@@ -16,7 +16,9 @@ use common::{
     Call, error_of, harness, initialize, meta, notification, reply, request, result_of, silent,
     stateless, tool_text,
 };
-use pn_ultramemory_mcp::{ExpandRequest, RecallRequest, SUPPORTED_PROTOCOL_VERSIONS};
+use pn_ultramemory_mcp::{
+    ExpandRequest, MAX_LIST_BYTES, RecallRequest, SUPPORTED_PROTOCOL_VERSIONS,
+};
 use serde_json::{Value, json};
 
 /// The server identity as results report it in `_meta`.
@@ -416,14 +418,20 @@ fn tool_list_payload_stays_tiny() {
         "tools/list response, stateless era: {} bytes",
         stateless_line.len()
     );
-    assert!(tools_bytes < 3_000, "tools array is {tools_bytes} bytes");
+    // MAX_LIST_BYTES carries the reasoning; this is where it is enforced. The list grew from six
+    // tools to nine when brief, map, memories and feedback were added — feedback in particular was
+    // the only way an agent could reach the learning subsystem at all.
     assert!(
-        legacy_line.len() < 3_000,
+        tools_bytes < MAX_LIST_BYTES,
+        "tools array is {tools_bytes} bytes"
+    );
+    assert!(
+        legacy_line.len() < MAX_LIST_BYTES,
         "legacy response is {} bytes",
         legacy_line.len()
     );
     assert!(
-        stateless_line.len() < 3_000,
+        stateless_line.len() < MAX_LIST_BYTES,
         "stateless response is {} bytes",
         stateless_line.len()
     );

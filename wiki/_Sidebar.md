@@ -8,6 +8,7 @@
 
 **Reference**
 * [Commands](Commands)
+* [The MCP tools](MCP-tools)
 * [How it works](How-it-works)
 * [Memories](Memories)
 

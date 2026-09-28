@@ -227,6 +227,8 @@ pub enum Command {
     Impact(ImpactArgs),
     /// Export the code graph as Mermaid, DOT, SVG or JSON.
     Graph(GraphArgs),
+    /// Everything a new session needs to know about this repository, inside a token budget.
+    Brief(BriefArgs),
     /// Describe one whole file: every symbol it declares, for a fraction of the tokens.
     Outline(OutlineArgs),
     /// Print a compact map of the repository within a token budget.
@@ -365,6 +367,14 @@ pub struct GraphArgs {
     /// Write to this file instead of standard output.
     #[arg(short, long, value_name = "FILE")]
     pub out: Option<PathBuf>,
+}
+
+/// Arguments of `brief`.
+#[derive(Debug, Args)]
+pub struct BriefArgs {
+    /// Token budget. Sections are trimmed from the bottom to fit it.
+    #[arg(short, long, value_name = "TOKENS")]
+    pub budget: Option<u32>,
 }
 
 /// Arguments of `outline`.

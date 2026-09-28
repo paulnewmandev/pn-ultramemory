@@ -4,19 +4,27 @@
 //! # Role in the architecture
 //! This crate is an **entry adapter** (see `docs/architecture.md`). It owns the wire protocol and
 //! nothing else: it depends on no other workspace crate, performs no network access and knows
-//! nothing about indexes or memories. The four things an agent can do are behind the [`Backend`]
+//! nothing about indexes or memories. The nine things an agent can do are behind the [`Backend`]
 //! trait, which the binary implements with the engine and hands to [`Server::new`]. The agent-facing
-//! surface is deliberately tiny so that the tool definitions cost few tokens.
+//! surface is kept small on purpose: every tool's schema is read once per session, so a tool that
+//! cannot pay for its own description does not belong in the list.
 //!
 //! # Tools
-//! Exactly four tools, listed in this order by `tools/list` (about 1.7 KB of JSON in total):
+//! Nine tools, listed in this order by `tools/list` (about 4 KB of JSON in total, or roughly a
+//! thousand tokens of per-session overhead — [`MAX_LIST_BYTES`] is the ceiling a test
+//! enforces):
 //!
 //! | Tool | Arguments | Purpose |
 //! |---|---|---|
+//! | `brief` | `budget` | What the repository is: size, languages, modules, busiest symbols and recorded memories. What a session that has lost its history reads first |
 //! | `recall` | `q` (required), `budget`, `explain` | A capsule of code and memories for a query, within a token budget; `explain: true` adds a short reason per result |
-//! | `impact` | `symbol` (required), `depth` | What depends on a symbol, with confidence |
-//! | `remember` | `kind` (required), `text` (required), `about` | Store a memory, optionally anchored to symbols |
+//! | `outline` | `path` (required), `budget` | Every symbol in one file. Detail falls to fit the budget; symbols are never dropped |
 //! | `expand` | `id` (required), `from`, `to` | The source of one node, optionally only lines `from` to `to` (1-based, inclusive, counted within the symbol's own source) so a very large function can be paged |
+//! | `impact` | `symbol` (required), `depth` | What depends on a symbol, with confidence |
+//! | `map` | `budget`, `path` | The repository's files and what each holds, optionally under one path prefix |
+//! | `remember` | `kind` (required), `text` (required), `about` | Store a memory, optionally anchored to symbols |
+//! | `memories` | `kind`, `stale`, `limit` | What is already known, and which memories the code has moved out from under |
+//! | `feedback` | `signal` (required), `symbol` or `memory` (one of them) | Report that a result was `used`, `useful`, `ignored`, a `dead_end` or `corrected`, and get the updated utility back. The only way the learning subsystem hears from the agent that actually calls `recall` |
 //!
 //! `kind` is one of `decision`, `fact`, `lesson`, `dead_end`, `error_fix`, `convention`,
 //! `requirement`, `task`
@@ -75,8 +83,9 @@
 //!
 //! ```
 //! use pn_ultramemory_mcp::{
-//!     Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest, Server, ServerInfo,
-//!     ToolFailure,
+//!     Backend, BriefRequest, ExpandRequest, FeedbackRequest, ImpactRequest, MAX_LIST_BYTES,
+//!     MapRequest, MemoriesRequest, OutlineRequest, RecallRequest, RememberRequest, Server,
+//!     ServerInfo, ToolFailure,
 //! };
 //!
 //! struct Notes;
@@ -90,6 +99,18 @@
 //!     }
 //!     fn remember(&self, request: RememberRequest) -> Result<String, ToolFailure> {
 //!         Ok(format!("remembered a {}", request.kind))
+//!     }
+//!     fn brief(&self, _: BriefRequest) -> Result<String, ToolFailure> {
+//!         Ok("brief:\n  files: 0".into())
+//!     }
+//!     fn map(&self, _: MapRequest) -> Result<String, ToolFailure> {
+//!         Ok("files[0]{path}:".into())
+//!     }
+//!     fn memories(&self, _: MemoriesRequest) -> Result<String, ToolFailure> {
+//!         Ok("memories[0]{id}:".into())
+//!     }
+//!     fn feedback(&self, _: FeedbackRequest) -> Result<String, ToolFailure> {
+//!         Ok("recorded: true".into())
 //!     }
 //!     fn outline(&self, _: OutlineRequest) -> Result<String, ToolFailure> {
 //!         Ok("file:\n  path: src/lib.rs".into())
@@ -110,7 +131,7 @@
 //! assert_eq!(server.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#), None);
 //!
 //! let list = server.handle_line(r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#).unwrap();
-//! assert!(list.len() < 3_000);
+//! assert!(list.len() < MAX_LIST_BYTES);
 //!
 //! let call = r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"expand","arguments":{"id":"n1"}}}"#;
 //! let reply = server.handle_line(call).unwrap();
@@ -125,6 +146,7 @@ mod tools;
 pub use protocol::{LATEST_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS};
 pub use server::{MAX_LINE_BYTES, Server, ServerInfo};
 pub use tools::{
-    Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest,
-    TOOL_NAMES, ToolFailure,
+    Backend, BriefRequest, ExpandRequest, FeedbackRequest, ImpactRequest, MAX_LIST_BYTES,
+    MapRequest, MemoriesRequest, OutlineRequest, RecallRequest, RememberRequest, TOOL_NAMES,
+    ToolFailure,
 };

@@ -3,6 +3,8 @@
 A memory is something worth keeping about this codebase, stored **anchored to the code it
 describes** so that when that code changes the memory says so.
 
+![A memory is stored with hashes of the symbol it describes; when that symbol changes the memory is marked stale rather than deleted or trusted](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/memory.svg)
+
 ## Writing one
 
 ```bash

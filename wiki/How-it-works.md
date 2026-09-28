@@ -2,6 +2,8 @@
 
 Why a question costs 413 tokens instead of 16,109, and what the tool is doing to get there.
 
+![A pipeline: the repository is indexed into a graph, a question finds seeds, the graph is walked, candidates are packed to a budget, and the capsule is measured](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/how.svg)
+
 ## Retrieval is a packing problem, not a search problem
 
 Search ranks. This has to **fit**. That difference decides the whole design.
@@ -15,6 +17,8 @@ L2  summary        + its first documentation sentence
 L3  outline        + the names it calls
 L4  source         + the whole body
 ```
+
+![Five levels of detail for one symbol, from its name alone to its whole source, each costing more than the one below](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/levels.svg)
 
 `recall` solves a **multi-resolution knapsack**: choose one level per candidate to maximise
 usefulness inside the budget. Three passes:

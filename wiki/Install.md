@@ -1,5 +1,7 @@
 # Install
 
+![Five install steps: get the binary, build the graph, register one agent, restart it, check it with doctor](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/install.svg)
+
 ## The short way
 
 Download the binary for your platform. **No toolchain needed.**

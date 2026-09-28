@@ -64,7 +64,7 @@ enum Era {
 /// # Examples
 /// ```
 /// use pn_ultramemory_mcp::{
-///     Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest,
+///     Backend, FeedbackRequest, MemoriesRequest, MapRequest, BriefRequest, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest,
 ///     Server, ServerInfo,
 ///     ToolFailure,
 /// };
@@ -80,6 +80,18 @@ enum Era {
 ///     }
 ///     fn remember(&self, _: RememberRequest) -> Result<String, ToolFailure> {
 ///         Ok("stored".to_owned())
+///     }
+///     fn brief(&self, _: BriefRequest) -> Result<String, ToolFailure> {
+///         Ok("brief:\n  files: 0".into())
+///     }
+///     fn map(&self, _: MapRequest) -> Result<String, ToolFailure> {
+///         Ok("files[0]{path}:".into())
+///     }
+///     fn memories(&self, _: MemoriesRequest) -> Result<String, ToolFailure> {
+///         Ok("memories[0]{id}:".into())
+///     }
+///     fn feedback(&self, _: FeedbackRequest) -> Result<String, ToolFailure> {
+///         Ok("recorded: true".into())
 ///     }
 ///     fn outline(&self, _: OutlineRequest) -> Result<String, ToolFailure> {
 ///         Ok("file:\n  path: src/lib.rs".into())
@@ -133,7 +145,7 @@ impl<B: Backend> Server<B> {
     /// # Examples
     /// ```
     /// use pn_ultramemory_mcp::{
-    ///     Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest, Server,
+    ///     Backend, FeedbackRequest, MemoriesRequest, MapRequest, BriefRequest, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest, Server,
     ///     ServerInfo, ToolFailure,
     /// };
     ///
@@ -148,6 +160,18 @@ impl<B: Backend> Server<B> {
     ///     }
     ///     fn remember(&self, _: RememberRequest) -> Result<String, ToolFailure> {
     ///         Ok(String::new())
+    ///     }
+    ///     fn brief(&self, _: BriefRequest) -> Result<String, ToolFailure> {
+    ///         Ok("brief:\n  files: 0".into())
+    ///     }
+    ///     fn map(&self, _: MapRequest) -> Result<String, ToolFailure> {
+    ///         Ok("files[0]{path}:".into())
+    ///     }
+    ///     fn memories(&self, _: MemoriesRequest) -> Result<String, ToolFailure> {
+    ///         Ok("memories[0]{id}:".into())
+    ///     }
+    ///     fn feedback(&self, _: FeedbackRequest) -> Result<String, ToolFailure> {
+    ///         Ok("recorded: true".into())
     ///     }
     ///     fn outline(&self, _: OutlineRequest) -> Result<String, ToolFailure> {
     ///         Ok("file:\n  path: src/lib.rs".into())
@@ -204,7 +228,7 @@ impl<B: Backend> Server<B> {
     /// # Examples
     /// ```
     /// use pn_ultramemory_mcp::{
-    ///     Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest, Server,
+    ///     Backend, FeedbackRequest, MemoriesRequest, MapRequest, BriefRequest, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest, Server,
     ///     ServerInfo, ToolFailure,
     /// };
     ///
@@ -219,6 +243,18 @@ impl<B: Backend> Server<B> {
     ///     }
     ///     fn remember(&self, _: RememberRequest) -> Result<String, ToolFailure> {
     ///         Ok(String::new())
+    ///     }
+    ///     fn brief(&self, _: BriefRequest) -> Result<String, ToolFailure> {
+    ///         Ok("brief:\n  files: 0".into())
+    ///     }
+    ///     fn map(&self, _: MapRequest) -> Result<String, ToolFailure> {
+    ///         Ok("files[0]{path}:".into())
+    ///     }
+    ///     fn memories(&self, _: MemoriesRequest) -> Result<String, ToolFailure> {
+    ///         Ok("memories[0]{id}:".into())
+    ///     }
+    ///     fn feedback(&self, _: FeedbackRequest) -> Result<String, ToolFailure> {
+    ///         Ok("recorded: true".into())
     ///     }
     ///     fn outline(&self, _: OutlineRequest) -> Result<String, ToolFailure> {
     ///         Ok("file:\n  path: src/lib.rs".into())

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 448" width="760" height="448" role="img" aria-label="Nine tools in three groups: four for reading the code, two for surveying it and three for writing to the memory, each with what it answers and what it costs">
+<title>Nine tools, and when to reach for each</title>
+<rect width="760" height="448" rx="14" fill="#0f172a"/>
+<text x="28" y="40" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#e8eced" text-anchor="start">Nine tools, and when to reach for each</text>
+<text x="28" y="62" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#9aa4ad" text-anchor="start">The list costs about 1,000 tokens, read once a session. On the right of each card is what its answer costs.</text>
+<text x="28.0" y="100" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6b7684" text-anchor="start">READ THE CODE</text>
+<line x1="28.0" y1="108" x2="251.33333333333334" y2="108" stroke="#2b3648"/>
+<rect x="28.0" y="122" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="40.0" y="145" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">brief</text>
+<text x="40.0" y="163" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">What is this project</text>
+<text x="239.33333333333334" y="145" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">1,200</text>
+<rect x="28.0" y="185" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="40.0" y="208" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">recall</text>
+<text x="40.0" y="226" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">Which code answers this</text>
+<text x="239.33333333333334" y="208" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">budgeted</text>
+<rect x="28.0" y="248" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="40.0" y="271" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">outline</text>
+<text x="40.0" y="289" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">What is in this file</text>
+<text x="239.33333333333334" y="271" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">budgeted</text>
+<rect x="28.0" y="311" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="40.0" y="334" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">expand</text>
+<text x="40.0" y="352" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">The source of one symbol</text>
+<text x="239.33333333333334" y="334" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">one symbol</text>
+<text x="268.33333333333337" y="100" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6b7684" text-anchor="start">SURVEY IT</text>
+<line x1="268.33333333333337" y1="108" x2="491.66666666666674" y2="108" stroke="#2b3648"/>
+<rect x="268.33333333333337" y="122" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="280.33333333333337" y="145" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">impact</text>
+<text x="280.33333333333337" y="163" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">What breaks if I change this</text>
+<text x="479.66666666666674" y="145" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">small</text>
+<rect x="268.33333333333337" y="185" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="280.33333333333337" y="208" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">map</text>
+<text x="280.33333333333337" y="226" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">Which files hold what</text>
+<text x="479.66666666666674" y="208" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">budgeted</text>
+<text x="508.6666666666667" y="100" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6b7684" text-anchor="start">WRITE TO THE MEMORY</text>
+<line x1="508.6666666666667" y1="108" x2="732.0" y2="108" stroke="#2b3648"/>
+<rect x="508.6666666666667" y="122" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="520.6666666666667" y="145" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">remember</text>
+<text x="520.6666666666667" y="163" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">Keep a decision, anchored</text>
+<text x="720.0" y="145" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">one line</text>
+<rect x="508.6666666666667" y="185" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="520.6666666666667" y="208" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">memories</text>
+<text x="520.6666666666667" y="226" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">What we know, what is stale</text>
+<text x="720.0" y="208" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">small</text>
+<rect x="508.6666666666667" y="248" width="223.33333333333334" height="54" rx="6" fill="#16203a" stroke="#2b3648"/>
+<text x="520.6666666666667" y="271" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start">feedback</text>
+<text x="520.6666666666667" y="289" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start">That helped, or it did not</text>
+<text x="720.0" y="271" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="end">one line</text>
+<line x1="28" y1="390" x2="732" y2="390" stroke="#2b3648"/>
+<text x="28" y="416" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="500" fill="#e8eced" text-anchor="start">Every answer is budgeted, measured, and returned as a table.</text>
+<text x="28" y="436" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#6b7684" text-anchor="start">feedback is the only one that teaches. Without it, the ranking never learns which answers were worth it.</text>
+</svg>

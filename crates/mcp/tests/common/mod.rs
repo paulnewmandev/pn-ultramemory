@@ -12,8 +12,9 @@
 use std::sync::{Arc, Mutex};
 
 use pn_ultramemory_mcp::{
-    Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest, RememberRequest, Server,
-    ServerInfo, ToolFailure,
+    Backend, BriefRequest, ExpandRequest, FeedbackRequest, ImpactRequest, MapRequest,
+    MemoriesRequest, OutlineRequest, RecallRequest, RememberRequest, Server, ServerInfo,
+    ToolFailure,
 };
 use serde_json::{Map, Value, json};
 
@@ -30,6 +31,14 @@ pub(crate) enum Call {
     Expand(ExpandRequest),
     /// An `outline` call.
     Outline(OutlineRequest),
+    /// A `brief` call.
+    Brief(BriefRequest),
+    /// A `map` call.
+    Map(MapRequest),
+    /// A `memories` call.
+    Memories(MemoriesRequest),
+    /// A `feedback` call.
+    Feedback(FeedbackRequest),
 }
 
 /// The shared, ordered record of backend calls.
@@ -127,6 +136,36 @@ impl Backend for Recorder {
             .budget
             .map_or_else(String::new, |budget| format!(":{budget}"));
         scripted(&request.path, format!("outline:{}{budget}", request.path))
+    }
+
+    /// Records and echoes the budget, when one was given.
+    fn brief(&self, request: BriefRequest) -> Result<String, ToolFailure> {
+        self.log.push(Call::Brief(request.clone()));
+        Ok(format!("brief:{:?}", request.budget))
+    }
+
+    /// Records and echoes what it was asked for.
+    fn map(&self, request: MapRequest) -> Result<String, ToolFailure> {
+        self.log.push(Call::Map(request.clone()));
+        Ok(format!("map:{:?}:{:?}", request.budget, request.path))
+    }
+
+    /// Records and echoes the filter.
+    fn memories(&self, request: MemoriesRequest) -> Result<String, ToolFailure> {
+        self.log.push(Call::Memories(request.clone()));
+        Ok(format!(
+            "memories:{:?}:{}:{:?}",
+            request.kind, request.stale, request.limit
+        ))
+    }
+
+    /// Records and echoes the signal and what it was about.
+    fn feedback(&self, request: FeedbackRequest) -> Result<String, ToolFailure> {
+        self.log.push(Call::Feedback(request.clone()));
+        Ok(format!(
+            "feedback:{}:{:?}:{:?}",
+            request.signal, request.symbol, request.memory
+        ))
     }
 }
 

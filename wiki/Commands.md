@@ -36,6 +36,19 @@ Builds or refreshes the graph. Only files whose content changed are read again.
 
 ## Retrieve
 
+### `brief`
+
+Everything a new session needs to know about this repository: its size, its languages, its modules,
+its busiest symbols and every memory already recorded. One call instead of an hour of explaining.
+
+| Flag | |
+|---|---|
+| `-b, --budget <TOKENS>` | Default 1200. Sections are given up from the bottom to fit it |
+
+Sections are printed in the order a reader needs them and given up in a different order: the
+busiest symbols go first, because reading the code finds them again, and the recorded decisions go
+last, because nothing else can recover them.
+
 ### `recall <question>`
 
 The code that matters for a question, packed into a budget.

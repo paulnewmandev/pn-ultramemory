@@ -17,6 +17,14 @@ enum Seen {
     Expand(ExpandRequest),
     /// An `outline` call.
     Outline(OutlineRequest),
+    /// A `brief` call.
+    Brief(BriefRequest),
+    /// A `map` call.
+    Map(MapRequest),
+    /// A `memories` call.
+    Memories(MemoriesRequest),
+    /// A `feedback` call.
+    Feedback(FeedbackRequest),
 }
 
 /// A backend that records every request and echoes a fixed reply.
@@ -76,6 +84,22 @@ impl Backend for Recording {
     fn outline(&self, request: OutlineRequest) -> Result<String, ToolFailure> {
         self.reply(Seen::Outline(request))
     }
+    /// Records the request.
+    fn brief(&self, request: BriefRequest) -> Result<String, ToolFailure> {
+        self.reply(Seen::Brief(request))
+    }
+    /// Records the request.
+    fn map(&self, request: MapRequest) -> Result<String, ToolFailure> {
+        self.reply(Seen::Map(request))
+    }
+    /// Records the request.
+    fn memories(&self, request: MemoriesRequest) -> Result<String, ToolFailure> {
+        self.reply(Seen::Memories(request))
+    }
+    /// Records the request.
+    fn feedback(&self, request: FeedbackRequest) -> Result<String, ToolFailure> {
+        self.reply(Seen::Feedback(request))
+    }
 }
 
 /// Calls a tool with arguments given as JSON text.
@@ -88,7 +112,7 @@ fn invoke(backend: &Recording, name: &str, arguments: &str) -> Result<Outcome, C
 
 /// The tool list is the four documented tools in order, each with a required-argument list.
 #[test]
-fn lists_exactly_four_tools_in_order() {
+fn lists_every_tool_in_the_declared_order() {
     let tools = definitions();
     let names: Vec<&str> = tools
         .as_array()
@@ -128,12 +152,18 @@ fn descriptions_are_terse_and_annotations_are_honest() {
             "{description}"
         );
         assert_eq!(tool["annotations"]["openWorldHint"], json!(false));
+        // Exactly two tools write: one stores a memory, the other records how a result turned out.
+        // Everything else only reads, and says so, so a client can treat it as safe to retry.
+        let writes = ["remember", "feedback"].contains(&tool["name"].as_str().unwrap_or_default());
         let read_only = tool["annotations"]["readOnlyHint"].as_bool().unwrap();
-        let is_remember = tool["name"] == "remember";
-        assert_eq!(read_only, !is_remember);
+        assert_eq!(read_only, !writes, "{}", tool["name"]);
+        // Nothing here destroys anything: a memory is added, a signal is recorded, and neither
+        // removes what was there. So every tool says so, reader and writer alike.
         assert_eq!(
-            tool["annotations"]["destructiveHint"] == json!(false),
-            is_remember
+            tool["annotations"]["destructiveHint"],
+            json!(false),
+            "{}",
+            tool["name"]
         );
     }
 }
@@ -142,7 +172,12 @@ fn descriptions_are_terse_and_annotations_are_honest() {
 #[test]
 fn schema_enum_matches_accepted_kinds() {
     let tools = definitions();
-    let remember = &tools[2];
+    // Found by name. Indexing by position made this test move whenever a tool was added, which
+    // says nothing about whether the enum and the list still agree.
+    let remember = tools
+        .as_array()
+        .and_then(|list| list.iter().find(|t| t["name"] == "remember"))
+        .expect("the remember tool");
     assert_eq!(
         remember["inputSchema"]["properties"]["kind"]["enum"],
         json!(MEMORY_KINDS)

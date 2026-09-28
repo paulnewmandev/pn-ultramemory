@@ -3,9 +3,11 @@
 A local, code-aware memory for coding agents. It indexes your repository into a graph of symbols
 and answers a question with the code that matters inside a token budget you set.
 
-**[Install](Install) · [First hour](First-hour) · [Commands](Commands) · [How it works](How-it-works) · [Memories](Memories) · [FAQ](FAQ) · [Troubleshooting](Troubleshooting)**
+**[Install](Install) · [First hour](First-hour) · [Commands](Commands) · [MCP tools](MCP-tools) · [How it works](How-it-works) · [Memories](Memories) · [FAQ](FAQ) · [Troubleshooting](Troubleshooting)**
 
 ---
+
+![One question costs 16,109 tokens read as files, or 413 as a capsule, and the capsule finds the right code more often](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/why.svg)
 
 ## In one paragraph
 
@@ -19,6 +21,8 @@ files.
 It also remembers decisions you tell it, anchored to the code they describe, so when that code
 changes the memory says so instead of quietly becoming a lie.
 
+![Nine tools in three groups: read the code, survey it, write to the memory](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/tools.svg)
+
 ## Where to start
 
 | You want to | Go to |
@@ -26,6 +30,7 @@ changes the memory says so instead of quietly becoming a lie.
 | Get it running in five minutes | [Install](Install) |
 | Know what to do once it is running | [First hour](First-hour) |
 | Look up a command or a flag | [Commands](Commands) |
+| Wire it into an agent and use it well | [The MCP tools](MCP-tools) |
 | Understand why it saves what it saves | [How it works](How-it-works) |
 | Store decisions and lessons | [Memories](Memories) |
 | Decide whether it suits your project | [FAQ](FAQ) |

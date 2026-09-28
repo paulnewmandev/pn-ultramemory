@@ -359,12 +359,22 @@ fn schema_declares_the_new_properties() {
             .count();
         assert!(words <= 5, "{property}");
     }
+    // A tool every one of whose properties is optional declares no `required` at all, which is
+    // correct and is not the same as declaring an empty one. What is being checked here is that no
+    // tool makes an optional refinement mandatory.
     for tool in tools.as_array().unwrap() {
-        let required = tool["inputSchema"]["required"].as_array().unwrap();
-        assert!(
-            required
-                .iter()
-                .all(|key| !["explain", "from", "to"].contains(&key.as_str().unwrap()))
-        );
+        let required = tool["inputSchema"]["required"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+        for key in &required {
+            let key = key.as_str().unwrap_or_default();
+            assert!(
+                // `path` is not here: for `outline` it is the subject of the call, not a filter.
+                !["explain", "from", "to", "budget", "stale", "limit"].contains(&key),
+                "`{}` makes `{key}` mandatory, but it refines a default",
+                tool["name"]
+            );
+        }
     }
 }

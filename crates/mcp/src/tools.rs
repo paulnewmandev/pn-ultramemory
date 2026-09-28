@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The four tools of the server, the [`Backend`] port that serves them and argument validation.
+//! The nine tools of the server, the [`Backend`] port that serves them and argument validation.
 //!
 //! # Role in the architecture
-//! The MCP server is an entry adapter. It owns the wire format and nothing else: what `recall`,
-//! `impact`, `remember` and `expand` actually do is decided by whatever implements [`Backend`]
-//! (the engine, wired in by the binary). This module turns a `tools/call` argument object into a
-//! plain request struct, calls the backend and reports the outcome as tool text.
+//! The MCP server is an entry adapter. It owns the wire format and nothing else: what `brief`,
+//! `recall`, `outline`, `expand`, `impact`, `map`, `remember`, `memories` and `feedback` actually
+//! do is decided by whatever implements [`Backend`] (the engine, wired in by the binary). This
+//! module turns a `tools/call` argument object into a plain request struct, calls the backend and
+//! reports the outcome as tool text.
 //!
 //! # Invariants
-//! * The tool list is fixed and its order is deterministic: `recall`, `impact`, `remember`,
-//!   `expand`. Its JSON stays tiny because it is paid for in every session that connects.
+//! * The tool list is fixed and its order is deterministic, and it is grouped by what an agent
+//!   does rather than alphabetically: read the code (`brief`, `recall`, `outline`, `expand`),
+//!   survey it (`impact`, `map`), then write to the memory (`remember`, `memories`, `feedback`).
+//! * The whole list stays under [`MAX_LIST_BYTES`], because it is paid for in every session that
+//!   connects.
 //! * Argument problems and backend failures are *tool errors* (`isError: true`), never protocol
 //!   errors. Only an unknown tool name or a backend panic escapes as a protocol error.
 //! * Validation is total: any JSON value as `arguments` yields a tool error or a request, never
@@ -23,8 +27,20 @@ use serde_json::{Map, Value, json};
 
 use crate::protocol::clip;
 
-/// Names of the four tools, in the order `tools/list` returns them.
-pub const TOOL_NAMES: [&str; 5] = ["recall", "impact", "remember", "expand", "outline"];
+/// The largest `tools/list` payload this crate is willing to put on the wire, in bytes.
+///
+/// The list is read once per session, before anything useful happens, by a tool whose whole
+/// purpose is spending fewer tokens. At roughly four bytes per token this ceiling is about a
+/// thousand tokens of overhead — two `recall` calls' worth — so a tool that cannot pay for that
+/// much every session does not belong in the list. `crates/mcp/tests/stateless.rs` fails the build
+/// when the payload grows past it, which makes raising it a decision someone has to make on
+/// purpose.
+pub const MAX_LIST_BYTES: usize = 4_200;
+
+/// Names of the nine tools, in the order `tools/list` returns them.
+pub const TOOL_NAMES: [&str; 9] = [
+    "brief", "recall", "outline", "expand", "impact", "map", "memories", "remember", "feedback",
+];
 
 /// The memory kinds `remember` accepts, in the order the schema lists them.
 const MEMORY_KINDS: [&str; 9] = [
@@ -92,6 +108,49 @@ pub struct RememberRequest {
     pub about: Vec<String>,
 }
 
+/// How a recalled result can be reported to have turned out.
+const SIGNALS: [&str; 5] = ["used", "useful", "ignored", "dead_end", "corrected"];
+
+/// Arguments of the `map` tool.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MapRequest {
+    /// A token budget for the map, when the agent gave one.
+    pub budget: Option<u32>,
+    /// Only files whose path starts with this, when the agent narrowed it.
+    pub path: Option<String>,
+}
+
+/// Arguments of the `memories` tool.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemoriesRequest {
+    /// Only memories of this kind; the server has already checked the name.
+    pub kind: Option<String>,
+    /// Only memories whose anchored code changed since they were written.
+    pub stale: bool,
+    /// The most to return, when the agent gave a limit.
+    pub limit: Option<u32>,
+}
+
+/// Arguments of the `feedback` tool.
+///
+/// Exactly one of `symbol` and `memory` is set; the server has already checked that.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FeedbackRequest {
+    /// The symbol the feedback is about.
+    pub symbol: Option<String>,
+    /// The memory the feedback is about.
+    pub memory: Option<i64>,
+    /// One of `used`, `useful`, `ignored`, `dead_end`, `corrected`.
+    pub signal: String,
+}
+
+/// Arguments of the `brief` tool.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BriefRequest {
+    /// A token budget for the whole briefing, when the agent gave one.
+    pub budget: Option<u32>,
+}
+
 /// Arguments of the `outline` tool.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutlineRequest {
@@ -126,7 +185,7 @@ pub struct ExpandRequest {
 /// # Examples
 /// ```
 /// use pn_ultramemory_mcp::{
-///     Backend, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest,
+///     Backend, FeedbackRequest, MemoriesRequest, MapRequest, BriefRequest, ExpandRequest, ImpactRequest, OutlineRequest, RecallRequest,
 ///     RememberRequest, ToolFailure,
 /// };
 ///
@@ -141,6 +200,18 @@ pub struct ExpandRequest {
 ///     }
 ///     fn remember(&self, _: RememberRequest) -> Result<String, ToolFailure> {
 ///         Ok("stored".to_owned())
+///     }
+///     fn brief(&self, _: BriefRequest) -> Result<String, ToolFailure> {
+///         Ok("brief:\n  files: 0".into())
+///     }
+///     fn map(&self, _: MapRequest) -> Result<String, ToolFailure> {
+///         Ok("files[0]{path}:".into())
+///     }
+///     fn memories(&self, _: MemoriesRequest) -> Result<String, ToolFailure> {
+///         Ok("memories[0]{id}:".into())
+///     }
+///     fn feedback(&self, _: FeedbackRequest) -> Result<String, ToolFailure> {
+///         Ok("recorded: true".into())
 ///     }
 ///     fn outline(&self, _: OutlineRequest) -> Result<String, ToolFailure> {
 ///         Ok("file:\n  path: src/lib.rs".into())
@@ -182,6 +253,30 @@ pub trait Backend: Send + Sync {
     /// Returns a [`ToolFailure`] when the id is unknown or the source is unavailable.
     fn expand(&self, request: ExpandRequest) -> Result<String, ToolFailure>;
 
+    /// Everything a session needs to know about this repository, inside a token budget.
+    ///
+    /// # Errors
+    /// Returns a [`ToolFailure`] whose text is shown to the agent.
+    fn brief(&self, request: BriefRequest) -> Result<String, ToolFailure>;
+
+    /// A compact map of the repository, inside a token budget.
+    ///
+    /// # Errors
+    /// Returns a [`ToolFailure`] whose text is shown to the agent.
+    fn map(&self, request: MapRequest) -> Result<String, ToolFailure>;
+
+    /// What is already known about this codebase, and what of it may have gone out of date.
+    ///
+    /// # Errors
+    /// Returns a [`ToolFailure`] whose text is shown to the agent.
+    fn memories(&self, request: MemoriesRequest) -> Result<String, ToolFailure>;
+
+    /// Records how a result turned out, which is what lets ranking improve.
+    ///
+    /// # Errors
+    /// Returns a [`ToolFailure`] whose text is shown to the agent.
+    fn feedback(&self, request: FeedbackRequest) -> Result<String, ToolFailure>;
+
     /// Describes one whole file: every symbol it declares, at the richest detail that fits.
     ///
     /// # Errors
@@ -213,11 +308,41 @@ pub(crate) enum CallError {
 /// each byte is a token the agent pays for. The annotations are the hints defined by the
 /// 2025-03-26 and later revisions; older clients ignore fields they do not know.
 pub(crate) fn definitions() -> Value {
-    let read_only = json!({ "readOnlyHint": true, "openWorldHint": false });
+    let mut tools = reading_tools();
+    if let Value::Array(all) = &mut tools {
+        for group in [survey_tools(), writing_tools()] {
+            if let Value::Array(rest) = group {
+                all.extend(rest);
+            }
+        }
+    }
+    tools
+}
+
+/// The tools that only read. Split from the rest so that neither list outgrows a screen.
+fn reading_tools() -> Value {
+    let read_only = json!({
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+    });
     json!([
         {
+            "name": "brief",
+            "description": "What this repository is: its shape, modules, busiest symbols and what \
+                            is already decided. Call this first.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "budget": { "type": "integer", "description": "Token budget", "minimum": 1 }
+                }
+            },
+            "annotations": read_only
+        },
+        {
             "name": "recall",
-            "description": "Recall code and memories relevant to a query, packed within a token budget.",
+            "description": "Recall code and memories relevant to a query, packed within a token \
+                            budget.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -226,55 +351,6 @@ pub(crate) fn definitions() -> Value {
                     "explain": { "type": "boolean", "description": "Why each result was chosen" }
                 },
                 "required": ["q"]
-            },
-            "annotations": read_only
-        },
-        {
-            "name": "impact",
-            "description": "Show what depends on a symbol, with confidence.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "symbol": { "type": "string", "description": "Qualified symbol name" },
-                    "depth": { "type": "integer", "description": "Hops to follow" }
-                },
-                "required": ["symbol"]
-            },
-            "annotations": read_only
-        },
-        {
-            "name": "remember",
-            "description": "Save a memory, optionally anchored to symbols, for later recall.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "kind": { "type": "string", "enum": MEMORY_KINDS },
-                    "text": { "type": "string", "description": "What to remember" },
-                    "about": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Symbols it concerns"
-                    }
-                },
-                "required": ["kind", "text"]
-            },
-            "annotations": {
-                "readOnlyHint": false,
-                "destructiveHint": false,
-                "openWorldHint": false
-            }
-        },
-        {
-            "name": "expand",
-            "description": "Return the full source of one node id from an earlier result.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "id": { "type": "string", "description": "Node id" },
-                    "from": { "type": "integer", "description": "First line, 1-based" },
-                    "to": { "type": "integer", "description": "Last line, inclusive" }
-                },
-                "required": ["id"]
             },
             "annotations": read_only
         },
@@ -291,6 +367,122 @@ pub(crate) fn definitions() -> Value {
                 "required": ["path"]
             },
             "annotations": read_only
+        },
+        {
+            "name": "expand",
+            "description": "Return the full source of one node id from an earlier result.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string", "description": "Node id" },
+                    "from": { "type": "integer", "description": "First line, 1-based" },
+                    "to": { "type": "integer", "description": "Last line, inclusive" }
+                },
+                "required": ["id"]
+            },
+            "annotations": read_only
+        },
+        {
+            "name": "impact",
+            "description": "Show what depends on a symbol, with confidence.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "symbol": { "type": "string", "description": "Qualified symbol name" },
+                    "depth": { "type": "integer", "description": "Hops to follow" }
+                },
+                "required": ["symbol"]
+            },
+            "annotations": read_only
+        },
+    ])
+}
+
+/// The tools that survey the repository as a whole, rather than answering about one place in it.
+fn survey_tools() -> Value {
+    let read_only = json!({
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+    });
+    json!([
+        {
+            "name": "map",
+            "description": "A compact map of the repository within a budget: every file, its \
+                            language, size and busiest symbols.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "budget": { "type": "integer", "description": "Token budget", "minimum": 1 },
+                    "path": { "type": "string", "description": "Only paths starting with this" }
+                }
+            },
+            "annotations": read_only
+        },
+        {
+            "name": "memories",
+            "description": "What is already known about this codebase. Use stale to see what may \
+                            have gone out of date.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "kind": { "type": "string", "enum": MEMORY_KINDS },
+                    "stale": {
+                        "type": "boolean",
+                        "description": "Only memories whose code changed"
+                    },
+                    "limit": { "type": "integer", "description": "How many at most", "minimum": 1 }
+                }
+            },
+            "annotations": read_only
+        }
+    ])
+}
+
+/// The tools that write: one stores a memory, the other records how a result turned out.
+fn writing_tools() -> Value {
+    let writes = json!({
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+    });
+    json!([
+        {
+            "name": "remember",
+            "description": "Save a memory, optionally anchored to symbols, for later recall.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "kind": { "type": "string", "enum": MEMORY_KINDS },
+                    "text": { "type": "string", "description": "What to remember" },
+                    "about": {
+                        "type": "array",
+                        "items": { "type": "string" },
+                        "description": "Symbols it concerns"
+                    }
+                },
+                "required": ["kind", "text"]
+            },
+            "annotations": writes
+        },
+        {
+            "name": "feedback",
+            "description": "Say how a recalled symbol or memory turned out. This is what makes \
+                            later answers better.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "symbol": { "type": "string", "description": "The symbol it is about" },
+                    "memory": { "type": "integer", "description": "The memory id it is about" },
+                    "signal": {
+                        "type": "string",
+                        "description": "How it turned out",
+                        "enum": ["used", "useful", "ignored", "dead_end", "corrected"]
+                    }
+                },
+                "required": ["signal"]
+            },
+            "annotations": writes
         }
     ])
 }
@@ -456,6 +648,98 @@ fn parse_remember(arguments: &Map<String, Value>) -> Result<RememberRequest, Str
 }
 
 /// Validates the arguments of `outline`.
+/// Validates the arguments of `map`.
+fn parse_map(arguments: &Map<String, Value>) -> Result<MapRequest, String> {
+    check_keys(arguments, &["budget", "path"])?;
+    Ok(MapRequest {
+        budget: optional_count_from(arguments, "budget", 1)?,
+        path: optional_string(arguments, "path")?,
+    })
+}
+
+/// Validates the arguments of `memories`.
+fn parse_memories(arguments: &Map<String, Value>) -> Result<MemoriesRequest, String> {
+    check_keys(arguments, &["kind", "stale", "limit"])?;
+    let kind = optional_string(arguments, "kind")?;
+    if let Some(name) = &kind {
+        if !MEMORY_KINDS.contains(&name.as_str()) {
+            return Err(format!(
+                "`kind` is `{name}`, which is not one of {}",
+                MEMORY_KINDS.join(", ")
+            ));
+        }
+    }
+    Ok(MemoriesRequest {
+        kind,
+        stale: optional_flag(arguments, "stale")?.unwrap_or(false),
+        limit: optional_count_from(arguments, "limit", 1)?,
+    })
+}
+
+/// Validates the arguments of `feedback`.
+///
+/// Exactly one of `symbol` and `memory` must be given: feedback about nothing in particular cannot
+/// be recorded, and feedback about two things at once means the caller is confused about which.
+fn parse_feedback(arguments: &Map<String, Value>) -> Result<FeedbackRequest, String> {
+    check_keys(arguments, &["symbol", "memory", "signal"])?;
+    let signal = required_text(arguments, "signal")?;
+    if !SIGNALS.contains(&signal.as_str()) {
+        return Err(format!(
+            "`signal` is `{signal}`, which is not one of: {}",
+            SIGNALS.join(", ")
+        ));
+    }
+    let symbol = optional_string(arguments, "symbol")?;
+    let memory =
+        match arguments.get("memory") {
+            None | Some(Value::Null) => None,
+            Some(Value::Number(n)) => Some(n.as_i64().ok_or_else(|| {
+                "`memory` must be a whole number, which is what an id is".to_owned()
+            })?),
+            Some(other) => {
+                return Err(format!(
+                    "`memory` must be a number, not {}",
+                    type_name(other)
+                ));
+            }
+        };
+    match (&symbol, memory) {
+        (Some(_), Some(_)) => {
+            Err("give `symbol` or `memory`, not both: feedback is about one thing".to_owned())
+        }
+        (None, None) => {
+            Err("give `symbol` or `memory` to say what the feedback is about".to_owned())
+        }
+        _ => Ok(FeedbackRequest {
+            symbol,
+            memory,
+            signal,
+        }),
+    }
+}
+
+/// The value of `key` when it is a string, or `None` when it is absent or null.
+fn optional_string(arguments: &Map<String, Value>, key: &str) -> Result<Option<String>, String> {
+    match arguments.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) if text.trim().is_empty() => Ok(None),
+        Some(Value::String(text)) => Ok(Some(text.trim().to_owned())),
+        Some(other) => Err(format!(
+            "`{key}` must be a string, not {}",
+            type_name(other)
+        )),
+    }
+}
+
+/// Validates the arguments of `brief`.
+fn parse_brief(arguments: &Map<String, Value>) -> Result<BriefRequest, String> {
+    check_keys(arguments, &["budget"])?;
+    Ok(BriefRequest {
+        budget: optional_count_from(arguments, "budget", 1)?,
+    })
+}
+
+/// Validates the arguments of `outline`.
 fn parse_outline(arguments: &Map<String, Value>) -> Result<OutlineRequest, String> {
     check_keys(arguments, &["path", "budget"])?;
     let path = required_text(arguments, "path")?;
@@ -524,6 +808,22 @@ pub(crate) fn call<B: Backend + ?Sized>(
         },
         "remember" => match parse_remember(arguments) {
             Ok(request) => run(|| backend.remember(request)),
+            Err(message) => Ok(rejected(message)),
+        },
+        "brief" => match parse_brief(arguments) {
+            Ok(request) => run(|| backend.brief(request)),
+            Err(message) => Ok(rejected(message)),
+        },
+        "map" => match parse_map(arguments) {
+            Ok(request) => run(|| backend.map(request)),
+            Err(message) => Ok(rejected(message)),
+        },
+        "memories" => match parse_memories(arguments) {
+            Ok(request) => run(|| backend.memories(request)),
+            Err(message) => Ok(rejected(message)),
+        },
+        "feedback" => match parse_feedback(arguments) {
+            Ok(request) => run(|| backend.feedback(request)),
             Err(message) => Ok(rejected(message)),
         },
         "outline" => match parse_outline(arguments) {

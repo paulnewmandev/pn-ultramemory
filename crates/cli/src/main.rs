@@ -224,7 +224,7 @@ fn run_with_engine(
     locations: &Locations,
 ) -> Result<(), CliError> {
     let engine = engine_at(locations, !global.no_metrics)?;
-    if run_code(&engine, command, global)? {
+    if run_code(&engine, command, global, locations)? {
         return Ok(());
     }
     if run_memory(&engine, command, global)? {
@@ -239,7 +239,12 @@ fn run_with_engine(
 ///
 /// # Errors
 /// Returns whatever the engine reports.
-fn run_code(engine: &Engine, command: &Command, global: &Global) -> Result<bool, CliError> {
+fn run_code(
+    engine: &Engine,
+    command: &Command,
+    global: &Global,
+    locations: &Locations,
+) -> Result<bool, CliError> {
     match command {
         Command::Index(args) => {
             let options = IndexOptions {
@@ -299,6 +304,13 @@ fn run_code(engine: &Engine, command: &Command, global: &Global) -> Result<bool,
                 limit: args.limit,
             };
             emit(&engine.impact(&query)?.to_value(), global);
+        }
+        Command::Brief(args) => {
+            let name = locations
+                .repo
+                .file_name()
+                .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+            emit(&engine.brief(&name, args.budget)?.to_value(), global);
         }
         Command::Outline(args) => {
             emit(&engine.outline(&args.path, args.budget)?.to_value(), global);
@@ -412,7 +424,13 @@ fn run_analysis(
             note(global, &style::good("sampling"));
             emit(&engine.bench(&options)?.to_value(), global);
         }
-        Command::Serve => serve(engine)?,
+        Command::Serve => {
+            let name = locations
+                .repo
+                .file_name()
+                .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+            serve(engine, name)?;
+        }
         // Every command is handled by one of the three groups or by `run_standalone`, and the
         // tests cover each one, but the compiler cannot see that across four functions. If this
         // is ever reached, a command was added without being wired up, and saying so is more use
@@ -436,6 +454,7 @@ const fn command_name(command: &Command) -> &'static str {
         Command::Expand(_) => "expand",
         Command::Impact(_) => "impact",
         Command::Graph(_) => "graph",
+        Command::Brief(_) => "brief",
         Command::Outline(_) => "outline",
         Command::Map(_) => "map",
         Command::Remember(_) => "remember",
@@ -654,12 +673,12 @@ fn feedback_target(args: &FeedbackArgs) -> Result<FeedbackTarget, CliError> {
 /// # Errors
 /// Returns a failure only when standard input or output breaks; a tool failure is reported to the
 /// client as a tool error, not as a process failure.
-fn serve(engine: Engine) -> Result<(), CliError> {
+fn serve(engine: Engine, repo_name: String) -> Result<(), CliError> {
     let info = pn_ultramemory_mcp::ServerInfo {
         name: "pn-ultramemory".to_owned(),
         version: env!("CARGO_PKG_VERSION").to_owned(),
     };
-    let server = pn_ultramemory_mcp::Server::new(McpBackend { engine }, info);
+    let server = pn_ultramemory_mcp::Server::new(McpBackend { engine, repo_name }, info);
     let stdin = std::io::stdin().lock();
     let stdout = std::io::stdout().lock();
     server.serve(stdin, stdout).map_err(CliError::from)
@@ -669,6 +688,9 @@ fn serve(engine: Engine) -> Result<(), CliError> {
 struct McpBackend {
     /// The engine every tool call goes through.
     engine: Engine,
+    /// What to call the repository. The engine reaches its files through a port and has no path of
+    /// its own, so the name is resolved once here rather than on every call.
+    repo_name: String,
 }
 
 impl McpBackend {
@@ -735,6 +757,90 @@ impl pn_ultramemory_mcp::Backend for McpBackend {
             .remember(&input)
             .map_err(|e| pn_ultramemory_mcp::ToolFailure(e.to_string()))?;
         Ok(Self::render(&outcome.to_value()))
+    }
+
+    fn brief(
+        &self,
+        request: pn_ultramemory_mcp::BriefRequest,
+    ) -> Result<String, pn_ultramemory_mcp::ToolFailure> {
+        let brief = self
+            .engine
+            .brief(&self.repo_name, request.budget)
+            .map_err(|e| pn_ultramemory_mcp::ToolFailure(e.to_string()))?;
+        Ok(Self::render(&brief.to_value()))
+    }
+
+    fn map(
+        &self,
+        request: pn_ultramemory_mcp::MapRequest,
+    ) -> Result<String, pn_ultramemory_mcp::ToolFailure> {
+        let query = pn_ultramemory_engine::MapQuery {
+            budget: request.budget,
+            path_prefix: request.path,
+        };
+        let map = self
+            .engine
+            .repo_map(&query)
+            .map_err(|e| pn_ultramemory_mcp::ToolFailure(e.to_string()))?;
+        Ok(Self::render(&map.to_value()))
+    }
+
+    fn memories(
+        &self,
+        request: pn_ultramemory_mcp::MemoriesRequest,
+    ) -> Result<String, pn_ultramemory_mcp::ToolFailure> {
+        let filter = MemoryFilter {
+            kind: request.kind.as_deref().and_then(MemoryKind::from_name),
+            only_stale: request.stale,
+            limit: request
+                .limit
+                .and_then(|n| usize::try_from(n).ok())
+                .unwrap_or(MemoryFilter::default().limit),
+        };
+        let records = self
+            .engine
+            .memories(&filter)
+            .map_err(|e| pn_ultramemory_mcp::ToolFailure(e.to_string()))?;
+        Ok(Self::render(&pn_ultramemory_engine::memories_to_value(
+            &records,
+        )))
+    }
+
+    fn feedback(
+        &self,
+        request: pn_ultramemory_mcp::FeedbackRequest,
+    ) -> Result<String, pn_ultramemory_mcp::ToolFailure> {
+        // The server has already checked that exactly one of the two is set, so the `else` here is
+        // unreachable rather than a case with a sensible answer.
+        let target = match (request.symbol, request.memory) {
+            (Some(symbol), _) => FeedbackTarget::Symbol(symbol),
+            (None, Some(id)) => FeedbackTarget::Memory(MemoryId(id)),
+            (None, None) => {
+                return Err(pn_ultramemory_mcp::ToolFailure(
+                    "give `symbol` or `memory` to say what the feedback is about".to_owned(),
+                ));
+            }
+        };
+        let signal = match request.signal.as_str() {
+            "used" => SignalKind::Used,
+            "useful" => SignalKind::Useful,
+            "ignored" => SignalKind::Ignored,
+            "dead_end" => SignalKind::DeadEnd,
+            "corrected" => SignalKind::Corrected,
+            other => {
+                return Err(pn_ultramemory_mcp::ToolFailure(format!(
+                    "unknown signal `{other}`"
+                )));
+            }
+        };
+        self.engine
+            .feedback(&target, signal)
+            .map_err(|e| pn_ultramemory_mcp::ToolFailure(e.to_string()))?;
+        let utility = self
+            .engine
+            .utility_of(&target)
+            .map_err(|e| pn_ultramemory_mcp::ToolFailure(e.to_string()))?;
+        Ok(Self::render(&utility.to_value()))
     }
 
     fn outline(

@@ -24,6 +24,7 @@
 //! shaped so that TOON prints uniform lists as compact tables.
 
 mod bench;
+mod brief;
 mod config;
 mod docs;
 mod engine;
@@ -46,6 +47,7 @@ mod sources;
 mod stats;
 
 pub use bench::*;
+pub use brief::*;
 pub use config::EngineConfig;
 pub use docs::*;
 pub use engine::{Deps, Engine, SystemClock};

@@ -10,7 +10,7 @@
 //! # Events
 //! | Event | What it says |
 //! |---|---|
-//! | `session-start` | One line: this repository is indexed, how big the index is, and to recall instead of reading. When there is no index, one line saying how to build it. |
+//! | `session-start` | One line: this repository is indexed, how big the index is, that `brief` will orient a session that does not know the project, and to recall instead of reading. When there is no index, one line saying how to build it. |
 //! | `pre-tool` | For a repository-wide search or a very large whole-file read, once per session: a recall would cost fewer tokens. Never a denial. Nothing for anything else. |
 //! | `post-tool` | Nothing. Reserved. |
 //! | anything else | Nothing. |
@@ -178,13 +178,17 @@ fn session_line(ctx: &HookContext) -> String {
                 then recall instead of reading files."
             .to_owned();
     }
+    // The brief is offered rather than included. A session that needs orienting asks for it and
+    // pays once; one that is continuing work already knows the project and pays nothing. Pasting
+    // a briefing into every session start would be a tax on the sessions that did not need it.
     match counts(&ctx.data_dir.join(STATS_FILE)) {
         Some((files, symbols)) => format!(
             "pn-ultramemory: this repository is indexed ({files} files, {symbols} symbols). \
-             Use the recall tool instead of reading files; expand for full source."
+             New to it? Call brief. Otherwise recall instead of reading files; \
+             expand for full source."
         ),
-        None => "pn-ultramemory: this repository is indexed. Use the recall tool instead of \
-                 reading files; expand for full source."
+        None => "pn-ultramemory: this repository is indexed. New to it? Call brief. Otherwise \
+                 recall instead of reading files; expand for full source."
             .to_owned(),
     }
 }

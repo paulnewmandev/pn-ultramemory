@@ -9,6 +9,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
+### Added
+
+- **`brief`** — everything a new session needs to know about a repository in one budgeted call:
+  its size, its languages, its modules with their coupling, its busiest symbols and every memory
+  already recorded. A model's context ends with its session; the graph on disk does not, and this
+  is how the next session picks it up instead of rediscovering it by reading files. Sections are
+  printed in the order a reader needs them and given up in a different one: the busiest symbols go
+  first under pressure, because reading the code finds them again, and recorded decisions go last,
+  because nothing else can recover them. Available as a command and as an MCP tool.
+- **Four more MCP tools.** The server now offers nine: `brief`, `recall`, `outline`, `expand`,
+  `impact`, `map`, `remember`, `memories` and `feedback`. `map` and `memories` were already
+  commands; `feedback` was too, which was the problem — the learning subsystem could only be fed
+  from a shell, while the thing actually calling `recall` was the agent, so in practice nothing was
+  ever learned from use. `feedback` returns the updated utility, so a caller can see the effect.
+- **`MAX_LIST_BYTES`** — the ceiling on the `tools/list` payload, now a documented constant rather
+  than a number repeated in three assertions. The list is read once per session by a tool whose
+  purpose is spending fewer tokens, so a tool that cannot pay for its own description does not
+  belong in it.
+- **Two diagrams**, `tools.svg` and `install.svg`, and a wiki page for the MCP surface.
+
+### Changed
+
+- The README leads with the released binaries rather than with `cargo build`, and says plainly that
+  the agent has to be restarted before its MCP servers are re-read — the usual reason someone
+  reports that the tools never appeared.
+
 ## [1.0.0] - 2026-09-27
 
 The first release. Everything below is implemented, tested, and reachable from the command line and

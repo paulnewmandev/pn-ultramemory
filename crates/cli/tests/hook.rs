@@ -88,9 +88,11 @@ fn the_session_line_follows_the_index() {
     let second = context_of(&run_hook("session-start", "", &ctx)).expect("a line");
     assert!(second.contains("is indexed"), "{second}");
     assert!(second.contains("recall"), "{second}");
+    // Counts are digits. Matching a substring of the prose instead made this fail the moment the
+    // sentence changed, which says nothing about whether a count was printed.
     assert!(
-        !second.contains("files,"),
-        "no counts are known yet: {second}"
+        !second.chars().any(|c| c.is_ascii_digit()),
+        "no counts are known yet, so no figure belongs in the line: {second}"
     );
 
     repo.write("data/stats.json", r#"{"files": 412, "symbols": 9137}"#);

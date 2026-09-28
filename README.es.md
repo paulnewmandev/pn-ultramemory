@@ -130,11 +130,27 @@ nunca toca el resultado que estás capturando. Ejecutarlo en una terminal tambi�
 > Si le vas a pedir a un agente que lo instale por ti, dale el enlace de este repositorio y dile que
 > siga [AGENTS.md](AGENTS.md). Está escrito para que lo lea un modelo y lo ejecute paso a paso.
 
+<p align="center">
+  <img src="assets/diagrams/install.svg" alt="Cinco pasos de instalación: consigue el binario, construye el grafo, registra un agente, reinícialo y compruébalo con doctor" width="760">
+</p>
+
+**Descarga un binario. No hace falta ningún toolchain.** Cada versión trae macOS (Apple silicon e
+Intel), Linux y Windows, cada uno con su `.sha256` al lado.
+
+```bash
+# macOS, Apple silicon — en la página de releases están Intel, Linux y Windows
+curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz | tar xz
+```
+
+O compílalo, lo que sí necesita un toolchain de Rust:
+
 ```bash
 git clone https://github.com/paulnewmandev/pn-ultramemory
 cd pn-ultramemory
 cargo build --release          # Rust edición 2024
 ```
+
+Después, desde la raíz del proyecto que quieres que conozca:
 
 ```bash
 pn-ultramemory index           # construye el grafo
@@ -142,6 +158,8 @@ pn-ultramemory install --agents claude-code   # o cursor, codex, gemini, windsur
                                               # sin --agents se registra en todos los que
                                               # encuentre; --dry-run enseña qué tocaría
                                               # sin cambiar nada
+                                              # luego reinicia ese agente: lee sus servidores
+                                              # MCP al arrancar, y solo ahí
 pn-ultramemory doctor          # comprueba que todo funcionó
 ```
 
@@ -349,6 +367,46 @@ mismos bytes.
 
 ---
 
+## Sobrevive al cambio de sesión
+
+<p align="center">
+  <img src="assets/diagrams/session.svg" alt="Una sesión sin memoria llama a brief para conocer el proyecto, a recall y outline para trabajar, a remember para guardar una decisión y a feedback para decir qué sirvió; el grafo en disco sobrevive a la sesión" width="760">
+</p>
+
+La memoria de un modelo termina con su ventana. Cierras la pestaña, cambias de herramienta, llegas
+al límite de contexto, y todo lo que aprendió de tu código desaparece — incluida la hora que pasaste
+explicándoselo. La sesión siguiente lo redescubre leyendo ficheros, que es justo lo caro que esto
+existe para evitar.
+
+El grafo en disco no termina. **`brief` es cómo una sesión lo retoma**: la forma del repositorio, sus
+módulos, sus símbolos más llamados y todas las decisiones ya registradas, en una sola llamada con
+presupuesto.
+
+### Nueve herramientas
+
+<p align="center">
+  <img src="assets/diagrams/tools.svg" alt="Nueve herramientas en tres grupos: cuatro para leer el código, dos para inspeccionarlo y tres para escribir en la memoria" width="760">
+</p>
+
+| Herramienta | Pregúntale | En vez de |
+|---|---|---|
+| **`brief`** | Qué es este proyecto | Leer un README y adivinar |
+| `recall` | Qué código importa para esta pregunta | Leer varios ficheros |
+| `outline` | Qué hay en este fichero | Leer el fichero entero |
+| `expand` | El código exacto de un símbolo | Leer alrededor |
+| `impact` | Qué rompo si cambio esto | Buscar el nombre con grep |
+| `map` | Qué ficheros hay y qué contienen | Listar el árbol |
+| `remember` | Guarda esta decisión, anclada al código | Un comentario que nadie lee |
+| `memories` | Qué sabemos ya; qué quedó obsoleto | Volver a preguntar |
+| `feedback` | Esa respuesta sirvió, o no | Nada — esto no tenía equivalente |
+
+`feedback` es la que cierra el bucle. Hasta que existió, el aprendizaje solo se podía alimentar desde
+la terminal, mientras que quien usaba `recall` era el agente — así que en la práctica nunca aprendía.
+
+La lista entera cuesta **3.995 bytes** de contexto, leídos una vez por sesión, medidos tal cual
+salen por el cable. El techo son 4.200 y es una prueba: una herramienta que no pueda pagar su
+propia descripción cada sesión no pertenece a la lista.
+
 ## Funciona con el agente que ya usas
 
 `pn-ultramemory install` se registra allí donde encuentra un agente, escribiendo **solo su propia
@@ -365,8 +423,7 @@ entrada** y dejando el resto del fichero byte por byte como estaba.
 idéntico, y eso es lo que comprueban sus 60 pruebas. La ruta de Trae está marcada como *sin
 verificar*: se ofrece con `--agents trae` y no se escribe por defecto.</sub>
 
-Cinco herramientas por MCP — **`recall`**, **`outline`**, **`impact`**, **`remember`** y
-**`expand`** — y la lista entera cuesta **2.139 bytes** del contexto del agente.
+Nueve herramientas por MCP, descritas arriba.
 
 ---
 

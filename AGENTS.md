@@ -113,19 +113,29 @@ people forget.
 
 ## 4. How to use it once it is running
 
-Five tools arrive over MCP. Reach for them instead of reading files:
+Nine tools arrive over MCP. Reach for them instead of reading files:
 
 | Tool | Ask it | Instead of |
 |---|---|---|
+| `brief` | What is this project | Reading a README and guessing |
 | `recall` | Which code matters for this question | Reading several files |
 | `outline` | What is in this file | Reading the whole file |
-| `impact` | What breaks if I change this | Grepping for the name |
 | `expand` | The exact source of one symbol | Reading around it |
+| `impact` | What breaks if I change this | Grepping for the name |
+| `map` | Which files exist and what is in them | Listing the tree |
 | `remember` | Store a decision, anchored to the code | A comment nobody reads |
+| `memories` | What do we already know; what went stale | Asking again |
+| `feedback` | That answer helped, or did not | Nothing |
 
-Two habits that make the difference:
+Four habits that make the difference:
 
+- **Call `brief` first in a new session.** It costs about 1,200 tokens and returns the shape of the
+  repository, its busiest symbols and every decision already recorded. It is how you start knowing
+  the project instead of discovering it.
 - **Set a budget.** `recall "..." -b 800` costs about 800 tokens. Without one it uses the default.
+- **Send `feedback`.** One call after a `recall` — `used`, `useful`, `ignored`, `dead_end` or
+  `corrected` — is what makes the next session's answers better than this one's. Nothing else feeds
+  the learning; skipping it means the tool never improves.
 - **Re-index after a branch change.** `pn-ultramemory index` re-reads only what changed; it takes
   milliseconds when nothing did.
 
