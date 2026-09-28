@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img" aria-label="A memory is stored with hashes of the symbol it describes; when that symbol changes the memory is marked stale rather than deleted or trusted">
+<title>A memory anchored to code</title>
+<rect width="760" height="300" rx="14" fill="#0f172a"/>
+<text x="28" y="40" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#e8eced" text-anchor="start">A memory knows when it went out of date</text>
+<text x="28" y="62" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#9aa4ad" text-anchor="start">It is stored with the shape of the code it describes, not beside it.</text>
+<rect x="28" y="88" width="300" height="86" rx="8" fill="#18202f" stroke="#e39bc4" stroke-opacity="0.5"/>
+<text x="44" y="110" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="700" fill="#e39bc4" text-anchor="start">decision</text>
+<text x="44" y="130" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#e8eced" text-anchor="start">“Money is stored as integer</text>
+<text x="44" y="146" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#e8eced" text-anchor="start">minor units, never floating point”</text>
+<text x="44" y="164" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">--about Money</text>
+<path d="M336 131 L392 131" stroke="#6b7684" stroke-width="1.5"/>
+<path d="M392 131 l-5 -3.5 v7 z" fill="#6b7684"/>
+<text x="364" y="122" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10" font-weight="500" fill="#0fe58b" text-anchor="middle">anchored</text>
+<rect x="400" y="88" width="332" height="86" rx="8" fill="#18202f" stroke="#4da3e0" stroke-opacity="0.5"/>
+<text x="416" y="110" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="600" fill="#e8eced" text-anchor="start">struct Money</text>
+<text x="416" y="132" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="start">sig_hash   9f2a…</text>
+<text x="416" y="150" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="start">body_hash  4c81…</text>
+<text x="416" y="168" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">src/money.rs:12-40</text>
+<line x1="28" y1="200" x2="732" y2="200" stroke="#2b3648"/>
+<text x="28" y="224" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="start">When Money changes, the hashes stop matching:</text>
+<circle cx="32" cy="250" r="3.5" fill="#0fe58b"/>
+<text x="44" y="254" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="600" fill="#0fe58b" text-anchor="start">stale</text>
+<text x="44" y="272" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">the memory is marked, never deleted and never guessed at</text>
+<circle cx="276" cy="250" r="3.5" fill="#f2b84b"/>
+<text x="288" y="254" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="600" fill="#f2b84b" text-anchor="start">reanchor</text>
+<text x="288" y="272" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">you read it, it is still true, and it is re-anchored</text>
+<circle cx="520" cy="250" r="3.5" fill="#f07272"/>
+<text x="532" y="254" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="600" fill="#f07272" text-anchor="start">forget</text>
+<text x="532" y="272" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#9aa4ad" text-anchor="start">it is no longer true, and it goes</text>
+</svg>

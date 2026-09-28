@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 318" width="760" height="318" role="img" aria-label="Each symbol can be shown at one of five levels, from its name alone to its whole source, each costing more than the one below">
+<title>Five levels of detail</title>
+<rect width="760" height="318" rx="14" fill="#0f172a"/>
+<text x="28" y="40" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#e8eced" text-anchor="start">Every symbol has five prices</text>
+<text x="28" y="62" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#9aa4ad" text-anchor="start">The packer buys one level per symbol, spending your budget where it is worth most.</text>
+<text x="28" y="109" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12.5" font-weight="700" fill="#4da3e0" text-anchor="start">L0</text>
+<text x="56" y="109" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#e8eced" text-anchor="start">name</text>
+<rect x="132" y="98" width="5" height="15" rx="2.5" fill="#4da3e0" opacity="0.85"/>
+<text x="462" y="109" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="end">~4 tok</text>
+<text x="478" y="109" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">estimate_tokens</text>
+<text x="28" y="139" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12.5" font-weight="700" fill="#4da3e0" text-anchor="start">L1</text>
+<text x="56" y="139" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#e8eced" text-anchor="start">signature</text>
+<rect x="132" y="128" width="16" height="15" rx="2.5" fill="#4da3e0" opacity="0.85"/>
+<text x="462" y="139" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="end">~14 tok</text>
+<text x="478" y="139" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">fn estimate_tokens(..) -&gt; u32</text>
+<text x="28" y="169" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12.5" font-weight="700" fill="#f2b84b" text-anchor="start">L2</text>
+<text x="56" y="169" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#e8eced" text-anchor="start">summary</text>
+<rect x="132" y="158" width="29" height="15" rx="2.5" fill="#f2b84b" opacity="0.85"/>
+<text x="462" y="169" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="end">~26 tok</text>
+<text x="478" y="169" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">+ its first doc sentence</text>
+<text x="28" y="199" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12.5" font-weight="700" fill="#f2b84b" text-anchor="start">L3</text>
+<text x="56" y="199" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#e8eced" text-anchor="start">outline</text>
+<rect x="132" y="188" width="43" height="15" rx="2.5" fill="#f2b84b" opacity="0.85"/>
+<text x="462" y="199" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="end">~38 tok</text>
+<text x="478" y="199" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">+ calls: Features::of, ..</text>
+<text x="28" y="229" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12.5" font-weight="700" fill="#0fe58b" text-anchor="start">L4</text>
+<text x="56" y="229" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#e8eced" text-anchor="start">source</text>
+<rect x="132" y="218" width="236" height="15" rx="2.5" fill="#0fe58b" opacity="0.85"/>
+<text x="462" y="229" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="end">~210 tok</text>
+<text x="478" y="229" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10.5" font-weight="400" fill="#6b7684" text-anchor="start">+ the whole body, 23 lines</text>
+<line x1="28" y1="256" x2="732" y2="256" stroke="#2b3648"/>
+<text x="28" y="280" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="start">A tight budget lowers the level, it does not drop the symbol.</text>
+<text x="28" y="300" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#9aa4ad" text-anchor="start">At 150 tokens you still get five names. That is what makes it work for a small model.</text>
+</svg>

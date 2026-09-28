@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img" aria-label="A bar chart: reading files costs 16,109 tokens and finds the right code 85% of the time; a capsule costs 413 tokens and finds it 99% of the time">
+<title>What a question costs</title>
+<rect width="760" height="300" rx="14" fill="#0f172a"/>
+<text x="28" y="40" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#e8eced" text-anchor="start" opacity="1">What one question costs</text>
+<text x="28" y="62" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#9aa4ad" text-anchor="start" opacity="1">Measured on this repository, 100 sampled questions. Bars are to scale.</text>
+<text x="28" y="104" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#9aa4ad" text-anchor="start" opacity="1">Reading the files</text>
+<rect x="28" y="114" width="604" height="30" rx="4" fill="#f07272" opacity="0.72"/>
+<text x="40" y="134" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#2a0f0f" text-anchor="start" opacity="1">16,109 tokens</text>
+<text x="644" y="134" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#9aa4ad" text-anchor="start" opacity="1">85%</text>
+<text x="28" y="180" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#9aa4ad" text-anchor="start" opacity="1">A capsule</text>
+<rect x="28" y="190" width="15" height="30" rx="3" fill="#0fe58b"/>
+<text x="53" y="210" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start" opacity="1">413 tokens</text>
+<text x="644" y="210" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13.5" font-weight="600" fill="#0fe58b" text-anchor="start" opacity="1">99%</text>
+<line x1="28" y1="242" x2="732" y2="242" stroke="#2b3648"/>
+<text x="28" y="266" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="500" fill="#e8eced" text-anchor="start" opacity="1">39x fewer tokens, and it finds the right code more often, not less.</text>
+<text x="28" y="286" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#6b7684" text-anchor="start" opacity="1">The bar for a capsule is not a rounding error. That is its real width.</text>
+</svg>

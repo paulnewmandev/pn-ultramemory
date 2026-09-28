@@ -1,3 +1,4 @@
-# Every path is reviewed by the maintainer. Split by area as more maintainers join
-# (see GOVERNANCE.md), for example: /packs/ @language-pack-maintainers
-*  @paulnewmandev
+# SPDX-License-Identifier: Apache-2.0
+# Every change to this repository needs a review from the owner. With "Require review from Code
+# Owners" enabled in the branch ruleset, this file is what makes that rule mean something.
+* @paulnewmandev

@@ -48,6 +48,10 @@ así que cuando ese código cambia la memoria lo dice en vez de volverse mentira
 
 Un binario estático. Nunca abre una conexión de red. No cuesta nada.
 
+<p align="center">
+  <img src="assets/diagrams/why.svg" alt="Leer los ficheros cuesta 16.109 tokens y acierta el 85% de las veces; una cápsula cuesta 413 y acierta el 99%" width="760">
+</p>
+
 ---
 
 ## Lo que ahorra
@@ -238,15 +242,15 @@ Entorno: `PN_ULTRAMEMORY_REPO`, `PN_ULTRAMEMORY_HOME`, `PN_ULTRAMEMORY_NO_METRIC
 
 ## Cómo funciona
 
+<p align="center">
+  <img src="assets/diagrams/how.svg" alt="Tu código se indexa en un grafo; una pregunta busca semillas, recorre el grafo, ordena y empaqueta los candidatos dentro de un presupuesto, y la cápsula se mide antes de devolverla" width="760">
+</p>
+
 ### Cinco resoluciones por símbolo
 
-```
-L0  nombre
-L1  nombre + firma
-L2  + la primera frase de su documentación
-L3  + a quién llama
-L4  + el código entero
-```
+<p align="center">
+  <img src="assets/diagrams/levels.svg" alt="Cada símbolo puede mostrarse en uno de cinco niveles, desde su nombre solo hasta su código entero, cada uno más caro que el anterior" width="760">
+</p>
 
 `recall` resuelve una **mochila multi-resolución**: un nivel por símbolo, maximizando la utilidad
 dentro del presupuesto. Comprobado contra un solucionador exacto por programación dinámica sobre
@@ -288,6 +292,10 @@ tokens por una respuesta peor que `cat`.
 | **`unknown`** | No se encontró ningún llamador y el símbolo es público — lo que **no** significa que nadie lo use |
 
 Cada arista lleva cómo de seguro estaba el indexador: `Guess`, `Heuristic`, `Resolved`, `Exact`.
+
+<p align="center">
+  <img src="assets/diagrams/memory.svg" alt="Una memoria se guarda con los hashes del símbolo que describe; cuando ese símbolo cambia, la memoria se marca obsoleta en vez de borrarse o darse por buena" width="760">
+</p>
 
 ### La regla que gobierna la memoria
 
@@ -457,6 +465,11 @@ se puede desactivar en silencio:
 | [docs/benchmark.md](docs/benchmark.md) | Cómo se producen los números de arriba |
 | [docs/quality.md](docs/quality.md) | Cada guarda, y qué **no** demuestra |
 | [docs/glossary.md](docs/glossary.md) | Las palabras que este proyecto usa con precisión |
+
+**Para usarlo:** el [wiki](https://github.com/paulnewmandev/pn-ultramemory/wiki) — instalación, la
+primera hora, todas las órdenes, preguntas frecuentes y resolución de problemas.
+**Para que lo instale un agente:** dale [AGENTS.md](AGENTS.md).
+**Para contribuir:** [CONTRIBUTING-WORKFLOW.md](CONTRIBUTING-WORKFLOW.md).
 
 ---
 

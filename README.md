@@ -48,6 +48,10 @@ so that when that code changes the memory says so instead of quietly becoming a 
 
 One static binary. It never opens a network connection. It costs nothing.
 
+<p align="center">
+  <img src="assets/diagrams/why.svg" alt="Reading the files costs 16,109 tokens and finds the right code 85% of the time; a capsule costs 413 tokens and finds it 99% of the time" width="760">
+</p>
+
 ---
 
 ## What it saves
@@ -239,15 +243,15 @@ Environment: `PN_ULTRAMEMORY_REPO`, `PN_ULTRAMEMORY_HOME`, `PN_ULTRAMEMORY_NO_ME
 
 ## How it works
 
+<p align="center">
+  <img src="assets/diagrams/how.svg" alt="Your code is indexed into a graph; a question finds seeds, walks the graph, ranks and packs candidates to a budget, and the capsule is measured before it is returned" width="760">
+</p>
+
 ### Five resolutions per symbol
 
-```
-L0  name
-L1  name + signature
-L2  + the first sentence of its documentation
-L3  + who it calls
-L4  + the whole source
-```
+<p align="center">
+  <img src="assets/diagrams/levels.svg" alt="Each symbol can be shown at one of five levels, from its name alone to its whole source, each costing more than the one below" width="760">
+</p>
 
 `recall` solves a **multi-resolution knapsack**: one level per symbol, maximising usefulness inside
 the budget. Checked against an exact dynamic-programming solver over 3,000 random instances.
@@ -288,6 +292,10 @@ charging you tokens for a worse answer than `cat`.
 | **`unknown`** | No caller found and the symbol is public — which does **not** mean nobody uses it |
 
 Every edge carries how sure the indexer was: `Guess`, `Heuristic`, `Resolved`, `Exact`.
+
+<p align="center">
+  <img src="assets/diagrams/memory.svg" alt="A memory is stored with hashes of the symbol it describes; when that symbol changes the memory is marked stale rather than deleted or trusted" width="760">
+</p>
 
 ### The rule that governs memory
 
@@ -457,6 +465,11 @@ entry that stops matching anything **fails the build**, so a guard cannot be qui
 | [docs/benchmark.md](docs/benchmark.md) | How the numbers above are produced |
 | [docs/quality.md](docs/quality.md) | Every guard, and what each does **not** prove |
 | [docs/glossary.md](docs/glossary.md) | The words this project uses precisely |
+
+**To use it:** the [wiki](https://github.com/paulnewmandev/pn-ultramemory/wiki) — install, your
+first hour, every command, FAQ and troubleshooting.
+**To have an agent install it:** hand it [AGENTS.md](AGENTS.md).
+**To contribute:** [CONTRIBUTING-WORKFLOW.md](CONTRIBUTING-WORKFLOW.md).
 
 ---
 

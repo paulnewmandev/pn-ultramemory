@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="A pipeline: your repository is indexed into a graph, a question finds seeds, the graph is walked, candidates are ranked and packed to a budget, and the capsule is measured before it is returned">
+<title>How a question becomes an answer</title>
+<rect width="760" height="330" rx="14" fill="#0f172a"/>
+<text x="28" y="40" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#e8eced" text-anchor="start" opacity="1">How a question becomes an answer</text>
+<rect x="28" y="78" width="116" height="74" rx="7" fill="#18202f" stroke="#4da3e0" stroke-opacity="0.55"/>
+<text x="86.0" y="104" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="middle" opacity="1">Your code</text>
+<text x="86.0" y="123" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">262 files</text>
+<path d="M150 115.0 L169 115.0" stroke="#6b7684" stroke-width="1.5"/>
+<path d="M169 115.0 l-5 -3.5 v7 z" fill="#6b7684"/>
+<text x="160" y="70" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10" font-weight="500" fill="#0fe58b" text-anchor="middle" opacity="1">index</text>
+<rect x="175" y="78" width="116" height="74" rx="7" fill="#18202f" stroke="#4da3e0" stroke-opacity="0.55"/>
+<text x="233.0" y="104" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="middle" opacity="1">The graph</text>
+<text x="233.0" y="123" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">4,880 symbols</text>
+<text x="233.0" y="137" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">22,458 edges</text>
+<path d="M297 115.0 L316 115.0" stroke="#6b7684" stroke-width="1.5"/>
+<path d="M316 115.0 l-5 -3.5 v7 z" fill="#6b7684"/>
+<text x="307" y="70" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10" font-weight="500" fill="#0fe58b" text-anchor="middle" opacity="1">recall</text>
+<rect x="322" y="78" width="116" height="74" rx="7" fill="#18202f" stroke="#f2b84b" stroke-opacity="0.55"/>
+<text x="380.0" y="104" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="middle" opacity="1">Candidates</text>
+<text x="380.0" y="123" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">ranked by</text>
+<text x="380.0" y="137" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">relevance</text>
+<path d="M444 115.0 L463 115.0" stroke="#6b7684" stroke-width="1.5"/>
+<path d="M463 115.0 l-5 -3.5 v7 z" fill="#6b7684"/>
+<text x="454" y="70" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10" font-weight="500" fill="#0fe58b" text-anchor="middle" opacity="1">pack</text>
+<rect x="469" y="78" width="116" height="74" rx="7" fill="#18202f" stroke="#f2b84b" stroke-opacity="0.55"/>
+<text x="527.0" y="104" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="middle" opacity="1">Packed</text>
+<text x="527.0" y="123" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">one detail level</text>
+<text x="527.0" y="137" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">per symbol</text>
+<path d="M591 115.0 L610 115.0" stroke="#6b7684" stroke-width="1.5"/>
+<path d="M610 115.0 l-5 -3.5 v7 z" fill="#6b7684"/>
+<text x="601" y="70" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="10" font-weight="500" fill="#0fe58b" text-anchor="middle" opacity="1">measure</text>
+<rect x="616" y="78" width="116" height="74" rx="7" fill="#18202f" stroke="#0fe58b" stroke-opacity="0.55"/>
+<text x="674.0" y="104" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e8eced" text-anchor="middle" opacity="1">Capsule</text>
+<text x="674.0" y="123" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">525 of 600</text>
+<text x="674.0" y="137" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#9aa4ad" text-anchor="middle" opacity="1">tokens</text>
+<line x1="28" y1="196" x2="732" y2="196" stroke="#2b3648"/>
+<circle cx="34" cy="218" r="3" fill="#0fe58b"/>
+<text x="48" y="222" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#e8eced" text-anchor="start" opacity="1">The answer is measured, not estimated.</text>
+<text x="48" y="237" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start" opacity="1">The capsule prints its own cost, so that cost is part of what it costs. It is rendered, measured, and trimmed until it fits.</text>
+<circle cx="34" cy="256" r="3" fill="#0fe58b"/>
+<text x="48" y="260" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#e8eced" text-anchor="start" opacity="1">It never exceeds the budget you set.</text>
+<text x="48" y="275" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start" opacity="1">When the budget is tight it drops detail in steps — source, then signatures, then names — instead of breaking.</text>
+<circle cx="34" cy="294" r="3" fill="#0fe58b"/>
+<text x="48" y="298" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#e8eced" text-anchor="start" opacity="1">Nothing leaves your machine.</text>
+<text x="48" y="313" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#9aa4ad" text-anchor="start" opacity="1">No network symbol is linked into the binary. It cannot open a socket.</text>
+</svg>
