@@ -34,13 +34,7 @@
 
 use std::collections::BTreeSet;
 
-/// Words carrying too little meaning to count towards similarity.
-const STOP_WORDS: [&str; 42] = [
-    "a", "an", "and", "are", "as", "at", "be", "been", "but", "by", "can", "do", "for", "from",
-    "has", "have", "if", "in", "into", "is", "it", "its", "of", "on", "or", "our", "should", "so",
-    "than", "that", "the", "then", "there", "this", "to", "was", "we", "were", "when", "which",
-    "with", "you",
-];
+use super::tongue::{Tongue, detect_tongue, split_words};
 
 /// Fewer content words than this and only identical sets count as similar.
 pub const MIN_CONTENT_WORDS: usize = 4;
@@ -59,19 +53,27 @@ pub const SIMILAR: f64 = 0.80;
 
 /// Splits a text into its content words: lowercase, punctuation removed, stop words dropped.
 ///
+/// The language is decided from the text itself, so a Spanish memory loses Spanish function words
+/// and an English one loses English ones. See [`crate::Tongue`].
+///
 /// # Examples
 /// ```
 /// use pn_ultramemory_engine::content_words;
 ///
 /// assert_eq!(content_words("Use a file, not env vars!"), ["use", "file", "not", "env", "vars"]);
+/// assert_eq!(content_words("Usar un fichero, no variables de entorno"),
+///            ["usar", "un", "fichero", "no", "variables", "entorno"]);
 /// assert!(content_words("   ").is_empty());
 /// ```
 #[must_use]
 pub fn content_words(text: &str) -> Vec<String> {
-    text.split(|c: char| !c.is_alphanumeric() && c != '_' && c != '\'')
-        .filter(|word| !word.is_empty())
-        .map(str::to_lowercase)
-        .filter(|word| !STOP_WORDS.contains(&word.as_str()))
+    words_in(text, detect_tongue(text))
+}
+
+/// The content words of a text read in a given language.
+pub(super) fn words_in(text: &str, tongue: Tongue) -> Vec<String> {
+    split_words(text)
+        .filter(|word| !tongue.is_stop(word))
         .collect()
 }
 

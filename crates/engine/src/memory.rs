@@ -38,6 +38,8 @@
 pub mod conflict;
 /// Deciding whether two memories say the same thing.
 pub mod similarity;
+/// Which language a memory is written in, and the function words of each.
+pub mod tongue;
 
 use std::collections::BTreeSet;
 

@@ -23,17 +23,19 @@ fn sample_is_a_valid_pdf() {
 fn known_sentences_are_present() {
     let original = check_pdf(&render_pdf(&sample(), Lang::En)).expect("valid PDF");
     let en_text = original.pages.join("\n");
-    assert!(
-        en_text.contains("Generated locally by pn-ultramemory 1.2.36. No data left this machine.")
-    );
+    assert!(en_text.contains(&format!(
+        "Generated locally by pn-ultramemory {}. No data left this machine.",
+        env!("CARGO_PKG_VERSION")
+    )));
     assert!(en_text.contains("Executive summary"));
     assert!(en_text.contains("Nimbus Ledger"));
     assert!(en_text.contains("71,240"));
     let translated = check_pdf(&render_pdf(&sample(), Lang::Es)).expect("valid PDF");
     let spanish_text = translated.pages.join("\n");
-    assert!(spanish_text.contains(
-        "Generado localmente por pn-ultramemory 1.2.36. Ningún dato salió de esta máquina."
-    ));
+    assert!(spanish_text.contains(&format!(
+        "Generado localmente por pn-ultramemory {}. Ningún dato salió de esta máquina.",
+        super::fixtures::SAMPLE_VERSION
+    )));
     assert!(spanish_text.contains("Cómo leer este informe"));
     assert!(spanish_text.contains("Líneas de código"));
     assert!(

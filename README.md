@@ -28,6 +28,7 @@
   <img alt="Telemetry: none" src="https://img.shields.io/badge/telemetry-none-success">
   <img alt="Network: never" src="https://img.shields.io/badge/network-never-success">
   <img alt="Price: free forever" src="https://img.shields.io/badge/price-free%20forever-blueviolet">
+  <img alt="Status: new project" src="https://img.shields.io/badge/status-new%20project-orange">
   <a href="docs/releasing.md"><img alt="SemVer 2.0.0" src="https://img.shields.io/badge/semver-2.0.0-3f4551"></a>
 </p>
 
@@ -60,6 +61,12 @@ Every figure here comes from `pn-ultramemory bench` on this repository. Nothing 
 | From a description | 2000 | **99 %** | 1,270 | 16,109 | **92.1 %** |
 | From a name | 500 | **98 %** | 424 | 16,258 | **97.4 %** |
 | From a name | 1000 | **100 %** | 718 | 16,258 | **95.6 %** |
+
+> **Where these come from, and where they do not hold.** They are measured on this tool's own
+> source: a Rust repository of about 260 files. The saving depends on the size of the project,
+> because what is saved is what reading whole files would have cost. On a small site or a handful of
+> scripts, reading them was never expensive, so there is less to save. Measure your own with
+> `pn-ultramemory bench`.
 
 <sub>100 sampled tasks per row, Apple M5. The baseline reads the three files a keyword search ranks
 highest, which is what an agent without an index does — and it finds the right code only 85 % of the
@@ -117,6 +124,9 @@ it never touches the result you are capturing. Running in a terminal also prints
 
 ## Install
 
+> Asking an agent to install this for you? Give it the link to this repository and tell it to follow
+> [AGENTS.md](AGENTS.md) — it is written to be read by a model and carried out step by step.
+
 ```bash
 git clone https://github.com/paulnewmandev/pn-ultramemory
 cd pn-ultramemory
@@ -125,7 +135,10 @@ cargo build --release          # Rust edition 2024
 
 ```bash
 pn-ultramemory index           # build the graph
-pn-ultramemory install         # register with every agent found on this machine
+pn-ultramemory install --agents claude-code   # or cursor, codex, gemini, windsurf, zed, …
+                                              # without --agents it registers with every
+                                              # agent it finds; --dry-run shows what it
+                                              # would touch and changes nothing
 pn-ultramemory doctor          # check it all worked
 ```
 
@@ -398,7 +411,8 @@ An honest tool says what it cannot do.
 
 - **It does not understand meaning.** Every text comparison is over words. A paraphrase sharing no
   words is not recognised as a duplicate.
-- **Where language matters, it is English** — the stop words and the negation markers.
+- **It reads English and Spanish.** A memory in another language is stored and retrieved correctly,
+  but is rarely recognised as a duplicate of another in that language.
 - **It cannot tell a true statement from a false one.** Stale means *the code changed*, not *the
   memory is now wrong*. A person decides that.
 - **Contradiction detection has deliberately low recall.** It catches structural opposition. It will

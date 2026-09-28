@@ -8,6 +8,12 @@ use pn_ultramemory_report::{
 
 /// The most hostile text the tests know: markup, quotes, ampersands, control characters, right to
 /// left text, emoji, combining marks and a bidirectional override.
+/// The version the sample report claims to have been produced by.
+///
+/// Sample data, not the crate's own version: a test that asserts on a sentence containing it must
+/// read it from here, so the two cannot drift apart the next time the project is renumbered.
+pub(crate) const SAMPLE_VERSION: &str = "1.0.0";
+
 pub(crate) const NASTY: &str = "<script>alert(1)</script> \"quoted\" 'single' & &amp; &lt; </td></tr> \
     שלום עולם 🙂 e\u{301} \u{202e}reversed\u{202c} tab\there\nnewline \u{0}nul\u{7}bell ]]> <!-- x -->";
 
@@ -92,7 +98,7 @@ pub(crate) fn sample() -> ReportData {
     ReportData {
         project: "Nimbus Ledger".into(),
         generated_on: "2026-09-25".into(),
-        tool_version: "1.2.36".into(),
+        tool_version: SAMPLE_VERSION.into(),
         summary: Summary {
             files: 363,
             lines: 71_240,
@@ -295,7 +301,7 @@ pub(crate) fn huge() -> ReportData {
     ReportData {
         project: long_word(10_000),
         generated_on: "2026-09-25".into(),
-        tool_version: "1.2.36".into(),
+        tool_version: SAMPLE_VERSION.into(),
         summary: Summary {
             files: 99_999,
             lines: 12_345_678,

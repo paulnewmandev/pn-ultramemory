@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: Apache-2.0
+# Purpose: build a binary for each supported platform on a version tag and attach them to the
+#          release, so the tool can be used without a Rust toolchain. Actions are pinned by SHA.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest,   target: aarch64-apple-darwin,      ext: "" }
+          - { os: macos-latest,   target: x86_64-apple-darwin,       ext: "" }
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-gnu,  ext: "" }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,    ext: ".exe" }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the toolchain pinned in rust-toolchain.toml
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }} -p pn-ultramemory
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          name="pn-ultramemory-${{ matrix.target }}"
+          mkdir -p "dist/$name"
+          cp "target/${{ matrix.target }}/release/pn-ultramemory${{ matrix.ext }}" "dist/$name/"
+          cp LICENSE NOTICE README.md "dist/$name/" 2>/dev/null || cp LICENSE README.md "dist/$name/"
+          cd dist
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            7z a "$name.zip" "$name" >/dev/null
+            echo "asset=dist/$name.zip" >> "$GITHUB_OUTPUT"
+          else
+            tar czf "$name.tar.gz" "$name"
+            echo "asset=dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checksum
+        run: |
+          set -euo pipefail
+          cd dist
+          if command -v sha256sum >/dev/null; then
+            sha256sum pn-ultramemory-${{ matrix.target }}.* > "pn-ultramemory-${{ matrix.target }}.sha256"
+          else
+            shasum -a 256 pn-ultramemory-${{ matrix.target }}.* > "pn-ultramemory-${{ matrix.target }}.sha256"
+          fi
+      - name: Smoke test the binary it just built
+        # A release that cannot answer `--version` is worse than no release, and the check costs
+        # nothing. Cross-built binaries are skipped: they cannot run on the machine that made them.
+        if: matrix.target != 'x86_64-apple-darwin'
+        run: ./target/${{ matrix.target }}/release/pn-ultramemory${{ matrix.ext }} --version
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            ${{ steps.package.outputs.asset }}
+            dist/pn-ultramemory-${{ matrix.target }}.sha256
+          if-no-files-found: error
+
+  publish:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Attach the binaries to the release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

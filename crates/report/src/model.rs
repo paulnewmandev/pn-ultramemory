@@ -27,7 +27,7 @@ pub struct ReportData {
     /// Generation date, already formatted (for example `2026-09-25`). It is also the source of the
     /// PDF creation date, so the output never depends on the clock.
     pub generated_on: String,
-    /// Version of the tool that produced the data, without a prefix (for example `1.2.36`).
+    /// Version of the tool that produced the data, without a prefix (for example `1.0.0`).
     pub tool_version: String,
     /// Headline counters.
     pub summary: Summary,

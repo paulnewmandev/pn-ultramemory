@@ -56,6 +56,7 @@ pub use impact::*;
 pub use indexer::{IndexOptions, IndexReport, content_hash};
 pub use insights::*;
 pub use map::*;
+pub use memory::tongue::{Tongue, detect_tongue};
 pub use memory::*;
 pub use outline::*;
 pub use recall::*;

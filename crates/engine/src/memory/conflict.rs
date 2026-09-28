@@ -34,20 +34,8 @@ use std::collections::BTreeSet;
 
 use pn_ultramemory_core::MemoryKind;
 
-use super::similarity::content_words;
-
-/// Words that turn a claim into its opposite.
-///
-/// `instead` and `rather` are here because of what follows them: "instead of X" and "rather than
-/// X" both deny X, and `of` and `than` are stop words, so the marker ends up next to the word it
-/// denies exactly as `not` does.
-const NEGATIONS: [&str; 11] = [
-    "not", "never", "no", "none", "don't", "doesn't", "avoid", "stop", "without", "instead",
-    "rather",
-];
-
-/// Words that introduce the thing a decision picked.
-const CHOICE_MARKERS: [&str; 6] = ["use", "prefer", "choose", "adopt", "switch", "keep"];
+use super::similarity::words_in;
+use super::tongue::{Tongue, detect_tongue};
 
 /// How much of their vocabulary two texts must share before opposition is even considered.
 const MIN_SHARED: f64 = 0.45;
@@ -82,11 +70,11 @@ impl Reason {
 }
 
 /// The content words of a text that are not negations or choice markers.
-fn subject_words(words: &[String]) -> Vec<&str> {
+fn subject_words(words: &[String], tongue: Tongue) -> Vec<&str> {
     words
         .iter()
         .map(String::as_str)
-        .filter(|word| !NEGATIONS.contains(word) && !CHOICE_MARKERS.contains(word))
+        .filter(|word| !tongue.negations().contains(word) && !tongue.choices().contains(word))
         .collect()
 }
 
@@ -107,54 +95,28 @@ fn shared_fraction(left: &[&str], right: &[&str]) -> f64 {
     value
 }
 
-/// The shortest a stripped word may be and still be treated as a root.
-const MIN_ROOT_LEN: usize = 4;
-
-/// The suffixes stripped to find a root, longest first so that `-es` is not read as `-s`.
-const SUFFIXES: [&str; 4] = ["ing", "ed", "es", "s"];
-
-/// A crude root of a word, used only to compare a denial against a plain statement.
-///
-/// English marks the same verb differently in the two places that matter here: a denial writes
-/// "does not **reject**" while the statement it denies writes "the parser **rejects**". Comparing
-/// the words as written would therefore miss the commonest shape of a contradiction entirely.
-///
-/// Only four suffixes are stripped, and only when what remains is still long enough to be a word.
-/// An aggressive stem would make unrelated words equal, and every such collision here turns two
-/// notes that agree into a false report, which is the one mistake this module must not make.
-///
-/// # Examples
-/// ```text
-/// assert_eq!(root("rejects"), "reject");
-/// assert_eq!(root("reject"), "reject");
-/// assert_eq!(root("used"), "used");  // stripping would leave "us", too short to be a root
-/// ```
-fn root(word: &str) -> &str {
-    for suffix in SUFFIXES {
-        if let Some(stem) = word.strip_suffix(suffix) {
-            if stem.len() >= MIN_ROOT_LEN {
-                return stem;
-            }
-        }
-    }
-    word
-}
-
 /// The roots a text denies: those directly following a negation marker.
-fn denied_roots(words: &[String]) -> BTreeSet<&str> {
+fn denied_roots(words: &[String], tongue: Tongue) -> BTreeSet<&str> {
     words
         .windows(2)
         .filter_map(|pair| match pair {
-            [marker, denied] if NEGATIONS.contains(&marker.as_str()) => Some(root(denied)),
+            [marker, denied] if tongue.negations().contains(&marker.as_str()) => {
+                Some(tongue.root(denied))
+            }
             _ => None,
         })
         .collect()
 }
 
 /// Whether `words` states any of `denied` plainly, that is without denying it itself.
-fn states_any(words: &[String], own_denials: &BTreeSet<&str>, denied: &BTreeSet<&str>) -> bool {
+fn states_any(
+    words: &[String],
+    own_denials: &BTreeSet<&str>,
+    denied: &BTreeSet<&str>,
+    tongue: Tongue,
+) -> bool {
     denied.iter().any(|target| {
-        !own_denials.contains(target) && words.iter().any(|word| root(word) == *target)
+        !own_denials.contains(target) && words.iter().any(|word| tongue.root(word) == *target)
     })
 }
 
@@ -164,16 +126,17 @@ fn states_any(words: &[String], own_denials: &BTreeSet<&str>, denied: &BTreeSet<
 /// negation counts only when the thing it denies is present, undenied, in the other text. Two
 /// texts that deny the same thing agree, however differently they word the denial, and a text that
 /// denies something the other never mentions is not opposition at all.
-fn denies_what_the_other_states(left: &[String], right: &[String]) -> bool {
-    let left_denied = denied_roots(left);
-    let right_denied = denied_roots(right);
-    states_any(right, &right_denied, &left_denied) || states_any(left, &left_denied, &right_denied)
+fn denies_what_the_other_states(left: &[String], right: &[String], tongue: Tongue) -> bool {
+    let left_denied = denied_roots(left, tongue);
+    let right_denied = denied_roots(right, tongue);
+    states_any(right, &right_denied, &left_denied, tongue)
+        || states_any(left, &left_denied, &right_denied, tongue)
 }
 
 /// The word a choice marker introduces, if the text makes a choice at all.
-fn chosen(words: &[String]) -> Option<&str> {
+fn chosen(words: &[String], tongue: Tongue) -> Option<&str> {
     words.windows(2).find_map(|pair| match pair {
-        [marker, picked] if CHOICE_MARKERS.contains(&marker.as_str()) => Some(picked.as_str()),
+        [marker, picked] if tongue.choices().contains(&marker.as_str()) => Some(picked.as_str()),
         _ => None,
     })
 }
@@ -197,14 +160,18 @@ fn chosen(words: &[String]) -> Option<&str> {
 /// ```
 #[must_use]
 pub fn contradicts(a: &str, b: &str, kind: MemoryKind) -> Option<Reason> {
-    let left = content_words(a);
-    let right = content_words(b);
+    // Both texts are read in one language, decided from the pair. Two memories that contradict
+    // each other say nearly the same words, so they are in the same language; reading them apart
+    // would let one be measured with the other's grammar.
+    let tongue = detect_tongue(&format!("{a} {b}"));
+    let left = words_in(a, tongue);
+    let right = words_in(b, tongue);
     if left.is_empty() || right.is_empty() {
         return None;
     }
 
-    let left_subject = subject_words(&left);
-    let right_subject = subject_words(&right);
+    let left_subject = subject_words(&left, tongue);
+    let right_subject = subject_words(&right, tongue);
     if shared_fraction(&left_subject, &right_subject) < MIN_SHARED {
         return None;
     }
@@ -212,13 +179,13 @@ pub fn contradicts(a: &str, b: &str, kind: MemoryKind) -> Option<Reason> {
     // One denies something the other states plainly. Merely carrying a negation the other lacks
     // proves nothing: it may deny something the other never mentions, or deny the same thing in
     // words this module does not know.
-    if denies_what_the_other_states(&left, &right) {
+    if denies_what_the_other_states(&left, &right, tongue) {
         return Some(Reason::Negated);
     }
 
     // Both pick something, for the same decision, and pick differently.
     if matches!(kind, MemoryKind::Decision | MemoryKind::Convention) {
-        if let (Some(first), Some(second)) = (chosen(&left), chosen(&right)) {
+        if let (Some(first), Some(second)) = (chosen(&left, tongue), chosen(&right, tongue)) {
             if first != second {
                 return Some(Reason::DifferentChoice);
             }
@@ -429,6 +396,88 @@ mod tests {
                 assert_eq!(contradicts(text, text, kind), None, "{text} as {kind}");
             }
         }
+    }
+
+    /// Spanish memories are read with Spanish grammar: a denial is found, a reworded agreement is
+    /// not, and two decisions that pick differently are.
+    ///
+    /// This is the case the module could not handle at all before: with only English markers,
+    /// `nunca` and `sin` meant nothing, so a Spanish contradiction was never reported and a Spanish
+    /// agreement was never distinguished from one.
+    #[test]
+    fn spanish_is_read_with_spanish_grammar() {
+        let denial = (
+            "el analizador rechaza un fichero mayor que el limite configurado",
+            "el analizador no rechaza un fichero mayor que el limite configurado",
+        );
+        assert_eq!(
+            contradicts(denial.0, denial.1, MemoryKind::Fact),
+            Some(Reason::Negated),
+            "a Spanish denial must be found"
+        );
+
+        // Both deny, but they deny different things: one says it is calibrated and not guessed,
+        // the other says it is not calibrated.
+        let opposed = (
+            "el estimador esta calibrado contra un tokenizador real, no adivinado",
+            "el estimador no esta calibrado contra un tokenizador real",
+        );
+        assert_eq!(
+            contradicts(opposed.0, opposed.1, MemoryKind::Decision),
+            Some(Reason::Negated)
+        );
+
+        // Both deny the same thing, in different words. They agree.
+        let agreeing = (
+            "los manejadores nunca desenvuelven en una peticion, devuelven un error",
+            "los manejadores nunca desenvuelven en una peticion; devuelven un error",
+        );
+        assert_eq!(
+            contradicts(agreeing.0, agreeing.1, MemoryKind::Convention),
+            None
+        );
+
+        // Two decisions picking differently for the same slot.
+        assert_eq!(
+            contradicts(
+                "usar Postgres para el almacen del libro mayor y la replica de informes",
+                "usar SQLite para el almacen del libro mayor y la replica de informes",
+                MemoryKind::Decision
+            ),
+            Some(Reason::DifferentChoice)
+        );
+
+        // And notes about different subjects are still not reported.
+        assert_eq!(
+            contradicts(
+                "el analizador rechaza un fichero mayor que el limite",
+                "los graficos del panel leen de una vista refrescada cada cinco minutos",
+                MemoryKind::Fact
+            ),
+            None
+        );
+    }
+
+    /// An English memory is never read with Spanish grammar, and the other way round.
+    ///
+    /// `sin` is "without" in Spanish and a noun in English; `no` negates in both. A single list of
+    /// markers would apply one language's grammar to the other's sentence, and the mistake would
+    /// land here, in the one place a false report is worst.
+    #[test]
+    fn one_language_never_borrows_the_other_grammar() {
+        // English sentences about sin, which must not be read as a Spanish negation.
+        let english = (
+            "the audit log records every sin bin entry for the match report",
+            "the audit log records every sin bin entry for the match summary",
+        );
+        assert_eq!(contradicts(english.0, english.1, MemoryKind::Fact), None);
+
+        // A Spanish sentence containing `use`, which is an English choice marker.
+        let spanish = (
+            "el modulo de use cases valida la entrada antes de escribir en el almacen",
+            "el modulo de use cases valida la entrada antes de escribir en la cache",
+        );
+        assert_eq!(contradicts(spanish.0, spanish.1, MemoryKind::Fact), None);
     }
 
     /// The reasons carry a stable name and a readable sentence.

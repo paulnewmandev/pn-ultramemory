@@ -9,10 +9,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
-## [1.2.36] - 2026-09-27
+## [1.0.0] - 2026-09-27
 
-The first complete version: everything below is implemented, tested and reachable from the command
-line and from MCP.
+The first release. Everything below is implemented, tested, and reachable from the command line and
+from MCP.
+
+It is numbered 1.0.0 because it is the first one, not because it has been through a long history:
+the project is days old and has one author. The public surface — the commands, the MCP tools and
+the shapes they return — is what a 1.x promises not to break.
 
 ### Added — retrieval
 
@@ -101,5 +105,5 @@ line and from MCP.
 - `scripts/bump-version`, `scripts/check-headers`, `scripts/ratchet`, `scripts/check-offline`.
 - Community health files, issue and pull request templates, and two CI workflows.
 
-[Unreleased]: https://github.com/paulnewmandev/pn-ultramemory/compare/v1.2.36...HEAD
-[1.2.36]: https://github.com/paulnewmandev/pn-ultramemory/releases/tag/v1.2.36
+[Unreleased]: https://github.com/paulnewmandev/pn-ultramemory/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/paulnewmandev/pn-ultramemory/releases/tag/v1.0.0

@@ -28,6 +28,7 @@
   <img alt="Telemetría: ninguna" src="https://img.shields.io/badge/telemetry-none-success">
   <img alt="Red: nunca" src="https://img.shields.io/badge/network-never-success">
   <img alt="Precio: gratis" src="https://img.shields.io/badge/price-free%20forever-blueviolet">
+  <img alt="Estado: proyecto nuevo" src="https://img.shields.io/badge/estado-proyecto%20nuevo-orange">
   <a href="docs/releasing.md"><img alt="SemVer 2.0.0" src="https://img.shields.io/badge/semver-2.0.0-3f4551"></a>
 </p>
 
@@ -60,6 +61,12 @@ Cada cifra sale de `pn-ultramemory bench` sobre este repositorio. Nada está pro
 | Por descripción | 2000 | **99 %** | 1.270 | 16.109 | **92,1 %** |
 | Por nombre | 500 | **98 %** | 424 | 16.258 | **97,4 %** |
 | Por nombre | 1000 | **100 %** | 718 | 16.258 | **95,6 %** |
+
+> **De dónde salen estas cifras, y dónde no valen.** Están medidas sobre el código de esta misma
+> herramienta: un repositorio Rust de unos 260 ficheros. El ahorro depende del tamaño del proyecto,
+> porque lo que se ahorra es lo que habría costado leer ficheros enteros. En un sitio pequeño o un
+> puñado de scripts, leerlos nunca fue caro, así que hay menos que ahorrar. Mide el tuyo con
+> `pn-ultramemory bench`.
 
 <sub>100 tareas por fila, Apple M5. La base de comparación lee los tres ficheros que mejor puntúa una
 búsqueda por palabras, que es lo que hace un agente sin índice — y solo acierta el 85 % desde una
@@ -116,6 +123,9 @@ nunca toca el resultado que estás capturando. Ejecutarlo en una terminal tambi�
 
 ## Instalación
 
+> Si le vas a pedir a un agente que lo instale por ti, dale el enlace de este repositorio y dile que
+> siga [AGENTS.md](AGENTS.md). Está escrito para que lo lea un modelo y lo ejecute paso a paso.
+
 ```bash
 git clone https://github.com/paulnewmandev/pn-ultramemory
 cd pn-ultramemory
@@ -124,7 +134,10 @@ cargo build --release          # Rust edición 2024
 
 ```bash
 pn-ultramemory index           # construye el grafo
-pn-ultramemory install         # se registra en todos los agentes de esta máquina
+pn-ultramemory install --agents claude-code   # o cursor, codex, gemini, windsurf, zed, …
+                                              # sin --agents se registra en todos los que
+                                              # encuentre; --dry-run enseña qué tocaría
+                                              # sin cambiar nada
 pn-ultramemory doctor          # comprueba que todo funcionó
 ```
 
@@ -398,7 +411,8 @@ Una herramienta honesta dice lo que no puede hacer.
 
 - **No entiende significado.** Toda comparación de texto es sobre palabras. Una paráfrasis que no
   comparte ninguna no se reconoce como duplicada.
-- **Donde el idioma importa, es inglés** — las palabras vacías y los marcadores de negación.
+- **Entiende inglés y español.** Un texto en otro idioma se guarda y se recupera bien, pero rara vez
+  se reconoce como duplicado de otro en ese idioma.
 - **No distingue lo verdadero de lo falso.** Obsoleta significa *el código cambió*, no *la memoria
   es ahora falsa*. Eso lo decide una persona.
 - **La detección de contradicciones tiene poca cobertura a propósito.** Captura oposición

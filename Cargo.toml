@@ -7,7 +7,7 @@ resolver = "3"
 members = ["crates/*", "xtask"]
 
 [workspace.package]
-version = "1.2.36"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.85"
 license = "Apache-2.0"
@@ -19,14 +19,14 @@ categories = ["development-tools", "command-line-utilities"]
 readme = "README.md"
 
 [workspace.dependencies]
-pn-ultramemory-core = { path = "crates/core", version = "1.2.36" }
-pn-ultramemory-codec = { path = "crates/codec", version = "1.2.36" }
-pn-ultramemory-toon = { path = "crates/toon", version = "1.2.36" }
-pn-ultramemory-index = { path = "crates/index", version = "1.2.36" }
-pn-ultramemory-store = { path = "crates/store", version = "1.2.36" }
-pn-ultramemory-mcp = { path = "crates/mcp", version = "1.2.36" }
-pn-ultramemory-engine = { path = "crates/engine", version = "1.2.36" }
-pn-ultramemory-report = { path = "crates/report", version = "1.2.36" }
+pn-ultramemory-core = { path = "crates/core", version = "1.0.0" }
+pn-ultramemory-codec = { path = "crates/codec", version = "1.0.0" }
+pn-ultramemory-toon = { path = "crates/toon", version = "1.0.0" }
+pn-ultramemory-index = { path = "crates/index", version = "1.0.0" }
+pn-ultramemory-store = { path = "crates/store", version = "1.0.0" }
+pn-ultramemory-mcp = { path = "crates/mcp", version = "1.0.0" }
+pn-ultramemory-engine = { path = "crates/engine", version = "1.0.0" }
+pn-ultramemory-report = { path = "crates/report", version = "1.0.0" }
 serde_json = { version = "1.0.151", features = ["preserve_order"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 tree-sitter = "0.27.0"

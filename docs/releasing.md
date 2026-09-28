@@ -4,7 +4,7 @@ The whole workspace shares **one version**, written once in the root `Cargo.toml
 inherits it (`version.workspace = true`). The project follows
 [Semantic Versioning 2.0.0](https://semver.org/) and keeps a
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) changelog. The current version is the one
-declared in `[workspace.package]` of the root `Cargo.toml`. Examples below start from `1.2.36`.
+declared in `[workspace.package]` of the root `Cargo.toml`. Examples below start from `1.0.0`.
 
 **Contents**
 
@@ -35,11 +35,11 @@ performance numbers, and the exact ranking of results unless a document promises
 
 Given a version `X.Y.Z`:
 
-| Change | Bump | Example from 1.2.36 | Resets |
+| Change | Bump | Example from 1.0.0 | Resets |
 |---|---|---|---|
 | Incompatible change to the public API | **major** (`X`) | 2.0.0 | minor and patch go to 0 |
-| New functionality, backward compatible | **minor** (`Y`) | 1.3.0 | patch goes to 0 |
-| Bug fix, backward compatible | **patch** (`Z`) | 1.2.37 | nothing |
+| New functionality, backward compatible | **minor** (`Y`) | 1.1.0 | patch goes to 0 |
+| Bug fix, backward compatible | **patch** (`Z`) | 1.0.1 | nothing |
 
 When a release contains several kinds of change, the **highest** one wins, and it resets everything
 to its right. A release with one fix and one incompatible change is a major release, and all three
@@ -73,9 +73,9 @@ links. It never pushes anything.
 
 ```sh
 # Choose the bump yourself
-scripts/bump-version patch          # 1.2.36 -> 1.2.37
-scripts/bump-version minor          # 1.2.36 -> 1.3.0
-scripts/bump-version major          # 1.2.36 -> 2.0.0
+scripts/bump-version patch          # 1.0.0 -> 1.0.1
+scripts/bump-version minor          # 1.0.0 -> 1.1.0
+scripts/bump-version major          # 1.0.0 -> 2.0.0
 
 # Or let the commit history decide
 scripts/bump-version auto

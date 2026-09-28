@@ -126,7 +126,7 @@ pub fn width() -> usize {
 ///
 /// # Examples
 /// ```text
-/// let plain = render("1.2.36", false);
+/// let plain = render("1.0.0", false);
 /// assert!(plain.contains("PN-ULTRAMEMORY") || plain.contains('╔'));
 /// assert!(!plain.contains('\u{1b}'));   // no escape sequences without colour
 /// ```
@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn the_banner_fits_eighty_columns() {
         assert!(width() <= 80, "the drawing is {} columns", width());
-        for line in render("1.2.36", false).lines() {
+        for line in render("1.0.0", false).lines() {
             assert!(
                 line.chars().count() <= 80,
                 "{} columns: {line}",
@@ -247,9 +247,9 @@ mod tests {
     /// Without colour the banner carries no escape sequence, so it is safe anywhere.
     #[test]
     fn plain_output_has_no_escape_sequences() {
-        let plain = render("1.2.36", false);
+        let plain = render("1.0.0", false);
         assert!(!plain.contains('\u{1b}'), "{plain}");
-        assert!(plain.contains("v1.2.36"));
+        assert!(plain.contains("v1.0.0"));
         assert!(!plain.ends_with('\n'));
     }
 
@@ -257,7 +257,7 @@ mod tests {
     /// output that follows the banner.
     #[test]
     fn colour_is_always_closed() {
-        let coloured = render("1.2.36", true);
+        let coloured = render("1.0.0", true);
         let opens = coloured.matches('\u{1b}').count();
         let closes = coloured.matches("\u{1b}[0m").count();
         assert_eq!(opens, closes * 2, "{coloured}");

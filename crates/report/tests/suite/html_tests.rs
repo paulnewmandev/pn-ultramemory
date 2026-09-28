@@ -218,13 +218,14 @@ fn truncation_notes() {
 /// The footer states that the report was generated locally, in both languages.
 #[test]
 fn footer_sentence() {
-    assert!(
-        render_html(&sample(), Lang::En)
-            .contains("Generated locally by pn-ultramemory 1.2.36. No data left this machine.")
-    );
-    assert!(render_html(&sample(), Lang::Es).contains(
-        "Generado localmente por pn-ultramemory 1.2.36. Ningún dato salió de esta máquina."
-    ));
+    assert!(render_html(&sample(), Lang::En).contains(&format!(
+        "Generated locally by pn-ultramemory {}. No data left this machine.",
+        super::fixtures::SAMPLE_VERSION
+    )));
+    assert!(render_html(&sample(), Lang::Es).contains(&format!(
+        "Generado localmente por pn-ultramemory {}. Ningún dato salió de esta máquina.",
+        super::fixtures::SAMPLE_VERSION
+    )));
 }
 
 /// The usage section explains that the numbers are local counts.
