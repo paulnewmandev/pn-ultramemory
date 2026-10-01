@@ -77,13 +77,45 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: dist
           merge-multiple: true
+      - name: Write the release notes from the changelog
+        # A release page is where most people meet a version, so it says what changed (the
+        # changelog section of this version, word for word) and how to install it, rather than
+        # only linking to a list of commits.
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on && /^\[[^]]+\]: / { next }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          cat >> notes.md <<'EOF'
+
+          ## Install
+
+          macOS and Linux, into `~/.local/bin`, checked against the published SHA-256:
+
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/install.sh | sh
+          ```
+
+          Windows: download `pn-ultramemory-x86_64-pc-windows-msvc.zip` below and put
+          `pn-ultramemory.exe` on your `PATH`. Every archive has a `.sha256` beside it.
+
+          Then, from the root of your project: `pn-ultramemory index`, `pn-ultramemory install --agents <your agent>` (and restart the agent), and `pn-ultramemory brain`.
+          EOF
+          test -s notes.md
+          cat notes.md
       - name: Attach the binaries to the release
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
         with:
           files: dist/*
+          body_path: notes.md
           generate_release_notes: true
           fail_on_unmatched_files: true
