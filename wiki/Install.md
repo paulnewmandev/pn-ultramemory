@@ -4,35 +4,64 @@
 
 ## 1. Get the binary
 
-Download the build for your platform. No toolchain is needed.
+### macOS and Linux: one command
 
 ```bash
-# macOS, Apple silicon
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz | tar xz
-
-# macOS, Intel
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-x86_64-apple-darwin.tar.gz | tar xz
-
-# Linux, x86_64
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-x86_64-unknown-linux-gnu.tar.gz | tar xz
+curl -fsSL https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/install.sh | sh
 ```
 
-On **Windows**, download `pn-ultramemory-x86_64-pc-windows-msvc.zip` from the
-[releases page](https://github.com/paulnewmandev/pn-ultramemory/releases/latest) and unzip it.
-
-Each archive unpacks to a folder with the binary, the licence and the README. Move the binary
-somewhere on your `PATH`. Every archive has a `.sha256` beside it:
+It picks the build for your system (macOS on Apple silicon or Intel, Linux on x86_64), downloads it
+from the latest release, **refuses to install it unless it matches its published SHA-256**, and puts
+it in `~/.local/bin`. It needs no root and edits no shell profile: when that folder is not on your
+`PATH` yet, it prints the one line to add to `~/.zshrc` or `~/.bashrc`. Open a new terminal
+afterwards and check:
 
 ```bash
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.sha256 -o sum.txt
-shasum -a 256 -c sum.txt
+pn-ultramemory --version
 ```
+
+Two settings, both optional: `PN_ULTRAMEMORY_VERSION=v1.1.0` installs a given release, and
+`PN_ULTRAMEMORY_BIN_DIR=/usr/local/bin` installs somewhere else. Read
+[the script](https://github.com/paulnewmandev/pn-ultramemory/blob/main/install.sh) first if you
+prefer; it is short.
+
+### Windows
+
+In PowerShell:
+
+```powershell
+$dir = "$env:LOCALAPPDATA\pn-ultramemory"
+Invoke-WebRequest https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-x86_64-pc-windows-msvc.zip -OutFile "$env:TEMP\pn-ultramemory.zip"
+Expand-Archive "$env:TEMP\pn-ultramemory.zip" -DestinationPath $dir -Force
+$bin = "$dir\pn-ultramemory-x86_64-pc-windows-msvc"
+$user = [Environment]::GetEnvironmentVariable("Path", "User")
+[Environment]::SetEnvironmentVariable("Path", "$user;$bin", "User")
+```
+
+Open a new terminal, then `pn-ultramemory --version`. The binary needs the Microsoft Visual C++
+runtime, which most systems already have.
+
+### By hand
+
+Every release carries one archive per platform and a `.sha256` beside each, on the
+[releases page](https://github.com/paulnewmandev/pn-ultramemory/releases/latest):
+
+```bash
+curl -fsSLO https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz
+curl -fsSLO https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.sha256
+shasum -a 256 -c pn-ultramemory-aarch64-apple-darwin.sha256
+tar xzf pn-ultramemory-aarch64-apple-darwin.tar.gz
+mkdir -p ~/.local/bin && mv pn-ultramemory-aarch64-apple-darwin/pn-ultramemory ~/.local/bin/
+```
+
+The targets are `aarch64-apple-darwin`, `x86_64-apple-darwin`, `x86_64-unknown-linux-gnu` and
+`x86_64-pc-windows-msvc` (a `.zip`). On macOS, a binary downloaded with a browser instead of `curl`
+is quarantined; see [Troubleshooting](Troubleshooting#macos-says-it-cannot-verify-the-developer).
 
 ### Or build it
 
-Needed when no release covers your platform, and for features that are on `main` but not yet
-released (the [brain](Brain) and receiver-aware resolution, until the next release). It needs a
-Rust toolchain, and on Windows the Visual Studio Build Tools, because the parsers are written in C.
+For any platform without a release, such as Linux on ARM. It needs a Rust toolchain, and on Windows
+the Visual Studio Build Tools, because the parsers are written in C.
 
 ```bash
 git clone https://github.com/paulnewmandev/pn-ultramemory
@@ -104,6 +133,6 @@ the limitations honestly.
 
 ## Upgrading
 
-Replace the binary. The index migrates itself the first time it is opened; when a migration needs
-information the old index never recorded, it marks every file as changed and the next `index` reads
-the repository once more. Memories are kept.
+Run the installer again, or replace the binary by hand. The index migrates itself the first time it
+is opened; when a migration needs information the old index never recorded, it marks every file as
+changed and the next `index` reads the repository once more. Memories are kept.

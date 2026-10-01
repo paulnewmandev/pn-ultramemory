@@ -11,6 +11,28 @@ and the free disk space, and names the command that fixes anything wrong.
 
 ---
 
+## `pn-ultramemory: command not found`
+
+The binary is not in a folder on your `PATH`. The installer puts it in `~/.local/bin` and prints the
+line to add when that folder is missing; add it to `~/.zshrc` or `~/.bashrc` and **open a new
+terminal**:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Until then, `~/.local/bin/pn-ultramemory` works by its full path. An agent that starts the server
+uses the full path `install` wrote, so it does not depend on your `PATH`.
+
+## macOS says it cannot verify the developer
+
+A binary downloaded with a browser is quarantined by macOS; the installer and `curl` do not have this
+problem. Clear the flag on the binary you downloaded:
+
+```bash
+xattr -d com.apple.quarantine /path/to/pn-ultramemory
+```
+
 ## My agent does not see the tools
 
 **Restart it.** An MCP server is read when the agent starts. This is the most common cause by far.

@@ -17,6 +17,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
   particle to read its signature, documentation, callers, callees and memories, and copy all of it
   as context for an agent. One HTML file in the data directory, plain WebGL with no library, and a
   Content-Security-Policy that forbids it any request.
+- **A one-command installer** for macOS and Linux:
+  `curl -fsSL https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/install.sh | sh`.
+  It picks the build for the machine, refuses it unless it matches its published SHA-256, puts it
+  in `~/.local/bin` without root, and prints the line to add when that folder is not on `PATH`.
+  The previous quick start unpacked the binary into a folder and then called it by name, which
+  failed for anyone who did not move it onto their `PATH` first.
 - **`brief`** — everything a new session needs to know about a repository in one budgeted call:
   its size, its languages, its modules with their coupling, its busiest symbols and every memory
   already recorded. A model's context ends with its session; the graph on disk does not, and this
@@ -71,6 +77,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
   takes about 430 ms instead of 360, and re-indexing after one file changes about 200 ms instead of
   130. Re-indexing with nothing changed is unaffected (12 ms). Each receiver is checked once per
   distinct name and word, and references without a receiver keep the old, index-only path.
+- **Release pages say what changed and how to install it.** The notes of a release are its section
+  of this changelog followed by install instructions, instead of a bare link to the commits.
 - **The README and the wiki are rewritten** around what the tool is now: a second brain shared by
   a person and an agent, with measured numbers, the brain view, and plainer limits. The benchmark
   figures are re-measured, and say that its questions come from the symbols' own documentation.

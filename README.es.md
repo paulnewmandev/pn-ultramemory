@@ -61,8 +61,8 @@ cuesta nada.
 ## Empieza en dos minutos
 
 ```bash
-# 1. Descarga el binario (macOS Apple silicon; Intel, Linux y Windows están en la página de releases)
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz | tar xz
+# 1. Instala (macOS y Linux): el binario correcto para tu máquina, verificado con su SHA-256
+curl -fsSL https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/install.sh | sh
 
 # 2. Desde la raíz de tu proyecto, construye el grafo
 pn-ultramemory index
@@ -74,13 +74,18 @@ pn-ultramemory install --agents claude-code     # o cursor, codex, gemini, winds
 pn-ultramemory brain --lang es
 ```
 
-`pn-ultramemory doctor` revisa cada paso y te dice la orden que arregla lo que falte. ¿Quieres que
-lo instale un agente? Pásale [AGENTS.md](AGENTS.md), que está escrito para que un modelo lo siga
-paso a paso.
+El instalador deja el binario en `~/.local/bin` y, si esa carpeta aún no está en tu `PATH`, te
+muestra la línea exacta que debes añadir. No necesita permisos de administrador y no cambia nada más.
 
-> **Compilar desde el código** requiere Rust: `cargo build --release`. La vista `brain` y la
-> resolución por receptor que se describe más abajo ya están en `main` y llegan en la próxima
-> versión; hasta entonces, compila desde el código para usarlas.
+- **Windows:** descarga `pn-ultramemory-x86_64-pc-windows-msvc.zip` de la
+  [última versión](https://github.com/paulnewmandev/pn-ultramemory/releases/latest), descomprímelo
+  y pon `pn-ultramemory.exe` en tu `PATH`.
+- **Cualquier otro sistema** (Linux en ARM, por ejemplo): `cargo build --release` con Rust
+  instalado.
+- **Compruébalo:** `pn-ultramemory doctor` revisa cada paso y te dice la orden que arregla lo que
+  falte.
+- **Que lo haga un agente:** pásale [AGENTS.md](AGENTS.md), escrito para que un modelo lo siga paso
+  a paso.
 
 ---
 

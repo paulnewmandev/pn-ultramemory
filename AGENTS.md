@@ -24,22 +24,20 @@ If they only want to try it without touching any agent configuration, do steps 1
 
 ## 1. Get the binary
 
-**Prefer a release build. It needs no toolchain.**
+**Prefer a release build. It needs no toolchain.** On macOS and Linux one command does it:
 
 ```bash
-# macOS (Apple silicon)
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz | tar xz
-# macOS (Intel)
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-x86_64-apple-darwin.tar.gz | tar xz
-# Linux
-curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-x86_64-unknown-linux-gnu.tar.gz | tar xz
+curl -fsSL https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/install.sh | sh
 ```
 
-On Windows, download `pn-ultramemory-x86_64-pc-windows-msvc.zip` from the same releases page and
-unzip it.
+It picks the build for the machine, refuses it unless it matches its published SHA-256, and puts it
+in `~/.local/bin` without root. If it says that folder is not on `PATH`, tell them the line it
+printed, and use `~/.local/bin/pn-ultramemory` by its full path in every command below until they
+open a new terminal.
 
-Each archive unpacks to a folder holding the binary. Move it somewhere on `PATH`, or use its full
-path in every command below.
+On Windows, download `pn-ultramemory-x86_64-pc-windows-msvc.zip` from the
+[releases page](https://github.com/paulnewmandev/pn-ultramemory/releases/latest), unzip it, and use
+the full path of `pn-ultramemory.exe`, or put its folder on `PATH`.
 
 **Only if no release exists for their platform**, build from source. Say first that this needs a
 Rust toolchain, and on Windows also the Visual Studio Build Tools, which are several gigabytes:
@@ -126,6 +124,10 @@ Nine tools arrive over MCP. Reach for them instead of reading files:
 | `remember` | Store a decision, anchored to the code | A comment nobody reads |
 | `memories` | What do we already know; what went stale | Asking again |
 | `feedback` | That answer helped, or did not | Nothing |
+
+For the person, not for you: `pn-ultramemory brain` opens the whole repository as a 3D brain in
+their browser, with search, every symbol's callers and callees, and the memories over the code they
+describe. Mention it once they are set up; it is how they see what you see.
 
 Four habits that make the difference:
 
