@@ -414,6 +414,7 @@ fn run_analysis(
         Command::Docs(command) => docs(&engine, command, global)?,
         Command::Stats => emit(&engine.stats()?.to_value(), global),
         Command::Report(args) => report(&engine, args, global, locations)?,
+        Command::Brain(args) => brain(&engine, args, global, locations)?,
         Command::Bench(args) => {
             let options = pn_ultramemory_engine::BenchOptions {
                 tasks: args.tasks,
@@ -454,6 +455,7 @@ const fn command_name(command: &Command) -> &'static str {
         Command::Expand(_) => "expand",
         Command::Impact(_) => "impact",
         Command::Graph(_) => "graph",
+        Command::Brain(_) => "brain",
         Command::Brief(_) => "brief",
         Command::Outline(_) => "outline",
         Command::Map(_) => "map",
@@ -599,6 +601,89 @@ fn report(
         global,
     );
     Ok(())
+}
+
+/// Builds the brain view, writes it, and opens it in the browser when a person is at the terminal.
+///
+/// The page goes to the data directory unless `--out` names another place, so that looking at a
+/// repository never writes inside it.
+///
+/// # Errors
+/// Returns whatever the engine reports, or a failure when the page cannot be written.
+fn brain(
+    engine: &Engine,
+    args: &args::BrainArgs,
+    global: &Global,
+    locations: &Locations,
+) -> Result<(), CliError> {
+    use std::io::IsTerminal as _;
+    let name = locations.repo.file_name().map_or_else(
+        || "repository".to_owned(),
+        |name| name.to_string_lossy().into_owned(),
+    );
+    let query = pn_ultramemory_engine::BrainQuery {
+        max_nodes: args.max_nodes,
+        min_confidence: args
+            .min_confidence
+            .map_or(pn_ultramemory_core::Confidence::Heuristic, confidence_of),
+    };
+    note(global, "growing the brain...");
+    let built = engine.brain(&name, &query)?;
+    let page = pn_ultramemory_report::render_brain(
+        &built.to_value().to_string(),
+        &name,
+        reporting::lang_of(args.lang),
+    );
+    let path = args
+        .out
+        .clone()
+        .unwrap_or_else(|| locations.data_dir.join("brain.html"));
+    std::fs::write(&path, page.as_bytes()).map_err(|e| {
+        CliError::failure(format!(
+            "cannot write `{}`: {e}. Check that the folder exists and that you may write to it, \
+             or choose another file with --out",
+            path.display()
+        ))
+    })?;
+    emit(
+        &json!({
+            "written": path.display().to_string(),
+            "bytes": page.len(),
+            "symbols": built.nodes,
+            "of": built.total_symbols,
+            "edges": built.edges,
+            "memories": built.memories,
+        }),
+        global,
+    );
+    if !args.no_open && std::io::stdout().is_terminal() && !open_in_browser(&path) {
+        note(
+            global,
+            &format!("open {} in a browser to see it", path.display()),
+        );
+    }
+    Ok(())
+}
+
+/// Asks the operating system to open a file in the default browser, without waiting for it.
+/// Returns `false` when the opener could not be started.
+fn open_in_browser(path: &Path) -> bool {
+    let mut command = if cfg!(target_os = "macos") {
+        std::process::Command::new("open")
+    } else if cfg!(windows) {
+        let mut start = std::process::Command::new("cmd");
+        start.args(["/C", "start", ""]);
+        start
+    } else {
+        std::process::Command::new("xdg-open")
+    };
+    command
+        .arg(path)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .is_ok()
 }
 
 /// Writes bytes to a file, or to standard output when no file was named.

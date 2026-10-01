@@ -15,7 +15,7 @@
 //!
 //! * indexing: [`Engine::index`];
 //! * retrieval: [`Engine::recall`], [`Engine::expand`], [`Engine::impact`], [`Engine::graph`],
-//!   [`Engine::repo_map`];
+//!   [`Engine::brain`], [`Engine::repo_map`];
 //! * memory and learning: [`Engine::remember`], [`Engine::memories`], [`Engine::feedback`];
 //! * documentation: [`Engine::doc_gaps`], [`Engine::doc_apply`], [`Engine::doc_markdown`];
 //! * analytics: [`Engine::stats`], [`Engine::insights`], [`Engine::bench`].
@@ -24,6 +24,7 @@
 //! shaped so that TOON prints uniform lists as compact tables.
 
 mod bench;
+mod brain;
 mod brief;
 mod config;
 mod docs;
@@ -47,6 +48,7 @@ mod sources;
 mod stats;
 
 pub use bench::*;
+pub use brain::*;
 pub use brief::*;
 pub use config::EngineConfig;
 pub use docs::*;

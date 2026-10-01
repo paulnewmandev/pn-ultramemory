@@ -18,6 +18,7 @@ EXAMPLES:
     pn-ultramemory remember decision \"Use a file, not env vars\" --about load_config
     pn-ultramemory docs gaps --context         Undocumented symbols, ready to hand to an agent
     pn-ultramemory report --lang es --as pdf   A report in Spanish, as a PDF
+    pn-ultramemory brain                       The whole repository as a 3D brain, in the browser
     pn-ultramemory serve                       Run the MCP server on standard input and output
 
 Everything runs on your machine: no network calls, no telemetry, no accounts.
@@ -227,6 +228,8 @@ pub enum Command {
     Impact(ImpactArgs),
     /// Export the code graph as Mermaid, DOT, SVG or JSON.
     Graph(GraphArgs),
+    /// Open the whole repository as a 3D brain you can fly through, search and read.
+    Brain(BrainArgs),
     /// Everything a new session needs to know about this repository, inside a token budget.
     Brief(BriefArgs),
     /// Describe one whole file: every symbol it declares, for a fraction of the tokens.
@@ -367,6 +370,28 @@ pub struct GraphArgs {
     /// Write to this file instead of standard output.
     #[arg(short, long, value_name = "FILE")]
     pub out: Option<PathBuf>,
+}
+
+/// Arguments of `brain`.
+#[derive(Debug, Args)]
+pub struct BrainArgs {
+    /// The most symbols to draw. When the repository has more, the most depended on are kept.
+    #[arg(long, value_name = "N", default_value_t = 6000)]
+    pub max_nodes: usize,
+    /// The weakest kind of edge to draw.
+    #[arg(long, value_enum)]
+    pub min_confidence: Option<ConfidenceArg>,
+    /// Language of the page.
+    #[arg(long, value_enum, default_value_t = LangArg::En)]
+    pub lang: LangArg,
+    /// Write the page to this file. Defaults to `brain.html` in the data directory, so nothing is
+    /// written inside the repository.
+    #[arg(short, long, value_name = "FILE")]
+    pub out: Option<PathBuf>,
+    /// Write the page without opening it in the browser. It is only opened when a person is at
+    /// the terminal anyway.
+    #[arg(long)]
+    pub no_open: bool,
 }
 
 /// Arguments of `brief`.

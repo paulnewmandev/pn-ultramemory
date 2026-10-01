@@ -8,7 +8,10 @@
 //!   external resource, light and dark themes, print-ready);
 //! * [`render_pdf`] writes a PDF 1.4 document by hand with the standard Helvetica fonts;
 //! * [`render_markdown`] produces GitHub-flavored Markdown with a Mermaid diagram;
-//! * [`render_graph`] exports the code graph as Mermaid, DOT, SVG or JSON.
+//! * [`render_graph`] exports the code graph as Mermaid, DOT, SVG or JSON;
+//! * [`render_brain`] produces the brain view: one HTML page that draws the whole repository as a
+//!   brain of particles a person can fly through and search. It is the one output that runs a
+//!   script, and its security policy forbids that script any request.
 //!
 //! # Role in the architecture
 //! This is an exit adapter (see `docs/architecture.md`). It depends on no other workspace crate
@@ -38,6 +41,7 @@
 //! assert!(markdown.starts_with("# Informe de código"));
 //! ```
 
+mod brain;
 mod content;
 mod graph;
 mod html;
@@ -149,4 +153,26 @@ pub fn render_markdown(data: &ReportData, lang: Lang) -> String {
 #[must_use]
 pub fn render_graph(graph: &Graph, format: GraphFormat, lang: Lang) -> String {
     graph::export(graph, format, lang)
+}
+
+/// Renders the brain view: the whole repository as a brain of particles, in one HTML page.
+///
+/// `data` is the JSON text of the engine's brain (symbols, edges and memories in columns) and
+/// `title` names the repository. The page carries its own script and styles and needs nothing
+/// else: its `Content-Security-Policy` names no source for connections, images, fonts or frames,
+/// so the browser refuses any request it could make, and every string from the repository is
+/// escaped before it is embedded.
+///
+/// # Examples
+///
+/// ```
+/// use pn_ultramemory_report::{Lang, render_brain};
+///
+/// let page = render_brain(r#"{"repo":"demo","nodes":[]}"#, "demo", Lang::En);
+/// assert!(page.contains("default-src 'none'"));
+/// assert!(page.contains("<title>demo · brain</title>"));
+/// ```
+#[must_use]
+pub fn render_brain(data: &str, title: &str, lang: Lang) -> String {
+    brain::render(data, title, lang)
 }
