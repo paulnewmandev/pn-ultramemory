@@ -11,6 +11,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ### Added
 
+- **`brain`** — the whole repository as a 3D brain in the browser: every symbol a particle, every
+  folder a region of the cortex, tests in the cerebellum, fibres for the relationships and pulses
+  running along them, memories as beacons over the code they describe. Search with `/`, open a
+  particle to read its signature, documentation, callers, callees and memories, and copy all of it
+  as context for an agent. One HTML file in the data directory, plain WebGL with no library, and a
+  Content-Security-Policy that forbids it any request.
 - **`brief`** — everything a new session needs to know about a repository in one budgeted call:
   its size, its languages, its modules with their coupling, its busiest symbols and every memory
   already recorded. A model's context ends with its session; the graph on disk does not, and this
@@ -29,8 +35,45 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
   belong in it.
 - **Two diagrams**, `tools.svg` and `install.svg`, and a wiki page for the MCP surface.
 
+### Fixed
+
+- **A method name shared with a library no longer makes a confident edge.** Resolution read only
+  the name of a call, so every `$request->validate()` in a Laravel controller became a call to the
+  repository's one `CouponService::validate`, and every `.is_empty()` on a vector a call to the one
+  `is_empty` this repository declares. Those edges filled `brief`, `impact`, `graph` and the
+  centrality ranking with symbols that are called by nobody. A reference now keeps the last word
+  of its receiver, and a call whose receiver does not point at the candidate (by its type, that is
+  its enclosing symbol or the part of its qualified name before the method, or else by its file or
+  a directory) is a `Guess`. The receiver also helps: `engine.recall()` now resolves to
+  `Engine::recall` among several `recall` methods, at `Heuristic`, instead of guessing among all of
+  them, and the same-file rule no longer links it to another type's `recall` in the caller's file. On a 541-file Laravel project, `CouponService::validate` went from 62 callers to
+  the 3 that call it.
+- **A question that does not repeat the code's words finds the code.** When no symbol matched every
+  word, `recall` searched each word alone and scored each list against its own best hit, so a word
+  found in two hundred symbols weighed as much as one found in eight, and the capsule filled with
+  whatever was shortest. It now runs one search that matches any word, where the rarer words
+  weigh more. "validate coupon discount on order" used to return eleven Eloquent accessors and not
+  the method; it now returns `CouponService::validate` first, with its signature.
+- **The best answers keep their signature.** When a capsule had to shrink, the cheapest loss per
+  token was taken first, which could reduce the best answer to its bare name while one-line
+  outlines of minor matches stayed. The three most relevant symbols now keep at least their
+  signature while anything else can still be given up.
+- **The file table lists only the files a row points at.** A symbol shown by name goes to `also`,
+  which has no file column, yet its path was still listed — on this repository, 46% of one
+  capsule's text was paths nothing referred to.
+
 ### Changed
 
+- **Schema version 4.** References record their receiver word. A database from version 3 marks
+  every file as changed, so the next `index` reads the repository once more and records the words;
+  until then references resolve exactly as before.
+- **Resolution costs more.** Checking receivers adds about 75 ms on this repository: a full index
+  takes about 430 ms instead of 360, and re-indexing after one file changes about 200 ms instead of
+  130. Re-indexing with nothing changed is unaffected (12 ms). Each receiver is checked once per
+  distinct name and word, and references without a receiver keep the old, index-only path.
+- **The README and the wiki are rewritten** around what the tool is now: a second brain shared by
+  a person and an agent, with measured numbers, the brain view, and plainer limits. The benchmark
+  figures are re-measured, and say that its questions come from the symbols' own documentation.
 - The README leads with the released binaries rather than with `cargo build`, and says plainly that
   the agent has to be restarted before its MCP servers are re-read — the usual reason someone
   reports that the tools never appeared.

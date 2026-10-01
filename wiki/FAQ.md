@@ -2,12 +2,12 @@
 
 ## Will it help *my* project?
 
-Probably, if reading files to answer questions is currently expensive for you. The saving is what
-reading whole files would have cost, so:
+If reading files to answer questions is expensive for you, probably. What it saves is what reading
+whole files would have cost:
 
 | | |
 |---|---|
-| **Most help** | Large codebases, deep call graphs, unfamiliar code, many files per question |
+| **Most help** | Large codebases, deep call graphs, unfamiliar code, questions that touch many files |
 | **Less help** | A handful of scripts, a small site, a project you already hold in your head |
 
 Do not take the published numbers as yours. Measure:
@@ -16,89 +16,98 @@ Do not take the published numbers as yours. Measure:
 pn-ultramemory bench
 ```
 
-That runs on **your** repository and prints your hit rate and your token cost against the baseline.
-It takes a minute or two.
+It runs on **your** repository and prints your hit rate and token cost against reading files.
+
+## How good is it at plain questions?
+
+Good when the question uses the code's own words, weaker when it shares none. The search is over
+words: nothing is embedded and nothing is translated. "validate coupon discount on order" finds
+`CouponService::validate` first; a question in Spanish about code written in English finds little.
+`bench` builds its questions from each symbol's own documentation, so its numbers measure finding a
+known thing, not answering any question, and it says so in its output.
 
 ## Which languages are parsed properly?
 
-Twelve go through tree-sitter, with full symbol and reference extraction:
+Twelve go through tree-sitter, with symbols, documentation and references:
 
 Rust · Python · JavaScript · TypeScript · TSX · Go · Java · C · C++ · C# · Ruby · PHP
 
-**Every other language is still indexed**, by a lexical pass that finds declarations without
-understanding them. So nothing in your repository is invisible, but for those files the graph is
-thinner: you get symbols and text search, with fewer resolved edges.
+**Every other language is still indexed** by a lexical pass that finds declarations without
+understanding them. Nothing is invisible, but for those files the graph is thinner: symbols and text
+search, fewer resolved edges.
+
+## Why did some calls disappear from `impact` after upgrading?
+
+They were wrong. A call such as `$request->validate()` used to count as a call to the only `validate`
+your code declares, because only the method's name was read. Calls are now read with their receiver,
+and one whose receiver does not point at the candidate is only a `Guess`, which `impact` leaves out
+by default. `--min-confidence guess` shows them again. See [How it works](How-it-works#the-receiver).
+
+## What is the brain for, if my agent has the tools?
+
+For you. The agent has `brief` and `recall`, which cost a few hundred tokens. A person needs to see
+the shape of the code, find their way around an unfamiliar repository, read what was decided, and
+point the agent at the right place: open a particle and *Copy context for an agent*. See
+[The brain](Brain).
 
 ## Is my code sent anywhere?
 
-No. There is no network code in the binary — not a client, not a symbol. A CI job runs the whole
-test suite inside a network namespace with no route out, so this is checked on every change rather
-than promised.
-
-No account, no telemetry, no usage reporting.
+No. There is no network code in the binary. A CI job runs the whole test suite in a network
+namespace with no route out, so this is checked on every change rather than promised. The brain page
+carries a security policy that forbids it any request. No account, no telemetry.
 
 ## Does it write in my repository?
 
-No, with one exception you ask for: `docs apply`, which inserts documentation you wrote into your
-source files. Everything else — the index, the memories, the usage counters — lives in your user
-data directory, one database per project.
+Not unless you ask. The index, the memories and the counters live in your user data directory, and
+so does the brain page. `docs apply` writes documentation you supplied into your sources; `report`
+writes its file to the current directory unless you pass `-o`.
 
-## How mature is it?
+## How is this different from embedding search over my code?
 
-New. One author, days old, no external users yet. The version is 1.0.0 because it is the first
-release, not because it has been through a long history.
+It is not a similarity search. It parses the code into symbols and real relationships, then
+**packs** an answer to fit a budget:
 
-What that means practically: the behaviour is covered by more than 1,300 tests and every gate is
-green on macOS, Linux and Windows, but it has not been used by many people on many codebases, which
-is a different kind of confidence. Treat it as something to try.
-
-## How is this different from an embedding search over my code?
-
-It is not a search. Nothing is embedded and nothing is scored by similarity to your question in
-vector space. It parses your code into symbols and real relationships, then **packs** an answer to
-fit a budget. The difference shows up in three places:
-
-- It knows what calls what, so `impact` can answer "what breaks" rather than "what looks similar".
+- It knows what calls what, so `impact` answers "what breaks" rather than "what looks similar".
 - It knows how sure it is about each edge, and says so.
-- It fits a budget exactly rather than returning the top *k* of something.
+- It fits a budget exactly instead of returning the top *k* of something.
+
+The price is that it does not understand meaning, so a question has to share words with the code.
 
 ## Why TOON and not JSON?
 
-TOON prints uniform lists as tables with the columns named once, so a capsule of forty symbols is
-about 20% cheaper than compact JSON and far cheaper than indented JSON. `-f json` is there whenever
-a program is reading.
+TOON prints uniform lists as tables with the column names written once, so a capsule of forty
+symbols costs about 20% less than compact JSON. `-f json` is there for programs.
 
 ## Can I use it without an agent?
 
-Yes. Everything works from the command line: `recall`, `outline`, `impact`, `map`, `graph`,
-`report`. The MCP server is one way in, not the only one.
-
-## What does it cost?
-
-Nothing, in every sense. Apache-2.0, no paid tier, no account, nothing to upgrade to. You may use
-it, change it, sell it and fork it.
+Yes. `recall`, `outline`, `impact`, `map`, `brain`, `graph` and `report` all work from the command
+line. The MCP server is one way in, not the only one.
 
 ## Does `install` really write to every agent?
 
-Yes, if you give it no `--agents`. That is rarely what you want:
+Only if you give it no `--agents`, which is rarely what you want:
 
 ```bash
 pn-ultramemory install --agents cursor     # just yours
 pn-ultramemory install --dry-run           # see what it would touch, change nothing
 ```
 
-It writes only its own entry, and `uninstall` removes exactly that entry — a round trip leaves the
-file byte for byte as it was, which is what sixty tests check.
-
-## What is the epistemic envelope for?
-
-So `impact` can never mislead you. It reports `exact` when the set is complete, `lower-bound` when
-there may be more, and `unknown` when it found no caller and the symbol is public. A tool that said
-"nothing depends on this" because it failed to resolve a dynamic call would be worse than useless.
+It writes only its own entry, and `uninstall` removes exactly that entry, leaving the file byte for
+byte as it was.
 
 ## Can I trust the memories it stores?
 
-Trust them as much as you trust whoever wrote them — the tool never decides a memory is true. What
-it does guarantee is narrower and more useful: a memory that repeats does not become more true, a
-memory whose code changed is marked stale, and a memory that contradicts another is reported rather
-than merged. See [Memories](Memories).
+As much as you trust whoever wrote them; the tool never decides a memory is true. What it guarantees
+is narrower and more useful: a memory that repeats does not become more true, a memory whose code
+changed is marked stale, and a memory that contradicts another is reported rather than merged. See
+[Memories](Memories).
+
+## How mature is it?
+
+New: one author and few users so far. The behaviour is covered by more than 1,300 tests and every
+gate passes on macOS, Linux and Windows, but it has not met many codebases yet, which is a different
+kind of confidence. Try it, measure it, and report what breaks.
+
+## What does it cost?
+
+Nothing. Apache-2.0, no paid tier, no account. Use it, change it, sell it, fork it.

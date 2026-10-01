@@ -5,8 +5,9 @@
 <h1 align="center">pn-ultramemory</h1>
 
 <p align="center">
-  <b>A code-aware, learning memory for coding agents.</b><br>
-  Fewer tokens, sharper recall, one small local binary.
+  <b>A second brain for your codebase, shared by you and your coding agent.</b><br>
+  It indexes the repository into a graph, answers questions in a few hundred tokens instead of whole
+  files, remembers decisions anchored to the code, and lets you fly through all of it in 3D.
 </p>
 
 <p align="center">
@@ -18,526 +19,297 @@
   <a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml"><img alt="Guards" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-  <a href="https://www.rust-lang.org"><img alt="Built with Rust" src="https://img.shields.io/badge/built%20with-Rust-000000?logo=rust&logoColor=white"></a>
-  <img alt="Rust edition 2024" src="https://img.shields.io/badge/edition-2024-orange?logo=rust&logoColor=white">
-  <img alt="unsafe code forbidden" src="https://img.shields.io/badge/unsafe-forbidden-success">
-  <img alt="1335 tests passing" src="https://img.shields.io/badge/tests-1335%20passing-success">
-</p>
-
-<p align="center">
-  <img alt="Telemetry: none" src="https://img.shields.io/badge/telemetry-none-success">
+  <img alt="Built with Rust" src="https://img.shields.io/badge/built%20with-Rust-000000?logo=rust&logoColor=white">
+  <img alt="1368 tests passing" src="https://img.shields.io/badge/tests-1368%20passing-success">
   <img alt="Network: never" src="https://img.shields.io/badge/network-never-success">
-  <img alt="Price: free forever" src="https://img.shields.io/badge/price-free%20forever-blueviolet">
+  <img alt="Telemetry: none" src="https://img.shields.io/badge/telemetry-none-success">
   <img alt="Status: new project" src="https://img.shields.io/badge/status-new%20project-orange">
-  <a href="docs/releasing.md"><img alt="SemVer 2.0.0" src="https://img.shields.io/badge/semver-2.0.0-3f4551"></a>
 </p>
-
----
-
-## The problem
-
-Your coding agent reads whole files to answer questions about your code. Most of what it reads
-is not the answer, and you pay for every token of it.
-
-**pn-ultramemory** indexes your repository into a graph of symbols and the relationships between
-them, then answers a question with a **capsule**: the code that matters, at the level of detail
-that fits, inside a token budget you set.
-
-It also remembers the decisions and lessons you tell it, **anchored to the code they describe**,
-so that when that code changes the memory says so instead of quietly becoming a lie.
-
-One static binary. It never opens a network connection. It costs nothing.
 
 <p align="center">
-  <img src="assets/diagrams/why.svg" alt="Reading the files costs 16,109 tokens and finds the right code 85% of the time; a capsule costs 413 tokens and finds it 99% of the time" width="760">
+  <img src="assets/screenshots/brain-overview.jpg" alt="This repository drawn as a brain: thousands of glowing particles, one per symbol, coloured by folder, with tests in the cerebellum and golden rings for the memories" width="860">
 </p>
 
 ---
 
-## What it saves
+## Why it exists
 
-Every figure here comes from `pn-ultramemory bench` on this repository. Nothing is projected.
+A coding agent learns your code by reading whole files. Most of what it reads is not the answer,
+you pay for every token, and everything it learned is gone when the session ends.
 
-| Question style | Budget | Finds the right code | Tokens used | Reading files instead | **Saved** |
-|---|---:|---:|---:|---:|---:|
-| From a description | 500 | **99 %** | 413 | 16,109 | **97.4 %** |
-| From a description | 1000 | **99 %** | 802 | 16,109 | **95.0 %** |
-| From a description | 2000 | **99 %** | 1,270 | 16,109 | **92.1 %** |
-| From a name | 500 | **98 %** | 424 | 16,258 | **97.4 %** |
-| From a name | 1000 | **100 %** | 718 | 16,258 | **95.6 %** |
+pn-ultramemory keeps that knowledge on disk instead:
 
-> **Where these come from, and where they do not hold.** They are measured on this tool's own
-> source: a Rust repository of about 260 files. The saving depends on the size of the project,
-> because what is saved is what reading whole files would have cost. On a small site or a handful of
-> scripts, reading them was never expensive, so there is less to save. Measure your own with
-> `pn-ultramemory bench`.
+- **A graph of the code.** Every function, method, class and type, and who calls and uses whom,
+  each relationship marked with how sure the indexer is.
+- **Answers, not files.** A question returns a *capsule*: the symbols that matter, each at the
+  level of detail that fits, inside a token budget you set.
+- **Memories that cannot silently lie.** Decisions and lessons are anchored to the code they
+  describe. When that code changes, the memory is marked stale instead of being trusted.
+- **A brain you can walk through.** The same graph and memories, drawn in 3D in your browser, so a
+  person can see the shape of the code and hand any part of it to an agent.
 
-<sub>100 sampled tasks per row, Apple M5. The baseline reads the three files a keyword search ranks
-highest, which is what an agent without an index does — and it finds the right code only 85 % of the
-time from a description and 41 % from a name, while costing forty times more. `task_success` is
-reported as `unobservable`, because whether your agent then solved the problem is not something this
-tool can measure, and it says so rather than inventing a number.</sub>
-
-### Speed
-
-| Operation | 266 files · 4,880 symbols · 22,458 edges |
-|---|---|
-| Full index, from nothing | **343 ms** |
-| Re-index with nothing changed | **13 ms** |
-| One recall | **7.2 ms** median · 8.7 ms at the 95th percentile |
-
-### It stays flat as you grow
-
-Cost is not a claim here, it is a **test**. The suite sweeps repository size and asserts that
-`recall`, `map` and `outline` cost the same at every size, each paired with a control measurement
-that must **grow** over the same sweep — so a test that stopped measuring anything fails instead of
-passing quietly.
-
----
-
-## At the terminal
-
-```console
-$ pn-ultramemory index
-indexing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 266/266
-✓ 266 files, 4880 symbols, 22458 edges  in 0.34s
-```
-
-A real progress bar: the indexer reports each file as it finishes, so the number moving is work
-actually done and not a guess at how long it will take.
-
-Results are coloured — keys in bold, figures in blue, a green tick when something succeeds. All of
-it appears **only when a person is reading**. Pipe the output and you get the same bytes you always
-did:
-
-```console
-$ pn-ultramemory recall "how are tokens estimated" -b 300 | wc -c   # zero escape sequences
-$ pn-ultramemory -f json stats | jq .index.symbols                  # still valid JSON
-```
-
-`NO_COLOR` and `TERM=dumb` turn colour off everywhere. The progress bar goes to standard error, so
-it never touches the result you are capturing. Running in a terminal also prints the mark:
-
-```
-●───◉───●  ╔═╗╔╗╔   ╦ ╦╦  ╔╦╗╦═╗╔═╗╔╦╗╔═╗╔╦╗╔═╗╦═╗╦ ╦
- ╲  │  ╱   ╠═╝║║║═══║ ║║   ║ ╠╦╝╠═╣║║║║╣ ║║║║ ║╠╦╝╚╦╝
-  ╰─●─╯    ╩  ╝╚╝   ╚═╝╩═╝ ╩ ╩╚═╩ ╩╩ ╩╚═╝╩ ╩╚═╝╩╚═ ╩
-```
-
----
-
-## Install
-
-> Asking an agent to install this for you? Give it the link to this repository and tell it to follow
-> [AGENTS.md](AGENTS.md) — it is written to be read by a model and carried out step by step.
+One static binary. It never opens a network connection, writes nothing inside your repository, and
+costs nothing.
 
 <p align="center">
-  <img src="assets/diagrams/install.svg" alt="Five install steps: get the binary, build the graph, register one agent, restart it, then check it with doctor" width="760">
+  <img src="assets/diagrams/why.svg" alt="On this repository a question costs 16,520 tokens read as files, and finds the right code 84% of the time; a capsule costs 464 tokens and finds it 100% of the time" width="760">
 </p>
 
-**Download a binary. No toolchain needed.** Every release carries macOS (Apple silicon and Intel),
-Linux and Windows, each with a `.sha256` beside it.
+---
+
+## Start in two minutes
 
 ```bash
-# macOS, Apple silicon — see the releases page for Intel, Linux and Windows
+# 1. Get the binary (macOS Apple silicon shown; Intel, Linux and Windows are on the releases page)
 curl -fsSL https://github.com/paulnewmandev/pn-ultramemory/releases/latest/download/pn-ultramemory-aarch64-apple-darwin.tar.gz | tar xz
+
+# 2. From the root of your project, build the graph
+pn-ultramemory index
+
+# 3. Connect your agent, then restart it (an MCP server is only read at startup)
+pn-ultramemory install --agents claude-code     # or cursor, codex, gemini, windsurf, zed, …
+
+# 4. Look at it
+pn-ultramemory brain
 ```
 
-Or build it, which needs a Rust toolchain:
+`pn-ultramemory doctor` checks every step and names the command that fixes anything missing.
+Asking an agent to set it up? Point it at [AGENTS.md](AGENTS.md), which is written for a model to
+carry out step by step.
 
-```bash
-git clone https://github.com/paulnewmandev/pn-ultramemory
-cd pn-ultramemory
-cargo build --release          # Rust edition 2024
-```
-
-Then, from the root of the project you want it to know:
-
-```bash
-pn-ultramemory index           # build the graph
-pn-ultramemory install --agents claude-code   # or cursor, codex, gemini, windsurf, zed, …
-                                              # without --agents it registers with every
-                                              # agent it finds; --dry-run shows what it
-                                              # would touch and changes nothing
-                                              # then restart that agent — it reads its MCP
-                                              # servers at startup and only there
-pn-ultramemory doctor          # check it all worked
-```
+> **Building from source** needs a Rust toolchain: `cargo build --release`. The `brain` view and
+> the receiver-aware resolution described below are on `main` and arrive in the next release;
+> until then, build from source to use them.
 
 ---
 
-## Every command
+## What your agent gets
 
-### Retrieve
+Nine tools over the Model Context Protocol. The whole list costs about a thousand tokens, read once
+per session.
 
-```console
-$ pn-ultramemory recall "how are tokens estimated" -b 600
-capsule:
-  query: how are tokens estimated
-  budget: 600
-  used: 525
-  omitted: 15
-files[9]{f,path}:
-  3,crates/codec/src/tokens.rs
-symbols[5]{id,f,lines,kind,name,d,text}:
-  7890647377742991523,3,149-157,method,"Features::estimate",L3,"fn estimate(self) -> f64 - Combines the counts into an estimated number of tokens."
-also[12]: MAX_CONTEXT_TOKENS,measure,symbol_cost,printed_tokens,estimate_tokens,…
-```
-
-| Command | What it answers |
-|---|---|
-| `recall <question>` | *Which code matters for this?* — packed to a budget |
-| `outline <path>` | *What is in this file?* — every symbol, complete, for a fraction of the tokens |
-| `expand <symbol>` | *Show me the actual source* — in windows of lines |
-| `impact <symbol>` | *What breaks if I change this?* — with how sure the answer is |
-| `map` | *What is this repository?* — the whole thing inside a budget |
-| `graph` | *Draw it* — Mermaid, DOT, SVG or JSON |
-
-### Remember
-
-| Command | What it does |
-|---|---|
-| `remember <kind> "<text>" --about <symbol>` | Store a decision, anchored to code |
-| `memories --stale` | What may no longer be true |
-| `reanchor <id>` · `forget <id>` | Confirm it, or drop it |
-| `feedback <signal> --memory <id>` | Tell it how a result turned out |
-| `learn status` · `learn why` · `learn reset` | Inspect or clear what it learned |
-
-Nine kinds: `decision`, `fact`, `lesson`, `dead-end`, `error-fix`, `convention`, `requirement`,
-`task`, `session`.
-
-### Report and connect
-
-| Command | What it does |
-|---|---|
-| `report --as html\|pdf\|md --lang en\|es` | A report you can send someone |
-| `docs gaps` · `docs apply` · `docs build` | Undocumented symbols, apply docs, build a reference |
-| `stats` · `bench` | Numbers, and the benchmark above |
-| `serve` · `mcp-config` | MCP over stdio, and the snippet that connects a client |
-| `install` · `uninstall` · `doctor` | Setup, exactly reversible |
-| `toon encode\|decode` · `completions` | Format conversion, shell completions |
-
----
-
-## Flags
-
-### Everywhere
-
-| Flag | Default | What it does |
+| Tool | It answers | Instead of |
 |---|---|---|
-| `-C, --repo <PATH>` | nearest `.git` parent | The repository to work on |
-| `--data-dir <PATH>` | your user data directory | Where the index lives — never inside your repository |
-| `-f, --format <toon\|json\|text>` | `toon` | `toon` is compact, `json` is for programs, `text` is for people |
-| `--delimiter <comma\|tab\|pipe>` | `comma` | Column separator of TOON tables; tab is marginally cheaper |
-| `-q, --quiet` | off | No progress, no notes — only the result |
-| `--no-metrics` | off | Record no usage counters at all |
-| `-h, --help` · `-V, --version` | | |
+| **`brief`** | What is this project: size, modules, busiest symbols, every decision on record | Reading a README and guessing |
+| `recall` | Which code matters for this question, inside a budget | Reading several files |
+| `outline` | Everything one file declares, for a fraction of its tokens | Reading the whole file |
+| `expand` | The exact source of one symbol | Reading around it |
+| `impact` | What depends on this, and how sure that answer is | Grepping for the name |
+| `map` | Which files exist and what is in them | Listing the tree |
+| `remember` | Keep this decision, anchored to the code | A comment nobody reads |
+| `memories` | What do we already know, and what went stale | Asking again |
+| `feedback` | That answer helped, or it did not | Nothing |
 
-Environment: `PN_ULTRAMEMORY_REPO`, `PN_ULTRAMEMORY_HOME`, `PN_ULTRAMEMORY_NO_METRICS`,
-`PN_ULTRAMEMORY_NO_HOOKS`, `PN_ULTRAMEMORY_SESSION`, `NO_COLOR`.
+<p align="center">
+  <img src="assets/diagrams/session.svg" alt="A new session calls brief to learn the project, recall and outline to work, remember to keep a decision and feedback to say what helped; the graph on disk outlives the session" width="760">
+</p>
 
-### Per command
+A session starts with `brief`, asks `recall` with a budget, writes `remember` when something is
+decided, and sends `feedback` so the next session ranks better. The graph and the memories survive
+the session; that is the whole point.
 
-| Command | Flags |
+The agent also gets two small hooks: one line at session start saying the repository is indexed,
+and, at most once per session, a nudge to `recall` when it is about to search the whole repository
+or read a very large file. A hook never blocks anything. `PN_ULTRAMEMORY_NO_HOOKS=1` turns them off.
+
+---
+
+## The brain
+
+```bash
+pn-ultramemory brain              # --lang es for Spanish
+```
+
+<p align="center">
+  <img src="assets/screenshots/brain-symbol.jpg" alt="One symbol opened in the brain view: its fibres highlighted, pulses travelling along them, and a side panel with its signature, documentation, a memory anchored to it, two callers and thirteen callees" width="860">
+</p>
+
+- **The shape means something.** Each folder is a region of the cortex, in mirrored pairs over
+  the two hemispheres, the largest first. Tests live in the cerebellum. Fibres run underneath like
+  white matter and fade from where they leave to where they arrive, so direction shows without an
+  arrowhead. Pulses travel from caller to callee.
+- **Search, then read.** `/` searches symbols, paths, documentation and memories. Opening a
+  particle shows its signature, its documentation, what calls it, what it calls and every memory
+  anchored to it; each of those links to the next particle, the way notes link in a notebook.
+- **Hand it to an agent.** *Copy context for an agent* puts the symbol, its location, its callers,
+  its callees and its memories on the clipboard, with the commands to go further: a few hundred
+  tokens that orient a model faster than any file.
+- **Sealed.** One HTML file in the data directory, plain WebGL with no library. Its
+  Content-Security-Policy names no source for connections, images, fonts or frames, so the browser
+  itself refuses any request the page could make.
+
+It opens in your browser when you run it at a terminal; `--no-open` only writes it, `-o` puts it
+elsewhere. Very large repositories keep their 6,000 most depended-on symbols (`--max-nodes`), which
+draws smoothly on a laptop. This repository, 4,890 symbols, is drawn in a quarter of a second.
+
+---
+
+## What it saves, measured
+
+`pn-ultramemory bench` samples 100 documented symbols, turns each into a question, and compares the
+capsule with what an agent without an index does: read the three files a keyword search ranks
+highest. On this repository (274 files, 5,232 symbols):
+
+| Question built from | Budget | Finds the code | Tokens | Reading files instead | Saved |
+|---|---:|---:|---:|---:|---:|
+| its documentation | 500 | **100%** | 464 | 16,520 · finds it 84% | **97.2%** |
+| its documentation | 1,000 | **100%** | 645 | 16,520 | **96.1%** |
+| its documentation | 2,000 | **100%** | 1,366 | 16,520 | **91.7%** |
+| its name | 500 | **100%** | 446 | 15,438 · finds it 62% | **97.1%** |
+| its name | 1,000 | **99%** | 672 | 15,438 | **95.7%** |
+
+On a 541-file Laravel application the same benchmark gives 100% from documentation at 95% fewer
+tokens, and 85–93% from names against 66% for reading files.
+
+**Read these numbers for what they are.** The questions come from the symbols' own documentation,
+so this measures finding a known thing, not solving a task, and the tool says so in its output.
+Plain questions do well when they use the code's own words ("validate coupon discount on order"
+finds `CouponService::validate` first); they do worse when they share none, and nothing is
+translated, so a question in Spanish about code written in English finds little. Measure your own
+repository with `pn-ultramemory bench`: the saving is what reading whole files would have cost, so a
+small project saves less.
+
+| Speed, this repository, Apple silicon laptop | |
 |---|---|
-| `index` | `--force` re-parse everything · `--threads <N>` |
-| `recall` | `-b, --budget <TOKENS>` · `--explain` why each symbol is here · `--path <PREFIX>` |
-| `outline` | `-b, --budget <TOKENS>` |
-| `expand` | `--from <LINE>` · `--to <LINE>` |
-| `impact` | `--depth <N>` up to 5 · `--min-confidence <guess\|heuristic\|resolved\|exact>` · `--limit <N>` |
-| `graph` | `--modules` · `--module-depth <N>` · `--depth <N>` · `--max-nodes <N>` · `--min-confidence` · `--as <mermaid\|dot\|svg\|json>` · `--lang <en\|es>` · `-o, --out <FILE>` |
-| `map` | `-b, --budget <TOKENS>` · `--path <PREFIX>` |
-| `remember` | `--about <SYMBOL>` repeatable · `--by <user\|agent\|tool>` |
-| `memories` | `--kind <KIND>` · `--stale` · `--limit <N>` |
-| `feedback` | `--memory <ID>` · signal: `useful`, `used`, `ignored`, `dead-end`, `corrected` |
-| `report` | `--lang <en\|es>` · `--as <html\|pdf\|md>` · `-o, --out <FILE>` · `--module-depth <N>` · `--title <TEXT>` |
-| `bench` | `--tasks <N>` · `--seed <N>` · `-b, --budget <TOKENS>` repeatable · `--baseline-files <N>` |
-| `docs gaps` | `--path <PREFIX>` · `--limit <N>` · `--context` |
-| `docs apply` | `<FILE>` or `-` for stdin · `--dry-run` |
-| `docs build` | `--path <PREFIX>` · `--title <TEXT>` · `-o, --out <FILE>` |
-| `install` | `--agents <ID>` repeatable · `--scope <user\|project>` · `--dry-run` · `--force` · `--name <NAME>` · `--command <PATH>` · `--pin-repo` |
+| Full index from nothing | **~430 ms** |
+| Re-index after changing one file | **~200 ms** |
+| Re-index with nothing changed | **12 ms** |
+| One `recall` | **5 ms** median, 6.5 ms at the 95th percentile |
 
 ---
 
 ## How it works
 
 <p align="center">
-  <img src="assets/diagrams/how.svg" alt="Your code is indexed into a graph; a question finds seeds, walks the graph, ranks and packs candidates to a budget, and the capsule is measured before it is returned" width="760">
+  <img src="assets/diagrams/how.svg" alt="The repository is indexed into a graph; a question finds seeds, the graph is walked, candidates are ranked and packed to a budget, and the capsule is measured before it is returned" width="760">
 </p>
 
-### Five resolutions per symbol
+**A graph that says how sure it is.** Twelve languages are parsed with tree-sitter (Rust, Python,
+JavaScript, TypeScript, TSX, Go, Java, C, C++, C#, Ruby, PHP); every other language is indexed by a
+lexical pass, so nothing is invisible. Every edge carries a confidence: `Exact`, `Resolved`,
+`Heuristic` or `Guess`.
+
+**Calls are read with their receiver.** A method name alone is weak evidence: `$request->validate()`
+in a Laravel controller is not a call to your one `CouponService::validate`, and `items.is_empty()`
+is not a call to your one `is_empty`. A call made on a receiver that does not point at the candidate,
+by its type, its file or its directory, is only a `Guess`, which keeps it out of `impact`, `brief`
+and the brain by default. The receiver also helps: `engine.recall()` resolves to `Engine::recall`
+among several `recall` methods.
+
+**An answer is a packing problem.** Every symbol can be shown at five levels: name, signature,
+summary, outline of what it calls, or full source. `recall` picks one level per symbol to give the
+most value inside the budget (a multiple-choice knapsack, checked against an exact solver), then
+measures the printed capsule and trims it until it fits. The three most relevant symbols keep at
+least their signature while anything else can still be given up, and a tight budget lowers detail
+instead of dropping answers.
 
 <p align="center">
-  <img src="assets/diagrams/levels.svg" alt="Each symbol can be shown at one of five levels, from its name alone to its whole source, each costing more than the one below" width="760">
+  <img src="assets/diagrams/levels.svg" alt="Five levels of detail for one symbol, from its name alone to its whole source, each costing more than the one below" width="760">
 </p>
 
-`recall` solves a **multi-resolution knapsack**: one level per symbol, maximising usefulness inside
-the budget. Checked against an exact dynamic-programming solver over 3,000 random instances.
+**`impact` never says "safe".** It answers `exact` (the set is complete), `lower-bound` (at least
+these) or `unknown` (no caller found and the symbol is public, which does not mean nobody uses it).
 
-When the budget is tight it **degrades in steps** instead of breaking: full source, then signatures,
-then a plain list of names. At 150 tokens it still returns five useful names, which is what makes it
-work for a small model.
-
-### An outline never drops a symbol
-
-```console
-$ pn-ultramemory outline crates/codec/src/tokens.rs
-file:
-  path: crates/codec/src/tokens.rs
-  lines: 274
-  symbols: 21
-  detail: documented
-  tokens: 1061
-  whole_file_tokens: 2669
-  saved: 0.602
-```
-
-Every symbol the file declares, in order, nested the way it nests. When a budget is too small the
-**detail** falls — documentation, then signatures, down to bare names — and the symbol list stays
-whole, because a skeleton missing three functions reads as *they are not there*.
-
-It also says when the file is short enough that **reading it outright is cheaper**, rather than
-charging you tokens for a worse answer than `cat`.
-
-### The epistemic envelope
-
-`impact` never says "safe". It says one of three things:
-
-| | |
-|---|---|
-| **`exact`** | The set is complete |
-| **`lower-bound`** | At least these; there may be more |
-| **`unknown`** | No caller found and the symbol is public — which does **not** mean nobody uses it |
-
-Every edge carries how sure the indexer was: `Guess`, `Heuristic`, `Resolved`, `Exact`.
+**Memories follow one rule.** *Corroboration raises how likely a memory is to be retrieved, never
+how likely it is to be true.* Repetitions within fifteen minutes count once, text captured from a
+tool never corroborates, and no memory gathers more than eight. Contradictions are checked before
+similarity, because negating a sentence changes almost none of its words, and they are reported,
+never merged. English and Spanish are both read properly.
 
 <p align="center">
   <img src="assets/diagrams/memory.svg" alt="A memory is stored with hashes of the symbol it describes; when that symbol changes the memory is marked stale rather than deleted or trusted" width="760">
 </p>
 
-### The rule that governs memory
+---
 
-> **Corroboration raises how likely a memory is to be RETRIEVED. It never raises how likely it is
-> to be TRUE.**
+## Commands
 
-Without it, an agent repeating its own mistake in a loop would manufacture a fact, and the tool
-would serve that fact with confidence to every later session. So: two repetitions **within 15
-minutes count as one**, whoever sent them; text captured from a tool (`--by tool`) **never**
-corroborates; and no memory gathers more than **8** corroborations.
+| Command | What it does |
+|---|---|
+| `index` | Build or refresh the graph. Only files whose content changed are read again |
+| `brief` · `recall` · `outline` · `expand` · `impact` · `map` | The six ways of reading, as above |
+| `brain` | The repository as a 3D brain in the browser |
+| `graph` | Export the graph as Mermaid, DOT, SVG or JSON |
+| `remember` · `memories` · `reanchor` · `forget` | Write, list, confirm or drop memories |
+| `feedback` · `learn status\|why\|reset` | Tell it what helped, and inspect what it learned |
+| `report` | An HTML, PDF or Markdown report, in English or Spanish |
+| `docs gaps\|apply\|build` | Find undocumented code, apply documentation, build a reference |
+| `stats` · `bench` | Numbers about the index, and the benchmark above on your repository |
+| `install` · `uninstall` · `doctor` · `serve` · `mcp-config` | Connect agents, exactly reversibly, and check the setup |
+| `toon encode\|decode` · `completions` | Format conversion and shell completions |
 
-### Contradictions are checked before similarity
+Output is TOON by default, a compact table format that costs about 20% fewer tokens than JSON;
+`-f json` is for programs and `-f text` for people. Every flag is in the
+[wiki](https://github.com/paulnewmandev/pn-ultramemory/wiki/Commands) and in `--help`.
 
-A real case from this repository shows why:
-
-| Pair | Similarity | Reality |
-|---|---:|---|
-| "calibrated against a real tokenizer, **not** guessed" vs "**not** calibrated against a real tokenizer" | **0.838** | They contradict |
-| "never unwrap in a request path, return an error" vs "never unwrap in a request path; return an error instead" | **0.844** | They agree |
-
-**The contradiction scores lower than the agreement.** No text similarity measure can tell them
-apart, because negating a sentence changes almost none of its words. Without the structural check, a
-memory could be reinforced by its own opposite.
+`install` works with Claude Code, Codex CLI, Cursor, Gemini CLI, Windsurf, Zed, Visual Studio Code,
+opencode, Kiro, Trae, Cline, Crush and Amp. Name yours with `--agents`; without it, every agent found
+is configured. It writes only its own entry, `--dry-run` shows the change first, and `uninstall`
+leaves the file byte for byte as it was.
 
 ---
 
-## The graph
+## What stays where
 
-```bash
-pn-ultramemory graph --modules --as svg -o graph.svg
-```
-
-No other code graph is drawn this way, and that is deliberate.
-
-- **An edge is a filled shape, not a line.** Two cubics share their control points, so the fibre is
-  wide where it leaves the caller and comes to a point where it arrives. **The taper carries the
-  direction**, which is why there is not one arrowhead in the picture. A hundred arrowheads are
-  noise; a hundred tapers are a texture.
-- **Fibres are bundled at both ends.** The second is the one that matters: a code graph is not a
-  tree calling outwards, it is a few symbols that everything calls *into*. Bundling by target is
-  what makes fibres converge on a soma the way processes do.
-- **Every fibre stops short of the soma it points at.** That gap is the synaptic cleft, and the
-  swelling on its near side is the terminal.
-- **A fibre takes the colour of the module it leaves**, so a connection can be traced back by colour
-  alone.
-- **The glow is three flat discs**, not a blur filter: a filter is the slowest thing in a drawing
-  this size, and three steps of falling opacity already read as light.
-
-Pure SVG and CSS. No JavaScript, no external font, no request. Light and dark follow the viewer, the
-palette is colourblind-safe (Okabe–Ito), and the same input always produces the same bytes.
-
----
-
-## It survives a change of session
-
-<p align="center">
-  <img src="assets/diagrams/session.svg" alt="A session with no memory calls brief to learn the project, recall and outline to work, remember to keep a decision, and feedback to say what helped; the graph on disk survives the session" width="760">
-</p>
-
-A model's memory ends with its window. Close the tab, switch tools, hit a context limit, and
-everything it learned about your codebase is gone — including the hour you spent explaining it. The
-next session rediscovers it by reading files, which is the expensive thing this exists to avoid.
-
-The graph on disk does not end. **`brief` is how a session picks it back up**: the repository's
-shape, its modules, its busiest symbols and every decision already recorded, in one budgeted call.
-
-### Nine tools
-
-<p align="center">
-  <img src="assets/diagrams/tools.svg" alt="Nine tools in three groups: four for reading the code, two for surveying it, three for writing to the memory" width="760">
-</p>
-
-| Tool | Ask it | Instead of |
-|---|---|---|
-| **`brief`** | What is this project | Reading a README and guessing |
-| `recall` | Which code matters for this question | Reading several files |
-| `outline` | What is in this file | Reading the whole file |
-| `expand` | The exact source of one symbol | Reading around it |
-| `impact` | What breaks if I change this | Grepping for the name |
-| `map` | Which files exist and what is in them | Listing the tree |
-| `remember` | Keep this decision, anchored to the code | A comment nobody reads |
-| `memories` | What do we already know; what went stale | Asking again |
-| `feedback` | That answer helped, or did not | Nothing — this had no equivalent |
-
-`feedback` is the one that closes the loop. Until it existed, the learning subsystem could only be
-fed from the command line, while the thing actually using `recall` was the agent — so in practice
-it never learned anything.
-
-The whole list costs **3,995 bytes** of context, read once per session — measured on the wire,
-not re-serialised. The ceiling is 4,200 and it is a test: a tool that cannot pay for its own
-description every session does not belong in the list.
-
-## Works with the agent you already use
-
-`pn-ultramemory install` registers itself everywhere it finds an agent, writing **only its own
-entry** and leaving the rest of the file byte for byte as it was.
-
-| | | | |
-|---|---|---|---|
-| Claude Code | Codex CLI | Cursor | Gemini CLI |
-| Windsurf | Zed | Visual Studio Code | opencode |
-| **Kiro** | **Trae** | Cline | Crush |
-| Amp | | | |
-
-<sub>`uninstall` removes exactly what `install` wrote — a round trip leaves the file identical, which
-is what the installer's 60 tests check. Trae's path is marked *unverified*: it is offered with
-`--agents trae` and never written to by default.</sub>
-
-Nine tools are offered over MCP, described above.
-
----
-
-## Architecture
-
-Hexagonal: the core knows nothing about SQLite, tree-sitter or the file system.
-
-```
-          ┌──────────┐   ┌──────────┐   ┌──────────┐
- entry    │   cli    │   │   mcp    │   │  report  │
-          └────┬─────┘   └────┬─────┘   └────┬─────┘
-               └──────────────┼──────────────┘
-                         ┌────▼─────┐
- use cases               │  engine  │   index · recall · outline · remember
-                         └────┬─────┘   impact · graph · map · docs · bench
-                              │
-                         ┌────▼─────┐
- contracts               │   core   │   Storage · Extractor · SourceTree · Clock
-                         └────┬─────┘   no I/O, no internal dependencies
-               ┌──────────────┼──────────────┐
-          ┌────▼─────┐   ┌────▼─────┐   ┌────▼─────┐
- adapters │  store   │   │  index   │   │  codec   │
-          │ (SQLite) │   │(tree-sit)│   │  (TOON)  │
-          └──────────┘   └──────────┘   └──────────┘
-```
-
-| Crate | Lines | What it is |
-|---|---:|---|
-| `core` | 2,319 | The contracts. No I/O, no dependency on any other crate here |
-| `codec` | 1,743 | Token estimation and the multi-resolution packer |
-| `toon` | 5,435 | TOON 4.1 — passes all **538** official conformance fixtures |
-| `index` | 13,012 | tree-sitter for 12 languages, plus a fallback for every other |
-| `store` | 10,802 | SQLite with WAL and FTS5 |
-| `engine` | 18,793 | Every use case |
-| `mcp` | 5,679 | Model Context Protocol over stdio, five revisions |
-| `report` | 12,421 | HTML, PDF and Markdown — **zero dependencies** |
-| `cli` | 8,034 | The command line, hooks, colour and the installer |
-| `xtask` | 3,850 | The quality guards |
-| | **83,035** | **1,335 tests** |
-
-Parsed with tree-sitter: **Rust, Python, JavaScript, TypeScript, TSX, Go, Java, C, C++, C#, Ruby,
-PHP**. Every other language is still indexed by a lexical fallback, so nothing in your repository is
-invisible.
+| | |
+|---|---|
+| Your code | Read, never sent anywhere. No network code is linked into the binary, and CI runs the whole test suite in a network namespace with no route out |
+| The index, memories and counters | Your user data directory, one database per project |
+| Your repository | Untouched unless you ask: `docs apply` writes the documentation you give it, and `report` writes to the current directory unless you pass `-o` |
+| The brain page | In the data directory; its security policy forbids it any request |
 
 ---
 
 ## What it will not do
 
-An honest tool says what it cannot do.
-
-- **It does not understand meaning.** Every text comparison is over words. A paraphrase sharing no
-  words is not recognised as a duplicate.
-- **It reads English and Spanish.** A memory in another language is stored and retrieved correctly,
-  but is rarely recognised as a duplicate of another in that language.
-- **It cannot tell a true statement from a false one.** Stale means *the code changed*, not *the
-  memory is now wrong*. A person decides that.
-- **Contradiction detection has deliberately low recall.** It catches structural opposition. It will
-  miss one that needs knowledge of your domain.
-- **`task_success` is not measured.** Whether your agent solved the problem is outside what this
-  tool can observe.
+- **It does not understand meaning.** Every comparison is over words: a paraphrase that shares no
+  words with the code or with a memory is not recognised.
+- **It does not translate.** A question in one language about code written in another finds little.
+- **It cannot tell true from false.** *Stale* means the code changed, not that the memory became
+  wrong; a person decides that with `reanchor` or `forget`.
+- **It does not know whether your agent succeeded.** `bench` reports task success as unobservable
+  rather than inventing a number.
+- **It is new.** One author, few users so far. Treat it as something to try, measure it on your own
+  code, and report what breaks.
 
 ---
 
-## Quality
+## For contributors
 
-Nothing merges unless all of this is green.
+```
+           cli      mcp      report          entry points: terminal, agents, files
+              \      |      /
+                  engine                     every use case
+                    |
+                   core                      contracts only: no I/O
+              /     |      \
+          store   index   codec              SQLite · tree-sitter · token packing
+```
 
-| | |
-|---|---|
-| **1,335 tests** | unit, integration, property, conformance and cost-class |
-| `cargo clippy --all-targets -- -D warnings` | zero findings |
-| `cargo doc -D warnings` | zero findings |
-| `cargo deny check` | advisories, bans, licences, sources |
-| **Permissive licences only** | an allowed licence nothing uses any more **fails** the check |
-| `#![forbid(unsafe_code)]` | in every crate |
-
-Four ratchets guard what tests cannot. Each has a baseline that **may only shrink**, and a baseline
-entry that stops matching anything **fails the build**, so a guard cannot be quietly disabled:
-
-| Ratchet | What it holds |
-|---|---|
-| `headers` | Every file carries its licence header and module documentation |
-| `refusal` | Every error message names a way forward |
-| `panics` | Library code does not panic; indexing and casts are checked |
-| `docs` | A public item's first sentence must add something to its name |
-
----
-
-## Documentation
+Hexagonal: the core knows nothing about SQLite, tree-sitter or the file system. Nothing merges
+unless formatting, `clippy -D warnings`, documentation, 1,368 tests and `cargo deny` pass on macOS,
+Linux and Windows, plus four ratchets that may only shrink: licence headers, error messages that
+name a way forward, no panics in library code, and documentation that says more than the item's
+name. See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING-WORKFLOW.md](CONTRIBUTING-WORKFLOW.md)
+and [AI_POLICY.md](AI_POLICY.md).
 
 | | |
 |---|---|
+| [Wiki](https://github.com/paulnewmandev/pn-ultramemory/wiki) | Install, first hour, every command, the brain, MCP tools, FAQ, troubleshooting |
 | [docs/architecture.md](docs/architecture.md) | The layers and why they are separate |
-| [docs/memory.md](docs/memory.md) | What is stored, how duplicates and contradictions are found |
-| [docs/formats.md](docs/formats.md) | TOON, capsules, and every output shape |
+| [docs/memory.md](docs/memory.md) | What is stored, and how duplicates and contradictions are found |
+| [docs/formats.md](docs/formats.md) | TOON, capsules and every output shape |
 | [docs/benchmark.md](docs/benchmark.md) | How the numbers above are produced |
-| [docs/quality.md](docs/quality.md) | Every guard, and what each does **not** prove |
-| [docs/glossary.md](docs/glossary.md) | The words this project uses precisely |
-
-**To use it:** the [wiki](https://github.com/paulnewmandev/pn-ultramemory/wiki) — install, your
-first hour, every command, FAQ and troubleshooting.
-**To have an agent install it:** hand it [AGENTS.md](AGENTS.md).
-**To contribute:** [CONTRIBUTING-WORKFLOW.md](CONTRIBUTING-WORKFLOW.md).
+| [docs/quality.md](docs/quality.md) | Every guard, and what each does not prove |
+| [CHANGELOG.md](CHANGELOG.md) | What changed, release by release |
 
 ---
 
-## Licence and contributing
-
-Apache-2.0. Use it, change it, sell it, fork it — see [LICENSE](LICENSE) and
-[TRADEMARKS.md](TRADEMARKS.md).
-
-[CONTRIBUTING.md](CONTRIBUTING.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ·
-[SECURITY.md](SECURITY.md) · [SUPPORT.md](SUPPORT.md) · [GOVERNANCE.md](GOVERNANCE.md)
+Apache-2.0: use it, change it, sell it, fork it. See [LICENSE](LICENSE) and
+[TRADEMARKS.md](TRADEMARKS.md). [Code of conduct](CODE_OF_CONDUCT.md) ·
+[Security](SECURITY.md) · [Support](SUPPORT.md) · [Governance](GOVERNANCE.md)
 
 <p align="center"><sub>
-Built by <a href="https://github.com/paulnewmandev">Paul Newman</a>. No telemetry. No account.
-No network. Free, and staying that way.
+Built by <a href="https://github.com/paulnewmandev">Paul Newman</a>. No telemetry, no account, no
+network. Free, and staying that way.
 </sub></p>

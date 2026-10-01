@@ -2,17 +2,18 @@
 
 **[Home](Home)**
 
-**Getting started**
+**Start**
 * [Install](Install)
 * [Your first hour](First-hour)
 
-**Reference**
+**Use**
 * [Commands](Commands)
+* [The brain](Brain)
 * [The MCP tools](MCP-tools)
-* [How it works](How-it-works)
 * [Memories](Memories)
 
-**Help**
+**Understand**
+* [How it works](How-it-works)
 * [FAQ](FAQ)
 * [Troubleshooting](Troubleshooting)
 

@@ -1,50 +1,11 @@
 # The MCP tools
 
 Nine tools reach your coding agent over the Model Context Protocol. This page says what each one
-answers, when to reach for it, and what it costs.
+answers, when to reach for it, and what it takes.
 
----
+![Nine tools in three groups: four read the code, two survey it, three write to the memory](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/tools.svg)
 
-![Nine tools in three groups: four for reading the code, two for surveying it, three for writing to the memory](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/tools.svg)
-
-## Why there is a `brief` at all
-
-A model's memory ends with its window. Close the tab, switch tools, hit a context limit, and
-everything it learned about your codebase is gone — including the hour you spent explaining it.
-
-The graph on disk does not end, and neither do the memories anchored into it. `brief` is how a new
-session picks both back up in one call.
-
-```
-brief:
-  repo: your-project
-  files: 268
-  symbols: 4924
-  edges: 22580
-  languages: rust 248, sql 4, cpp 1, typescript 1
-  memories: 2
-modules[11]{name,files,symbols,in,out}:
-  crates/engine,57,1109,561,614
-  crates/index,51,893,9,354
-  ...
-central[10]{name,kind,path,line,callers}:
-  Result,type,crates/store/src/error.rs,17,473
-  ...
-known[2]{id,kind,stale,text}:
-  1,decision,false,"Money is stored as integer minor units, never floating point"
-next[4]: recall "<question>" -b 800, outline <path>, impact <symbol>, memories --stale
-```
-
-It is budgeted like everything else. Sections are printed in the order a reader needs them —
-structure, then the busiest symbols, then what is already decided — and **given up in a different
-order**: the busiest symbols go first, because reading the code finds them again, and what someone
-already decided goes last, because nothing else can recover it.
-
----
-
-![A session with no memory calls brief to learn the project, recall and outline to work, remember to keep a decision, and feedback to say what helped](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/session.svg)
-
-## All nine
+## The nine
 
 | Tool | Ask it | Instead of | Writes |
 |---|---|---|---|
@@ -58,17 +19,43 @@ already decided goes last, because nothing else can recover it.
 | `memories` | What do we already know; what went stale | Asking again | |
 | `feedback` | That answer helped, or did not | Nothing | yes |
 
+The whole list is **3,995 bytes** on the wire, about a thousand tokens, read once per session. A
+test fails the build if it grows past 4,200: a tool that cannot pay for its own description every
+session does not belong in the list.
+
+## A session that works
+
+![A session with no memory calls brief to learn the project, recall and outline to work, remember to keep a decision, and feedback to say what helped](https://raw.githubusercontent.com/paulnewmandev/pn-ultramemory/main/assets/diagrams/session.svg)
+
+1. **`brief`** once at the start, when the project is not already known.
+2. **`recall`** with a budget for each question; 800 is a good default. Use the code's own words.
+3. **`outline`** before changing a file you have not read.
+4. **`impact`** before changing anything other code calls.
+5. **`expand`** only when the exact lines are needed.
+6. **`remember`** when something is decided, anchored with `about`.
+7. **`feedback`** when a result helped or misled.
+
+Steps 6 and 7 are what make the next session better than this one. Without them every session
+starts as ignorant as this one did.
+
+## Arguments
+
 ### `brief`
 
 | Argument | |
 |---|---|
-| `budget` | Tokens. Default 1200 |
+| `budget` | Tokens. Default 1,200 |
+
+The shape of the repository, its modules with their coupling, its most-called symbols and every
+memory on record, with the next commands to run. Sections are printed in the order a reader needs
+them and given up in a different one: the busiest symbols go first under pressure, because reading
+the code finds them again, and recorded decisions go last, because nothing else can recover them.
 
 ### `recall`
 
 | Argument | |
 |---|---|
-| `q` | **Required.** A question, a symbol or a path |
+| `q` | **Required.** A question, a symbol name or a path |
 | `budget` | Tokens |
 | `explain` | Add why each symbol is in the answer |
 
@@ -83,32 +70,31 @@ already decided goes last, because nothing else can recover it.
 
 | Argument | |
 |---|---|
-| `id` | **Required.** A node id from an earlier result |
-| `from` · `to` | The window, counted from the symbol's first line |
+| `id` | **Required.** A symbol id from an earlier result, or a name |
+| `from` · `to` | The window of lines |
 
 ### `impact`
 
 | Argument | |
 |---|---|
-| `symbol` | **Required.** A qualified symbol name |
-| `depth` | Hops of callers to follow |
+| `symbol` | **Required.** A symbol name |
+| `depth` | Steps of callers to follow |
 
-Read the `epistemic` field before the list: `exact`, `lower-bound` or `unknown`. It never says
-"safe".
+Read `epistemic` before the list: `exact`, `lower-bound` or `unknown`. It never says "safe".
 
 ### `map`
 
 | Argument | |
 |---|---|
 | `budget` | Tokens |
-| `path` | Only files whose path starts with this |
+| `path` | Only files under this prefix |
 
 ### `remember`
 
 | Argument | |
 |---|---|
-| `kind` | **Required.** One of the nine kinds |
-| `text` | **Required.** The memory itself |
+| `kind` | **Required.** `decision`, `fact`, `lesson`, `dead-end`, `error-fix`, `convention`, `requirement`, `task` or `session` |
+| `text` | **Required.** The memory itself, written as a statement about the code |
 | `about` | Symbols it concerns |
 
 ### `memories`
@@ -124,49 +110,34 @@ Read the `epistemic` field before the list: `exact`, `lower-bound` or `unknown`.
 | Argument | |
 |---|---|
 | `signal` | **Required.** `used`, `useful`, `ignored`, `dead_end` or `corrected` |
-| `symbol` **or** `memory` | **One of the two.** What the feedback is about |
+| `symbol` **or** `memory` | **One of the two.** What it is about |
 
-This is the one that closes the loop. Until it existed the learning subsystem could only be fed from
-the command line, while the thing actually calling `recall` was the agent — so in practice nothing
-was ever learned. It returns the updated utility, so you can watch the multiplier move.
+It returns the updated utility, so the effect is visible. This is the only thing that feeds the
+learning: without it, ranking never improves from use.
 
----
+## The hooks
 
-## What the list costs
+`install` also registers two hooks with agents that support them. Each answers with one line of
+context or with nothing, never blocks a tool call, and always exits successfully:
 
-**3,995 bytes**, read once per session — roughly a thousand tokens, or two `recall` calls. That
-is the array as it goes out on the wire, not a re-serialisation of it, which is a different and
-smaller number.
+| Event | What the agent is told |
+|---|---|
+| Session start | The repository is indexed (or how to index it), how large the index is, and that `brief` orients a new session |
+| Before a tool call | When it is about to search the whole repository or read a very large file, at most once per session: a `recall` would cost fewer tokens |
 
-That number is a test, not a note. A tool that cannot pay for its own description every session does
-not belong in the list, and the ceiling in `crates/mcp/tests/stateless.rs` fails the build when the
-payload grows past it. Raising it is a decision someone has to make deliberately.
-
----
-
-## A session that works well
-
-1. **`brief`** once, at the start, if you do not know the project.
-2. **`recall`** with a budget for each question. `-b 800` is a good default.
-3. **`outline`** before changing a file you have not read.
-4. **`impact`** before changing anything other code calls.
-5. **`expand`** only when you need the exact lines.
-6. **`remember`** when a decision is made, anchored with `about`.
-7. **`feedback`** when something helped or did not.
-
-Steps 6 and 7 are what make the next session better than this one. Skipping them still works; it
-just means every session starts as ignorant as this one did.
-
----
+`PN_ULTRAMEMORY_NO_HOOKS=1` turns them off.
 
 ## What no tool does
 
-There is no `forget` and no `reanchor` over MCP, and that is deliberate. A memory going stale means
-*the code changed*, not *the memory is wrong* — deciding which is a person's call. Both live on the
-command line, where a person is already standing:
+There is no `forget` and no `reanchor` over MCP, deliberately. A stale memory means *the code
+changed*, not *the memory is wrong*, and deciding which is a person's call. Both live on the command
+line:
 
 ```bash
 pn-ultramemory memories --stale
 pn-ultramemory reanchor <id>     # you checked: still true
 pn-ultramemory forget <id>       # no longer true
 ```
+
+The [brain](Brain) is for people too: an agent has `recall` and `brief`, which cost a few hundred
+tokens; a 3D scene would cost it nothing useful.

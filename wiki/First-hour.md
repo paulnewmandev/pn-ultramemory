@@ -1,33 +1,48 @@
 # Your first hour
 
-What to actually do once it is installed, in the order that pays off.
+What to do once it is installed, in the order that pays off. Every step runs on your own code, so
+by the end you know whether it helps *you*, not whether it helps a benchmark.
 
-## 1. Index, and look at what it found
+## 1. Index, and see what it found
 
 ```bash
 pn-ultramemory index
-pn-ultramemory stats
+pn-ultramemory brief
 ```
 
-If the symbol count looks far too low, a language of yours is probably going through the lexical
-fallback rather than a full parser. That still works, but the graph is thinner. See
-[FAQ](FAQ#which-languages-are-parsed-properly).
+`brief` is what an agent reads at the start of a session: the size of the repository, its
+languages, its modules with how much they depend on each other, its most-called symbols and every
+memory on record. If the symbol count looks far too low, one of your languages is probably going
+through the lexical fallback rather than a full parser; see [FAQ](FAQ#which-languages-are-parsed-properly).
 
-## 2. Ask it something you already know the answer to
+Check the busiest symbols in `central`. They should be things your code really leans on. If you
+see a method name that the standard library or a framework also uses, the receiver of those calls
+was not recognised; tell us, with the language.
 
-This is the step to not skip. Ask about code you can verify:
+## 2. Look at it
+
+```bash
+pn-ultramemory brain
+```
+
+Your repository as a brain: each folder a region, tests in the cerebellum. Press `/`, type the name
+of something you know, open it, and follow what calls it and what it calls. Five minutes here tells
+you more about the shape of an unfamiliar codebase than an hour of reading. See [The brain](Brain).
+
+## 3. Ask something you already know the answer to
+
+Do not skip this one:
 
 ```bash
 pn-ultramemory recall "how are prices rounded" -b 800
 ```
 
-You should see the symbols you expected, at mixed levels of detail, and a `used:` well under 800.
-If you get nothing useful, the tool is not helping yet and you should find out why before wiring it
-into an agent.
+You should see the symbols you expected near the top, at mixed levels of detail, with `used:` under
+800. Use the words your code uses: the search is over words, and nothing is translated. If the
+answer is wrong, find out why before you wire it into an agent; `--explain` says why each symbol is
+there.
 
-## 3. Watch the budget do its work
-
-The same question at three budgets:
+## 4. Watch the budget work
 
 ```bash
 pn-ultramemory recall "how are prices rounded" -b 200
@@ -35,32 +50,31 @@ pn-ultramemory recall "how are prices rounded" -b 800
 pn-ultramemory recall "how are prices rounded" -b 3000
 ```
 
-At 200 you get names. At 800, signatures and summaries. At 3000, whole functions. Nothing is
-dropped as the budget falls — the *detail* falls. That is the mechanism the whole tool is built on.
+At 200 you get names and a signature or two. At 800, signatures and summaries. At 3000, whole
+functions. As the budget falls, the *detail* falls, not the answers; the best few always keep
+their signature.
 
-## 4. Learn one file without reading it
+## 5. Read a file without reading it
 
 ```bash
 pn-ultramemory outline src/some/large/file.ts
 ```
 
-Every symbol it declares, in order, nested, with signatures and first documentation sentences. The
-output reports what it cost and what reading the file would have cost, so you can see the trade
-rather than take it on faith. On a short file it will tell you that reading it outright is cheaper.
+Every symbol the file declares, in order and nested, with signatures and first documentation
+sentences. It reports what it cost and what reading the file would have cost, and for a short file
+it tells you that reading it outright is cheaper.
 
-## 5. Find out what a change would break
+## 6. Find out what a change would break
 
 ```bash
 pn-ultramemory impact PriceCalculator
 ```
 
-Read the `epistemic` field before the list. `exact` means the set is complete. `lower-bound` means
-there may be more. `unknown` means it found no caller and the symbol is public — which does **not**
-mean nobody uses it.
+Read `epistemic` before the list. `exact` means the set is complete, `lower-bound` that there may be
+more, and `unknown` that no caller was found and the symbol is public, which does **not** mean
+nobody uses it.
 
-## 6. Write your first memory
-
-Anchor it to the code it is about:
+## 7. Write your first memory
 
 ```bash
 pn-ultramemory remember decision \
@@ -68,23 +82,24 @@ pn-ultramemory remember decision \
   --about PriceCalculator
 ```
 
-When `PriceCalculator` changes, that memory is marked stale. See [Memories](Memories).
+Open the brain again: the memory is a golden ring above `PriceCalculator`. When that code changes,
+the ring turns red and `memories --stale` lists it. See [Memories](Memories).
 
-## 7. Wire it into your agent, then check it took
+## 8. Connect your agent
 
 ```bash
-pn-ultramemory install --agents cursor     # or whichever you use
+pn-ultramemory install --agents claude-code     # or whichever you use
 pn-ultramemory doctor
 ```
 
-Restart the agent. Then ask it something about your code and see whether it calls `recall` instead
-of reading files. If it does not, say so in your prompt once — most agents take the hint and keep
-it for the session.
+Restart the agent, then ask it something about your code and watch whether it calls `brief` and
+`recall` instead of reading files. If it does not, say so once in your prompt; most agents keep the
+hint for the session.
 
 ## A habit worth forming
 
-Re-index after switching branches. It re-reads only what changed, so it costs milliseconds when
-nothing did:
+Re-index after switching branches or pulling. Only what changed is read again, so it costs
+milliseconds when nothing did:
 
 ```bash
 pn-ultramemory index
