@@ -385,7 +385,7 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "pn-ultramemory"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "clap",
  "clap_complete",
@@ -403,7 +403,7 @@ dependencies = [
 
 [[package]]
 name = "pn-ultramemory-codec"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "pn-ultramemory-core",
  "pn-ultramemory-toon",
@@ -412,11 +412,11 @@ dependencies = [
 
 [[package]]
 name = "pn-ultramemory-core"
-version = "1.0.0"
+version = "1.1.0"
 
 [[package]]
 name = "pn-ultramemory-engine"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "pn-ultramemory-codec",
  "pn-ultramemory-core",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "pn-ultramemory-index"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ignore",
  "pn-ultramemory-core",
@@ -450,18 +450,18 @@ dependencies = [
 
 [[package]]
 name = "pn-ultramemory-mcp"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "pn-ultramemory-report"
-version = "1.0.0"
+version = "1.1.0"
 
 [[package]]
 name = "pn-ultramemory-store"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "pn-ultramemory-core",
  "rusqlite",
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "pn-ultramemory-toon"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "serde_json",
 ]
