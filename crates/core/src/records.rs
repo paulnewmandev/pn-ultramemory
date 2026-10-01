@@ -177,6 +177,10 @@ pub struct SearchQuery {
     pub kinds: Vec<SymbolKind>,
     /// Restrict results to paths that start with this prefix, if given.
     pub path_prefix: Option<String>,
+    /// Match symbols that carry any word of the text instead of every word. The score then adds up
+    /// over the words matched, each weighed by how rare it is in the index, so a symbol that
+    /// matches the two rare words of a question ranks above one that matches its one common word.
+    pub any_word: bool,
 }
 
 /// A symbol that matched a search, with its relevance.

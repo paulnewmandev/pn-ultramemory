@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 
 use pn_ultramemory_codec::{
     Candidate, Capsule, CapsuleMemory, CapsuleRelation, CapsuleSymbol, LevelOption, RenderOptions,
-    SymbolView, estimate_tokens, measure, pack, symbol_cost, symbol_text,
+    SymbolView, estimate_tokens, measure, pack, row_files, symbol_cost, symbol_text,
 };
 use pn_ultramemory_core::{Detail, SymbolId, SymbolRecord, first_sentence};
 
@@ -314,25 +314,60 @@ fn frame_cost(
     memories: &[CapsuleMemory],
 ) -> u32 {
     let mut frame = compose(settings, prepared, chosen, memories);
+    // The table of files belongs to the frame: a path is printed once, however many rows point
+    // at it, and only for rows (a symbol shown by name carries no file). It disappears from the
+    // measure below with the rows, so it is added back here.
+    let listed = row_files(&frame);
+    let files: u32 = listed
+        .iter()
+        .filter_map(|&file| frame.files.get(file))
+        .map(|path| estimate_tokens(path) + tuning::FILE_ROW_TOKENS)
+        .sum();
     frame.symbols.clear();
     frame.memories.clear();
-    let mut cost = measure(&frame, &RenderOptions::default()) + tuning::TABLE_HEADER_TOKENS;
+    let mut cost = measure(&frame, &RenderOptions::default()) + tuning::TABLE_HEADER_TOKENS + files;
+    if !listed.is_empty() {
+        cost += tuning::FILE_HEADER_TOKENS;
+    }
     if !memories.is_empty() {
         cost += tuning::MEMORY_HEADER_TOKENS;
     }
     cost
 }
 
+/// Whether lowering candidate `index` from option `level` would take one of the best answers
+/// below its signature.
+///
+/// Candidates are ranked, so the first [`tuning::KEEP_SIGNATURE_TOP`] are the best answers to the
+/// question. Value per token alone would give their signature up before the one-line outline of a
+/// minor match, because an outline that adds one called name is cheap; but a capsule whose best
+/// answer is a bare name has not answered, however much else it shows.
+fn lowers_a_best_answer(prepared: &[Prepared], index: usize, level: usize) -> bool {
+    index < tuning::KEEP_SIGNATURE_TOP
+        && prepared
+            .get(index)
+            .and_then(|p| p.options.get(level))
+            .is_some_and(|option| option.detail <= Detail::Signature)
+}
+
 /// The step that gives up the least value per token saved: `(index, tokens saved)`.
 ///
 /// A step lowers a symbol by one level, or drops it when it is at its cheapest level. Ties go to
-/// the less relevant symbol, then to the later one.
-fn cheapest_step_down(prepared: &[Prepared], chosen: &[Option<usize>]) -> Option<(usize, u32)> {
+/// the less relevant symbol, then to the later one. With `protect`, the best answers are not taken
+/// below their signature (see [`lowers_a_best_answer`]).
+fn cheapest_step_down(
+    prepared: &[Prepared],
+    chosen: &[Option<usize>],
+    protect: bool,
+) -> Option<(usize, u32)> {
     let mut best: Option<(f64, f64, usize, u32)> = None;
     for (index, p) in prepared.iter().enumerate() {
         let Some(level) = chosen[index] else {
             continue;
         };
+        if protect && lowers_a_best_answer(prepared, index, level) {
+            continue;
+        }
         let here = &p.options[level];
         let (lost_utility, saved) = match level.checked_sub(1) {
             Some(below) => {
@@ -360,11 +395,14 @@ fn cheapest_step_down(prepared: &[Prepared], chosen: &[Option<usize>]) -> Option
 }
 
 /// Lowers or drops symbols, cheapest loss first, until about `need` tokens are saved. Returns
-/// whether anything changed.
+/// whether anything changed. The best answers keep their signature until nothing else is left to
+/// give up.
 fn shrink_symbols(prepared: &[Prepared], chosen: &mut [Option<usize>], mut need: u32) -> bool {
     let mut changed = false;
     while need > 0 {
-        let Some((index, saved)) = cheapest_step_down(prepared, chosen) else {
+        let Some((index, saved)) = cheapest_step_down(prepared, chosen, true)
+            .or_else(|| cheapest_step_down(prepared, chosen, false))
+        else {
             break;
         };
         chosen[index] = chosen[index].and_then(|level| level.checked_sub(1));

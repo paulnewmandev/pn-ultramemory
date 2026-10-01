@@ -27,14 +27,11 @@ pub(super) const TEXT_SPAN: f64 = 0.75;
 pub(super) const TEXT_UNSCORED: f64 = 0.5;
 
 /// A text search that finds fewer symbols than this is relaxed (stop words dropped, then one search
-/// per word), because the store requires every word of a query to match.
+/// for any of the words), because the store requires every word of a query to match.
 pub(super) const RELAX_BELOW: usize = 8;
 
 /// The most words a relaxed search looks at.
 pub(super) const RELAX_TERMS: usize = 6;
-
-/// The most symbols one single-word search of a relaxed query returns.
-pub(super) const RELAX_PER_TERM_LIMIT: usize = 15;
 
 /// The relevance of the weakest partial match; a symbol that matches every word gets at most
 /// [`PARTIAL_FLOOR`] + [`PARTIAL_SPAN`].
@@ -137,6 +134,17 @@ pub(super) const MEMORY_HEADER_TOKENS: u32 = 15;
 
 /// The tokens reserved for the header of the symbol table, on top of the measured frame.
 pub(super) const TABLE_HEADER_TOKENS: u32 = 30;
+
+/// The tokens one row of the file table costs besides its path: the index, the separator and the
+/// line break.
+pub(super) const FILE_ROW_TOKENS: u32 = 3;
+
+/// The tokens the header of the file table costs when any row points at a file.
+pub(super) const FILE_HEADER_TOKENS: u32 = 8;
+
+/// How many of the most relevant candidates keep at least their signature while anything else can
+/// still be lowered to make a capsule fit.
+pub(super) const KEEP_SIGNATURE_TOP: usize = 3;
 
 /// How many times the reserve is corrected for the files and relations of the actual selection.
 pub(super) const RESERVE_ROUNDS: usize = 4;

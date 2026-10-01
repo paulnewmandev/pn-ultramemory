@@ -13,9 +13,22 @@
 //! | Situation | Edges written | Confidence |
 //! |---|---|---|
 //! | A symbol of the **same file** has the name | to those symbols, at most 4, nearest line first | `Resolved` |
-//! | Else exactly **one** symbol in the whole index has the name | to it | `Heuristic` |
+//! | Else exactly **one** symbol in the whole index has the name | to it | `Heuristic`, or `Guess` when the call is made on a receiver that does not point at it |
+//! | Else **several** do, and the receiver points at exactly one | to that one | `Heuristic` |
 //! | Else **several** do | to at most 4, whose path shares the longest prefix with the referencing file | `Guess` |
 //! | Else none | none | none |
+//!
+//! # Receivers
+//! A name alone is weak evidence for a method: `$request->validate()` in a Laravel controller and
+//! `items.is_empty()` in Rust share their method's name with one symbol of the repository, and are
+//! calls on a framework object and on a standard vector. So a reference keeps the last word of
+//! its receiver (`couponservice` for `$this->couponService`, empty for an expression such as
+//! `items()`), and that word *points at* a candidate when it names the candidate's type (its
+//! enclosing symbol, or the part of its qualified name before its own name; equal, or the end of a
+//! longer name of at least four letters, ignoring case), the candidate's file (`utils` for
+//! `utils.py`) or one of its directories (`store` for `crates/store/src/db.rs`). Among several
+//! candidates, a match by type is preferred to a match by place. A reference with no receiver of its own (unqualified, `self`,
+//! `this`, `super` and the like) resolves by name alone, as before.
 //!
 //! Further rules:
 //! * A reference kind maps to an edge kind: call to `calls`, type mention to `uses`, inheritance
@@ -45,8 +58,8 @@
 //! reference tests check exactly that, including edits that only modify symbols.
 
 use pn_ultramemory_core::{
-    Confidence, Direction, EdgeKind, EdgeRecord, Neighbor, RefKind, ResolveScope, ResolveStats,
-    SymbolId,
+    Confidence, Direction, EXPRESSION_QUALIFIER, EdgeKind, EdgeRecord, Neighbor, RefKind,
+    ResolveScope, ResolveStats, SymbolId,
 };
 use rusqlite::{Connection, TransactionBehavior, params};
 
@@ -77,6 +90,93 @@ pub(crate) fn must_not_link_to_self(
         && qualifier.is_some_and(|qualifier| !SELF_QUALIFIERS.contains(&qualifier))
 }
 
+/// Qualifiers that name no receiver at all: the enclosing module or crate.
+const MODULE_QUALIFIERS: &[&str] = &["super", "crate", "parent"];
+
+/// The last word of a reference's receiver, lowercased: `couponservice` for
+/// `$this->couponService`, `storage` for `self.storage`, `fs` for `std::fs`.
+///
+/// `None` means the reference has no receiver of its own: it is unqualified, or qualified by the
+/// symbol itself or by the enclosing module, and resolves by name as it always did. An empty
+/// word means a receiver that is an expression, which says only that the call is made on some
+/// other object.
+///
+/// # Examples
+/// ```text
+/// receiver_word(None)                          == None
+/// receiver_word(Some("$this"))                 == None
+/// receiver_word(Some("$this->couponService"))  == Some("couponservice")
+/// receiver_word(Some("(expr)"))                == Some("")
+/// ```
+pub(crate) fn receiver_word(qualifier: Option<&str>) -> Option<String> {
+    let qualifier = qualifier?.trim();
+    if qualifier.is_empty()
+        || SELF_QUALIFIERS.contains(&qualifier)
+        || MODULE_QUALIFIERS.contains(&qualifier)
+    {
+        return None;
+    }
+    if qualifier == EXPRESSION_QUALIFIER {
+        return Some(String::new());
+    }
+    let last = qualifier
+        .rsplit(['.', ':', '>', '\\', '/', '#', '@'])
+        .find(|part| !part.is_empty())
+        .unwrap_or_default()
+        .trim_start_matches('$')
+        .trim_end_matches('-');
+    if SELF_QUALIFIERS.contains(&last) {
+        return None;
+    }
+    Some(last.to_lowercase())
+}
+
+/// The SQL condition, 0 or 1, that the receiver word in column `recv` names the type the
+/// candidate `symbol` belongs to: its enclosing symbol `parent` (left-joined, so it may be NULL),
+/// or, when the type is declared elsewhere (a Rust `impl` in another file), the segment of its
+/// qualified name just before its own name (`Engine` in `Engine::recall`). The word must equal
+/// that name or, with at least four letters, end it, ignoring case (and underscores, for a parent).
+fn names_type(recv: &str, symbol: &str, parent: &str) -> String {
+    let segment = |sep: &str| {
+        format!(
+            "{symbol}.qualified_name LIKE {recv} || '{sep}' || {symbol}.name \
+             OR {symbol}.qualified_name LIKE '%{sep}' || {recv} || '{sep}' || {symbol}.name \
+             OR (length({recv}) >= 4 \
+                 AND {symbol}.qualified_name LIKE '%' || {recv} || '{sep}' || {symbol}.name)"
+        )
+    };
+    format!(
+        "COALESCE({recv} <> '' AND ( \
+             replace(lower({parent}.name), '_', '') = replace({recv}, '_', '') \
+             OR (length({recv}) >= 4 \
+                 AND replace(lower({parent}.name), '_', '') LIKE '%' || replace({recv}, '_', '')) \
+             OR {} OR {}), 0)",
+        segment("::"),
+        segment("."),
+    )
+}
+
+/// The SQL condition, 0 or 1, that the receiver word in column `recv` names the place the
+/// candidate is declared in: its file (`utils` for `utils.py`) or one of its directories (`store`
+/// for `crates/store/src/db.rs`), where `file` is the row alias of the candidate's file.
+fn names_place(recv: &str, file: &str) -> String {
+    format!(
+        "COALESCE({recv} <> '' AND ( \
+             {file}.path LIKE '%/' || {recv} || '.%' OR {file}.path LIKE {recv} || '.%' \
+             OR {file}.path LIKE '%/' || {recv} || '/%' OR {file}.path LIKE {recv} || '/%'), 0)"
+    )
+}
+
+/// The SQL condition that the receiver word points at a candidate at all, by its type or by its
+/// place. An empty word, the receiver of an expression, points at nothing.
+fn points_at(recv: &str, symbol: &str, parent: &str, file: &str) -> String {
+    format!(
+        "({} OR {})",
+        names_type(recv, symbol, parent),
+        names_place(recv, file)
+    )
+}
+
 /// Conflict clause shared by every edge insert: keep the strongest confidence and first line.
 const ON_CONFLICT: &str = "ON CONFLICT (src, dst, kind) DO UPDATE SET \
      confidence = MAX(edges.confidence, excluded.confidence), \
@@ -89,6 +189,7 @@ fn clear_scratch(conn: &Connection) -> Result<()> {
         "tmp_scope_names",
         "tmp_scope_dirty",
         "tmp_refs",
+        "tmp_hints",
         "tmp_names",
         "tmp_pick",
     ] {
@@ -114,24 +215,40 @@ fn edge_kind_case() -> String {
 /// The statement that copies references into `tmp_refs`, ready for a `WHERE` clause, with
 /// everything the tiers need worked out on the way.
 ///
+/// The count for a reference without a receiver reads only the name index, which is most of them;
+/// the receiver of an expression points at nothing, so its count is zero; a named receiver needs
+/// each candidate's enclosing symbol, and only those references pay for it.
+///
 /// References without an owner are left out. `excl` is the reference's `no_self` flag and
 /// `family` the language family of its file. `nsame` counts the candidates in the reference's
-/// file and `cnt` those in the whole family (from `tmp_names`); both leave out the owner when it
-/// is excluded.
+/// file that its receiver allows (all of them without a receiver, those it points at with one:
+/// `engine.recall()` is not a call to the `recall` method of another type in the same file), and
+/// `cnt` those in the whole family (from `tmp_names`); both leave out the owner when it is
+/// excluded.
 fn load_refs_sql(filter: &str) -> String {
     format!(
         "INSERT OR IGNORE INTO tmp_refs \
-             (rid, file_id, owner, name, kind, line, excl, family, nsame, cnt) \
+             (rid, file_id, owner, name, kind, line, excl, family, nsame, cnt, recv) \
          SELECT j.rid, j.file_id, j.owner, j.name, j.kind, j.line, j.excl, j.family, \
-                (SELECT COUNT(*) FROM symbols s \
-                 WHERE s.name = j.name AND s.file_id = j.file_id) - j.excl, \
+                CASE WHEN j.recv IS NULL THEN \
+                    (SELECT COUNT(*) FROM symbols s \
+                     WHERE s.name = j.name AND s.file_id = j.file_id) - j.excl \
+                WHEN j.recv = '' THEN 0 \
+                ELSE \
+                    (SELECT COUNT(*) FROM symbols s LEFT JOIN symbols p ON p.id = s.parent_id \
+                     WHERE s.name = j.name AND s.file_id = j.file_id \
+                       AND (j.excl = 0 OR s.id <> j.owner) AND {allowed}) \
+                END, \
                 COALESCE((SELECT n.cnt FROM tmp_names n \
-                          WHERE n.name = j.name AND n.family = j.family), 0) - j.excl \
+                          WHERE n.name = j.name AND n.family = j.family), 0) - j.excl, \
+                j.recv \
          FROM (SELECT r.id AS rid, r.file_id AS file_id, r.owner_id AS owner, r.name AS name, \
-                      {kind} AS kind, r.line AS line, r.no_self AS excl, rf.family AS family \
+                      {kind} AS kind, r.line AS line, r.no_self AS excl, rf.family AS family, \
+                      r.recv AS recv, rf.path AS path \
                FROM refs r JOIN files rf ON rf.id = r.file_id \
                WHERE r.owner_id IS NOT NULL {filter}) j",
         kind = edge_kind_case(),
+        allowed = points_at("j.recv", "s", "p", "j"),
     )
 }
 
@@ -230,9 +347,11 @@ fn resolve_in_tx(tx: &Connection, scope: &ResolveScope) -> Result<u64> {
     } else {
         None
     };
+    point_receivers(tx)?;
     let mut written = 0_u64;
     written += link_same_file(tx)?;
     written += link_unique(tx)?;
+    written += link_pointed(tx)?;
     written += link_ambiguous(tx)?;
     if let Some(sql) = rebuild {
         tx.execute_batch(&sql).db()?;
@@ -276,11 +395,24 @@ fn fill_scope(
 /// The usual case, up to four symbols of the file with that name, is a plain join. Only a name
 /// defined more than four times in one file (the four nearest lines are linked) needs ranking.
 fn link_same_file(tx: &Connection) -> Result<u64> {
+    let allowed = points_at("r.recv", "s", "p", "f");
+    // Without a receiver every candidate of the file counts, and nothing but the name is read.
     let plain = format!(
         "INSERT INTO edges (src, dst, kind, confidence, line, src_file, dst_file) \
          SELECT r.owner, s.id, r.kind, ?1, MIN(r.line), r.file_id, r.file_id \
          FROM tmp_refs r JOIN symbols s ON s.name = r.name AND s.file_id = r.file_id \
-         WHERE r.nsame BETWEEN 1 AND {MAX_LINKS} AND (r.excl = 0 OR s.id <> r.owner) \
+         WHERE r.nsame BETWEEN 1 AND {MAX_LINKS} AND r.recv IS NULL \
+           AND (r.excl = 0 OR s.id <> r.owner) \
+         GROUP BY r.owner, s.id, r.kind {ON_CONFLICT}"
+    );
+    // With one, only the candidates it points at.
+    let received = format!(
+        "INSERT INTO edges (src, dst, kind, confidence, line, src_file, dst_file) \
+         SELECT r.owner, s.id, r.kind, ?1, MIN(r.line), r.file_id, r.file_id \
+         FROM tmp_refs r JOIN symbols s ON s.name = r.name AND s.file_id = r.file_id \
+         JOIN files f ON f.id = r.file_id LEFT JOIN symbols p ON p.id = s.parent_id \
+         WHERE r.nsame BETWEEN 1 AND {MAX_LINKS} AND r.recv IS NOT NULL AND r.recv <> '' \
+           AND (r.excl = 0 OR s.id <> r.owner) AND {allowed} \
          GROUP BY r.owner, s.id, r.kind {ON_CONFLICT}"
     );
     let ranked = format!(
@@ -291,11 +423,18 @@ fn link_same_file(tx: &Connection) -> Result<u64> {
                     ROW_NUMBER() OVER (PARTITION BY r.rid \
                                        ORDER BY ABS(s.start_line - r.line), s.id) AS rn \
              FROM tmp_refs r JOIN symbols s ON s.name = r.name AND s.file_id = r.file_id \
-             WHERE r.nsame > {MAX_LINKS} AND (r.excl = 0 OR s.id <> r.owner)) \
+             JOIN files f ON f.id = r.file_id LEFT JOIN symbols p ON p.id = s.parent_id \
+             WHERE r.nsame > {MAX_LINKS} AND (r.excl = 0 OR s.id <> r.owner) \
+               AND (r.recv IS NULL OR {allowed})) \
          WHERE rn <= {MAX_LINKS} GROUP BY owner, sid, kind {ON_CONFLICT}"
     );
     let resolved = params![confidence_to_sql(Confidence::Resolved)];
     let mut changed = execute(tx, &plain, resolved)?;
+    changed += execute(
+        tx,
+        &received,
+        params![confidence_to_sql(Confidence::Resolved)],
+    )?;
     changed += execute(
         tx,
         &ranked,
@@ -304,15 +443,111 @@ fn link_same_file(tx: &Connection) -> Result<u64> {
     Ok(u64::try_from(changed).unwrap_or(0))
 }
 
-/// Links references to the only symbol of that name in the index, at `Heuristic`.
+/// Records, for every reference with a named receiver and no candidate in its own file, the one
+/// candidate its receiver points at (see the module documentation). A receiver that names the
+/// type of exactly one candidate points at it; only when it names no candidate's type does a
+/// single match by file or directory count, so `engine.recall()` is `Engine::recall` and not the
+/// `mod recall` that happens to live under `crates/engine/`.
+fn point_receivers(tx: &Connection) -> Result<()> {
+    // The choice, for a receiver word in column `recv` of the row alias `of`: a match by type
+    // when exactly one candidate has one, else a match by place when exactly one has that.
+    let choice = |of: &str| {
+        let typed = names_type(&format!("{of}.recv"), "s", "p");
+        let placed = names_place(&format!("{of}.recv"), "sf");
+        format!(
+            "CASE \
+                 WHEN SUM({typed}) = 1 THEN MAX(CASE WHEN {typed} THEN s.id END) \
+                 WHEN SUM({typed}) = 0 AND SUM({placed}) = 1 \
+                     THEN MAX(CASE WHEN {placed} THEN s.id END) \
+             END"
+        )
+    };
+    let scope = "nsame = 0 AND recv IS NOT NULL AND recv <> ''";
+    // Most references may link to their owner, so their answer depends only on the name, the
+    // family and the word, and is worked out once for each distinct triple.
+    execute(
+        tx,
+        &format!(
+            "INSERT OR IGNORE INTO tmp_hints (name, family, recv) \
+             SELECT DISTINCT name, family, recv FROM tmp_refs WHERE {scope} AND excl = 0"
+        ),
+        [],
+    )?;
+    execute(
+        tx,
+        &format!(
+            "UPDATE tmp_hints SET hint = ( \
+                 SELECT {} FROM symbols s \
+                 JOIN files sf ON sf.id = s.file_id AND sf.family = tmp_hints.family \
+                 LEFT JOIN symbols p ON p.id = s.parent_id \
+                 WHERE s.name = tmp_hints.name)",
+            choice("tmp_hints")
+        ),
+        [],
+    )?;
+    execute(
+        tx,
+        &format!(
+            "UPDATE tmp_refs SET hint = ( \
+                 SELECT h.hint FROM tmp_hints h \
+                 WHERE h.name = tmp_refs.name AND h.family = tmp_refs.family \
+                   AND h.recv = tmp_refs.recv) \
+             WHERE {scope} AND excl = 0"
+        ),
+        [],
+    )?;
+    // The few that must not link to their owner leave it out of the candidates, one by one.
+    execute(
+        tx,
+        &format!(
+            "UPDATE tmp_refs SET hint = ( \
+                 SELECT {} FROM symbols s \
+                 JOIN files sf ON sf.id = s.file_id AND sf.family = tmp_refs.family \
+                 LEFT JOIN symbols p ON p.id = s.parent_id \
+                 WHERE s.name = tmp_refs.name AND s.id <> tmp_refs.owner) \
+             WHERE {scope} AND excl = 1",
+            choice("tmp_refs")
+        ),
+        [],
+    )?;
+    Ok(())
+}
+
+/// Links references to the only symbol of that name in the index: at `Heuristic` when nothing
+/// argues against it, at `Guess` when the reference is made on a receiver that does not point at
+/// that symbol.
 fn link_unique(tx: &Connection) -> Result<u64> {
     let sql = format!(
         "INSERT INTO edges (src, dst, kind, confidence, line, src_file, dst_file) \
-         SELECT r.owner, s.id, r.kind, ?1, MIN(r.line), r.file_id, s.file_id \
+         SELECT r.owner, s.id, r.kind, \
+                MAX(CASE WHEN r.recv IS NULL OR r.hint = s.id THEN ?1 ELSE ?2 END), \
+                MIN(r.line), r.file_id, s.file_id \
          FROM tmp_refs r JOIN symbols s ON s.name = r.name \
          JOIN files sf ON sf.id = s.file_id AND sf.family = r.family \
          WHERE r.nsame = 0 AND r.cnt = 1 AND (r.excl = 0 OR s.id <> r.owner) \
          GROUP BY r.owner, s.id, r.kind {ON_CONFLICT}"
+    );
+    let changed = execute(
+        tx,
+        &sql,
+        params![
+            confidence_to_sql(Confidence::Heuristic),
+            confidence_to_sql(Confidence::Guess)
+        ],
+    )?;
+    Ok(u64::try_from(changed).unwrap_or(0))
+}
+
+/// Links references to an ambiguous name whose receiver points at exactly one of the candidates,
+/// to that one, at `Heuristic`: `engine.recall()` is `Engine::recall` and not the other `recall`
+/// functions of the repository.
+fn link_pointed(tx: &Connection) -> Result<u64> {
+    let sql = format!(
+        "INSERT INTO edges (src, dst, kind, confidence, line, src_file, dst_file) \
+         SELECT r.owner, r.hint, r.kind, ?1, MIN(r.line), r.file_id, s.file_id \
+         FROM tmp_refs r JOIN symbols s ON s.id = r.hint \
+         WHERE r.nsame = 0 AND r.cnt >= 2 \
+         GROUP BY r.owner, r.hint, r.kind {ON_CONFLICT}"
     );
     let changed = execute(tx, &sql, params![confidence_to_sql(Confidence::Heuristic)])?;
     Ok(u64::try_from(changed).unwrap_or(0))
@@ -355,14 +590,15 @@ fn best_candidates<'a>(candidates: &'a [Candidate], from_path: &str) -> Vec<&'a 
         .collect()
 }
 
-/// Links references to an ambiguous name (several candidates, none in the same file) at `Guess`,
-/// to the best four by shared path prefix.
+/// Links references to an ambiguous name (several candidates, none in the same file, no receiver
+/// pointing at one of them) at `Guess`, to the best four by shared path prefix.
 fn link_ambiguous(tx: &Connection) -> Result<u64> {
     let groups: Vec<(String, String, i64, String)> = query_all(
         tx,
         "SELECT DISTINCT r.name, r.family, r.file_id, f.path \
          FROM tmp_refs r JOIN files f ON f.id = r.file_id \
-         WHERE r.nsame = 0 AND r.cnt >= 2 ORDER BY r.name, r.family, r.file_id",
+         WHERE r.nsame = 0 AND r.cnt >= 2 AND r.hint IS NULL \
+         ORDER BY r.name, r.family, r.file_id",
         [],
         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
     )?;
@@ -413,7 +649,8 @@ fn link_ambiguous(tx: &Connection) -> Result<u64> {
         "INSERT INTO edges (src, dst, kind, confidence, line, src_file, dst_file) \
          SELECT r.owner, p.sid, r.kind, ?1, MIN(r.line), r.file_id, p.sfile \
          FROM tmp_refs r JOIN tmp_pick p ON p.name = r.name AND p.file_id = r.file_id \
-         WHERE r.nsame = 0 AND r.cnt >= 2 AND r.excl = 0 AND p.rank < {MAX_LINKS} \
+         WHERE r.nsame = 0 AND r.cnt >= 2 AND r.hint IS NULL AND r.excl = 0 \
+           AND p.rank < {MAX_LINKS} \
          GROUP BY r.owner, p.sid, r.kind {ON_CONFLICT}"
     );
     let ranked = format!(
@@ -423,7 +660,8 @@ fn link_ambiguous(tx: &Connection) -> Result<u64> {
                     r.file_id AS file, p.sfile AS sfile, \
                     ROW_NUMBER() OVER (PARTITION BY r.rid ORDER BY p.rank) AS rn \
              FROM tmp_refs r JOIN tmp_pick p ON p.name = r.name AND p.file_id = r.file_id \
-             WHERE r.nsame = 0 AND r.cnt >= 2 AND r.excl = 1 AND p.sid <> r.owner) \
+             WHERE r.nsame = 0 AND r.cnt >= 2 AND r.hint IS NULL AND r.excl = 1 \
+               AND p.sid <> r.owner) \
          WHERE rn <= {MAX_LINKS} GROUP BY owner, sid, kind {ON_CONFLICT}"
     );
     let mut changed = execute(tx, &plain, params![confidence_to_sql(Confidence::Guess)])?;
@@ -491,7 +729,36 @@ pub(crate) fn neighbors(
 
 #[cfg(test)]
 mod tests {
-    use super::{Candidate, best_candidates, common_prefix};
+    use super::{Candidate, best_candidates, common_prefix, receiver_word};
+
+    /// A receiver word is the last word of the receiver, lowercased; the symbol itself and the
+    /// enclosing module are no receiver at all, and an expression is a receiver with no word.
+    #[test]
+    fn receiver_words() {
+        let word = |q: Option<&str>| receiver_word(q);
+        assert_eq!(word(None), None);
+        for own in [
+            "self", "this", "$this", "Self", "cls", "static", "super", "crate", "parent",
+        ] {
+            assert_eq!(word(Some(own)), None, "{own}");
+        }
+        assert_eq!(
+            word(Some("$this->couponService")).as_deref(),
+            Some("couponservice")
+        );
+        assert_eq!(word(Some("$request")).as_deref(), Some("request"));
+        assert_eq!(word(Some("self.storage")).as_deref(), Some("storage"));
+        assert_eq!(word(Some("std::fs")).as_deref(), Some("fs"));
+        assert_eq!(
+            word(Some("App\\Support\\Settings")).as_deref(),
+            Some("settings")
+        );
+        assert_eq!(
+            word(Some("CouponService")).as_deref(),
+            Some("couponservice")
+        );
+        assert_eq!(word(Some("(expr)")).as_deref(), Some(""));
+    }
 
     /// A candidate at a path.
     fn candidate(id: i64, path: &str) -> Candidate {

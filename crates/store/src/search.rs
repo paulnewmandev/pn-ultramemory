@@ -42,7 +42,8 @@ const WEIGHT_SIGNATURE: f64 = 2.0;
 const WEIGHT_DOC: f64 = 1.0;
 
 /// Searches symbols. Every word of the query must match somewhere in the name, qualified name,
-/// signature or documentation, and the last word also matches by prefix.
+/// signature or documentation (or any word, with [`SearchQuery::any_word`]), and the last word
+/// also matches by prefix.
 ///
 /// A query without any word, and a limit of zero, give an empty result.
 pub(crate) fn search_symbols(
@@ -50,7 +51,8 @@ pub(crate) fn search_symbols(
     query: &SearchQuery,
     limit: usize,
 ) -> Result<Vec<SearchHit>> {
-    let Some(expression) = match_expression(&query.text, Join::All) else {
+    let join = if query.any_word { Join::Any } else { Join::All };
+    let Some(expression) = match_expression(&query.text, join) else {
         return Ok(Vec::new());
     };
     if limit == 0 {

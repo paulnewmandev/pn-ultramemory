@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 use pn_ultramemory_core::{
-    RefKind, ReferenceDraft, Span, SymbolDraft, Visibility, hash_normalized,
+    EXPRESSION_QUALIFIER, RefKind, ReferenceDraft, Span, SymbolDraft, Visibility, hash_normalized,
 };
 use tree_sitter::Node;
 
@@ -416,10 +416,15 @@ impl<'a, 't> Walker<'a, 't> {
         if self.references.len() >= MAX_REFERENCES {
             return;
         }
-        let qualifier = qualifier
-            .map(str::trim)
-            .filter(|q| is_simple_path(q))
-            .map(str::to_owned);
+        // A receiver that is an expression has no name to keep, but it is still a receiver: the
+        // call is made on some other object, and resolution must not read it as a plain call.
+        let qualifier = qualifier.map(str::trim).filter(|q| !q.is_empty()).map(|q| {
+            if is_simple_path(q) {
+                q.to_owned()
+            } else {
+                EXPRESSION_QUALIFIER.to_owned()
+            }
+        });
         self.references.push(ReferenceDraft {
             name: name.to_owned(),
             kind,

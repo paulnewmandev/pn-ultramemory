@@ -29,8 +29,8 @@ pub(crate) fn text_relevance(score: f64, best: f64) -> f64 {
 
 /// The relevance of a symbol that matched some, but not all, words of the query.
 ///
-/// `matched` is the sum, over the words the symbol matched, of that word's normalized score
-/// (each in `0..=1`), and `words` the number of words searched for.
+/// `matched` is how much of the query the symbol covers, as a sum of normalized scores (each in
+/// `0..=1`) over `words` parts: one part scored as a whole for a search that matches any word.
 pub(crate) fn partial_relevance(matched: f64, words: usize) -> f64 {
     if words == 0 || !matched.is_finite() || matched <= 0.0 {
         return tuning::PARTIAL_FLOOR;

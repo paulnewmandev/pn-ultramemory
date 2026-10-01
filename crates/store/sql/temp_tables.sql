@@ -25,7 +25,8 @@ CREATE TEMP TABLE IF NOT EXISTS tmp_scope_dirty (
 -- The references being resolved. `kind` is already an edge kind name, `excl` is 1 when the
 -- owner itself must not be a candidate, `family` is the language family of the reference's file,
 -- `nsame` is the number of candidates in the same file and `cnt` the number of candidates in the
--- family (the owner not counted when excluded).
+-- family (the owner not counted when excluded). `recv` is the last word of the receiver (NULL for
+-- none, empty for an expression) and `hint` the one candidate that word points at, if exactly one.
 CREATE TEMP TABLE IF NOT EXISTS tmp_refs (
     rid     INTEGER PRIMARY KEY,
     file_id INTEGER NOT NULL,
@@ -36,8 +37,20 @@ CREATE TEMP TABLE IF NOT EXISTS tmp_refs (
     excl    INTEGER NOT NULL,
     family  TEXT    NOT NULL,
     nsame   INTEGER NOT NULL,
-    cnt     INTEGER NOT NULL
+    cnt     INTEGER NOT NULL,
+    recv    TEXT,
+    hint    INTEGER
 );
+
+-- The candidate a receiver word points at, worked out once per name, family and word: a
+-- repository writes `Vec::new()` thousands of times and the answer is the same every time.
+CREATE TEMP TABLE IF NOT EXISTS tmp_hints (
+    name   TEXT NOT NULL,
+    family TEXT NOT NULL,
+    recv   TEXT NOT NULL,
+    hint   INTEGER,
+    PRIMARY KEY (name, family, recv)
+) WITHOUT ROWID;
 
 -- How many symbols carry each name, per language family.
 CREATE TEMP TABLE IF NOT EXISTS tmp_names (

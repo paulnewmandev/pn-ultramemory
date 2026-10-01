@@ -230,18 +230,23 @@ fn self_links_only_for_recursion() {
         edges_from(&store, "src/a.rs", "save"),
         [("src/a.rs::save".to_owned(), Confidence::Resolved)]
     );
-    // `wrapper_save` calls `db.save`: the only same-file `save` is a different symbol, so it
-    // links to it (it is not the owner), at `Resolved`.
+    // `wrapper_save` calls `db.save`: a call on another object, and nothing says that object is
+    // either `save` of the repository, so both are only guesses. The same-file `save` is not
+    // assumed, because `db` does not point at it.
     assert_eq!(
         edges_from(&store, "src/a.rs", "wrapper_save"),
-        [("src/a.rs::save".to_owned(), Confidence::Resolved)]
+        [
+            ("src/a.rs::save".to_owned(), Confidence::Guess),
+            ("src/b.rs::save".to_owned(), Confidence::Guess)
+        ]
     );
 
-    // A symbol that calls `db.save()` while being `save` itself must not link to itself.
+    // A symbol that calls `db.save()` while being `save` itself must not link to itself; the
+    // other `save` is the only candidate left, and `db` does not point at it either.
     let other = store_with_qualified_self_call();
     assert_eq!(
         edges_from(&other, "src/x.rs", "save"),
-        [("src/y.rs::save".to_owned(), Confidence::Heuristic)]
+        [("src/y.rs::save".to_owned(), Confidence::Guess)]
     );
 }
 

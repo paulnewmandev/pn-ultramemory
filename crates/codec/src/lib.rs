@@ -24,7 +24,7 @@ pub mod tokens;
 
 pub use capsule::{
     Capsule, CapsuleMemory, CapsuleRelation, CapsuleSymbol, Format, RenderOptions, SymbolView,
-    measure, render, symbol_cost, symbol_text,
+    measure, render, row_files, symbol_cost, symbol_text,
 };
 pub use packer::{Candidate, LevelOption, Packing, Selection, pack};
 pub use tokens::estimate_tokens;

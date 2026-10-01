@@ -263,9 +263,14 @@ pub trait Storage: Send + Sync {
     /// Confidence rules, from the strongest: a reference whose name matches a symbol in the same
     /// file is [`Confidence::Resolved`] (when several symbols of the file match, the four nearest
     /// by line are linked, all `Resolved`); a name that matches exactly one symbol in the whole
-    /// index is [`Confidence::Heuristic`]; a name that matches several is linked to at most
-    /// four of them, preferring symbols whose path shares the longest prefix with the referencing
-    /// file, at [`Confidence::Guess`]. Names that match nothing produce no edge, and neither do
+    /// index is [`Confidence::Heuristic`], unless it is called on a receiver that does not point at
+    /// that symbol (`$request->validate()` and the repository's only `validate`), which is
+    /// [`Confidence::Guess`]; a name that matches several is linked to the one its receiver points
+    /// at, when exactly one, at [`Confidence::Heuristic`], and otherwise to at most four of them,
+    /// preferring symbols whose path shares the longest prefix with the referencing file, at
+    /// [`Confidence::Guess`]. A receiver points at a candidate when its last word names the
+    /// candidate's enclosing type, its file or one of its directories. Names that match nothing
+    /// produce no edge, and neither do
     /// references at file level (no owning symbol). A symbol links to itself only when the
     /// reference is unqualified or qualified by `self`, `this`, `Self`, `cls`, `$this` or `static`
     /// (recursion), never through another qualifier.

@@ -217,6 +217,7 @@ fn filters_by_kind() {
         text: "config".into(),
         kinds: vec![SymbolKind::Struct],
         path_prefix: None,
+        any_word: false,
     };
     assert_eq!(names(&search(&store, &query)), ["Config"]);
     let query = SearchQuery {
@@ -241,6 +242,7 @@ fn filters_by_path_prefix() {
         text: "parse config".into(),
         kinds: vec![],
         path_prefix: Some("lib/".into()),
+        any_word: false,
     };
     assert_eq!(names(&search(&store, &query)), ["parseConfig"]);
     let query = SearchQuery {
@@ -328,6 +330,7 @@ fn hostile_queries_never_fail() {
                     text: (*input).to_owned(),
                     kinds: kinds.clone(),
                     path_prefix: prefix,
+                    any_word: false,
                 };
                 let result = store.search_symbols(&query, 20);
                 assert!(result.is_ok(), "{input:.40?} failed: {result:?}");

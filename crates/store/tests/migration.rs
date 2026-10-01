@@ -20,6 +20,9 @@ const VERSION_1: &str = include_str!("../migrations/0001_initial.sql");
 /// The SQL that takes version 1 to version 2.
 const VERSION_2: &str = include_str!("../migrations/0002_report_totals.sql");
 
+/// The SQL that takes version 2 to version 3.
+const VERSION_3: &str = include_str!("../migrations/0003_language_families.sql");
+
 /// Creates a version 1 database with a little of everything in it, the way version 1 wrote it:
 /// edges with foreign keys, references without the `no_self` flag, files without parse errors.
 fn version_1_database(path: &std::path::Path) {
@@ -89,7 +92,7 @@ fn a_version_1_database_migrates_cleanly() {
         rows(&path, "PRAGMA user_version", 1),
         [[i64::from(SqliteStorage::SCHEMA_VERSION)]]
     );
-    assert_eq!(SqliteStorage::SCHEMA_VERSION, 3);
+    assert_eq!(SqliteStorage::SCHEMA_VERSION, 4);
 
     // What version 1 stored is all still there.
     assert_eq!(store.list_files().unwrap().len(), 2);
@@ -302,7 +305,10 @@ fn a_version_2_database_gets_language_families() {
     drop(raw);
 
     let store = SqliteStorage::open(&path).unwrap();
-    assert_eq!(rows(&path, "PRAGMA user_version", 1), [[3]]);
+    assert_eq!(
+        rows(&path, "PRAGMA user_version", 1),
+        [[i64::from(SqliteStorage::SCHEMA_VERSION)]]
+    );
 
     // The backfilled families are exactly what the code says.
     let raw = Connection::open(&path).unwrap();
@@ -339,4 +345,53 @@ fn a_version_2_database_gets_language_families() {
         })
         .unwrap();
     assert_eq!(rows(&path, "SELECT count(*) FROM dirty_names", 1), [[0]]);
+}
+
+/// Version 4 adds the receiver word of a reference. A version 3 database cannot know the words of
+/// what it stored, so its references keep none, which resolves them exactly as version 3 did, and
+/// every file is marked as changed so that the next `index` reads it again and records them.
+#[test]
+fn a_version_3_database_is_marked_for_reading_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("v3.db");
+    let raw = Connection::open(&path).unwrap();
+    raw.execute_batch(VERSION_1).unwrap();
+    raw.execute_batch(VERSION_2).unwrap();
+    raw.execute_batch(VERSION_3).unwrap();
+    raw.execute_batch(
+        "PRAGMA user_version = 3; \
+         INSERT INTO files (id, path, language, hash, size, mtime, lines, symbol_count, \
+             indexed_at, parse_errors, family) \
+         VALUES (1, 'src/a.rs', 'rust', 'h1', 10, 0, 20, 1, 5, 0, 'rust'), \
+                (2, 'src/b.rs', 'rust', 'h2', 10, 0, 20, 1, 5, 0, 'rust'); \
+         INSERT INTO symbols (id, file_id, seq, ordinal, name, qualified_name, kind, signature, \
+             doc, visibility, start_line, end_line, start_byte, end_byte, parent_id, outline, \
+             sig_hash, body_hash) VALUES \
+           (101, 1, 0, 0, 'run', 'run', 'function', 'fn run()', NULL, 'public', 1, 5, 0, 50, NULL, '', 1, 2), \
+           (201, 2, 0, 0, 'save', 'save', 'function', 'fn save()', NULL, 'public', 1, 3, 0, 30, NULL, '', 3, 4); \
+         INSERT INTO symbol_fts (rowid, name, qname, sig, doc) VALUES \
+           (101, 'run', 'run', 'fn run', ''), (201, 'save', 'save', 'fn save', ''); \
+         INSERT INTO refs (file_id, owner_id, name, kind, line, qualifier, no_self) \
+           VALUES (1, 101, 'save', 'call', 3, 'db', 0);",
+    )
+    .unwrap();
+    drop(raw);
+
+    let store = SqliteStorage::open(&path).unwrap();
+    assert_eq!(rows(&path, "PRAGMA user_version", 1), [[4]]);
+    // Every file reads as changed, and the stored reference has no receiver word.
+    assert_eq!(store.file_hash("src/a.rs").unwrap().as_deref(), Some(""));
+    assert_eq!(
+        rows(&path, "SELECT count(*) FROM refs WHERE recv IS NULL", 1),
+        [[1]]
+    );
+    // Without a word, `db.save()` resolves as version 3 resolved it: the only `save`, at
+    // `Heuristic`.
+    store.resolve_edges(&ResolveScope::All).unwrap();
+    let out = store
+        .neighbors(SymbolId(101), Direction::Out, Confidence::Guess, 10)
+        .unwrap();
+    assert_eq!(out.len(), 1);
+    assert_eq!(out[0].edge.confidence, Confidence::Heuristic);
+    assert_consistent(&path);
 }

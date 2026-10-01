@@ -44,5 +44,6 @@ pub use records::{
     SymbolRecord, UpsertOutcome,
 };
 pub use symbol::{
-    FileExtract, RefKind, ReferenceDraft, Span, SymbolDraft, SymbolKind, Visibility, first_sentence,
+    EXPRESSION_QUALIFIER, FileExtract, RefKind, ReferenceDraft, Span, SymbolDraft, SymbolKind,
+    Visibility, first_sentence,
 };

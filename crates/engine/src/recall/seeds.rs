@@ -4,10 +4,8 @@
 //!
 //! Every step reads the storage and adds to a [`CandidateSet`]; none of them writes anything.
 
-use std::collections::BTreeMap;
-
 use pn_ultramemory_core::{
-    Confidence, Direction, EdgeKind, SearchHit, SearchQuery, SymbolId, SymbolRecord, Target,
+    Confidence, Direction, EdgeKind, SearchHit, SearchQuery, SymbolId, Target,
 };
 
 use super::candidates::{CandidateSet, EdgeBook, SeenEdge};
@@ -100,6 +98,7 @@ fn search(
         text: text.to_owned(),
         kinds: Vec::new(),
         path_prefix: prefix.map(str::to_owned),
+        any_word: false,
     };
     Ok(engine.storage().search_symbols(&query, limit)?)
 }
@@ -122,12 +121,14 @@ fn text_seeds(
     Ok(())
 }
 
-/// Searches again with the meaning of the query only, and then word by word.
+/// Searches again with the meaning of the query only, and then for any of its words.
 ///
 /// The store requires every word of a query to match, which is right for a name and for a phrase
 /// copied from documentation but returns nothing for a question. First the stop words are dropped
-/// (when that changes the query); if there are still few results, each word is searched alone and a
-/// symbol scores by how many of the words it matched.
+/// (when that changes the query); if there are still few results, one search matches any of the
+/// words. That search is scored as a whole, so a word found in a few symbols weighs more than one
+/// found in hundreds: for "validate coupon discount on order", `CouponService::validate` ranks above
+/// the dozens of symbols that only mention an order.
 fn relaxed_seeds(
     engine: &Engine,
     text: &str,
@@ -155,26 +156,28 @@ fn relaxed_seeds(
     if found >= tuning::RELAX_BELOW || terms.len() < 2 {
         return Ok(());
     }
-    let mut matched: BTreeMap<SymbolId, (SymbolRecord, f64)> = BTreeMap::new();
-    for term in &terms {
-        let hits = search(engine, term, prefix, tuning::RELAX_PER_TERM_LIMIT)?;
-        let best = best_score(&hits);
-        for hit in hits {
-            let share = if best > 0.0 {
-                (hit.score / best).clamp(0.0, 1.0)
-            } else {
-                0.5
-            };
-            let entry = matched
-                .entry(hit.symbol.id)
-                .or_insert_with(|| (hit.symbol.clone(), 0.0));
-            entry.1 += share;
-        }
-    }
-    for (record, sum) in matched.values() {
+    let query = SearchQuery {
+        text: terms.join(" "),
+        kinds: Vec::new(),
+        path_prefix: prefix.map(str::to_owned),
+        any_word: true,
+    };
+    let hits = engine
+        .storage()
+        .search_symbols(&query, tuning::TEXT_LIMIT)?;
+    let best = best_score(&hits);
+    for hit in &hits {
+        let share = if best > 0.0 {
+            (hit.score / best).clamp(0.0, 1.0)
+        } else {
+            0.5
+        };
+        // Squared, because a search for any word has a long tail of symbols that share one common
+        // word with the question; their relevance must fall well below the few that match its
+        // rare words, or the packer buys ten of them for the price of the answer.
         set.offer(
-            record,
-            partial_relevance(*sum, terms.len()),
+            &hit.symbol,
+            partial_relevance(share * share, 1),
             "partial text match",
         );
     }

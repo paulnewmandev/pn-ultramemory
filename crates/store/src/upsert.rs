@@ -51,7 +51,7 @@ use pn_ultramemory_core::{
 use rusqlite::{CachedStatement, Connection, ToSql, TransactionBehavior, params};
 
 use crate::convert::{encode_names, size_to_sql, u64_from_sql, u64_to_sql};
-use crate::edges::must_not_link_to_self;
+use crate::edges::{must_not_link_to_self, receiver_word};
 use crate::error::{DbResult, Result, from_sqlite};
 use crate::ids::{Allocator, IdKey, derive_id_with};
 use crate::query::drop_index;
@@ -205,8 +205,8 @@ impl<'c> Writer<'c> {
             fts_delete: prepare("DELETE FROM symbol_fts WHERE rowid = ?1")?,
             delete_refs: prepare("DELETE FROM refs WHERE file_id = ?1")?,
             insert_ref: prepare(
-                "INSERT INTO refs (file_id, owner_id, name, kind, line, qualifier, no_self) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                "INSERT INTO refs (file_id, owner_id, name, kind, line, qualifier, no_self, recv) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             )?,
             drop_out_edges: prepare(
                 "DELETE FROM edges WHERE src IN (SELECT id FROM symbols WHERE file_id = ?1)",
@@ -583,6 +583,7 @@ impl<'c> Writer<'c> {
                     reference.line,
                     qualifier,
                     i64::from(no_self),
+                    receiver_word(qualifier),
                 ])
                 .db()?;
         }

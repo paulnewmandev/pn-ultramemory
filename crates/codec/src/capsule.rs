@@ -307,16 +307,34 @@ fn relation_rows(capsule: &Capsule) -> Vec<Value> {
         .collect()
 }
 
+/// The files the table rows of a capsule point at, in the order rows first mention them, as
+/// indices into [`Capsule::files`].
+///
+/// A symbol shown by name only goes to the `also` list, which carries no file, so its file is not
+/// listed: a path that nothing on the page refers to is tokens spent on nothing.
+#[must_use]
+pub fn row_files(capsule: &Capsule) -> Vec<usize> {
+    let mut listed: Vec<usize> = Vec::new();
+    for symbol in capsule.symbols.iter().filter(|s| s.detail != Detail::Name) {
+        if !listed.contains(&symbol.file) {
+            listed.push(symbol.file);
+        }
+    }
+    listed
+}
+
 /// Builds the TOON document and the raw source blocks of a capsule.
 fn toon_parts(capsule: &Capsule) -> (Value, Vec<String>) {
     let mut root = Map::new();
     root.insert("capsule".into(), header(capsule));
-    if !capsule.files.is_empty() {
-        let files: Vec<Value> = capsule
-            .files
+    let listed = row_files(capsule);
+    if !listed.is_empty() {
+        let files: Vec<Value> = listed
             .iter()
             .enumerate()
-            .map(|(index, path)| json!({ "f": index, "path": path }))
+            .map(|(index, &file)| {
+                json!({ "f": index, "path": capsule.files.get(file).map_or("", String::as_str) })
+            })
             .collect();
         root.insert("files".into(), Value::Array(files));
     }
@@ -345,7 +363,8 @@ fn toon_parts(capsule: &Capsule) -> (Value, Vec<String>) {
         };
         let mut row = Map::new();
         row.insert("id".into(), Value::from(symbol.id.0));
-        row.insert("f".into(), Value::from(symbol.file));
+        let printed = listed.iter().position(|&file| file == symbol.file);
+        row.insert("f".into(), Value::from(printed.unwrap_or(0)));
         row.insert("lines".into(), Value::from(line_range(symbol)));
         row.insert("kind".into(), Value::from(symbol.kind.as_str()));
         row.insert("name".into(), Value::from(symbol.name.as_str()));
@@ -587,7 +606,8 @@ mod tests {
         let (document, blocks) = output.split_once("\n\n@1 ").expect("one source block");
         let value = decode(document, &DecodeOptions::default()).expect("valid TOON");
         assert_eq!(value["capsule"]["budget"], 1500);
-        assert_eq!(value["files"][1]["path"], "src/main.rs");
+        assert_eq!(value["files"][0]["path"], "src/config.rs");
+        assert_eq!(value["files"].as_array().map(Vec::len), Some(1));
         assert_eq!(value["symbols"][0]["d"], "L1");
         assert_eq!(value["symbols"][1]["text"], "@1");
         assert_eq!(value["also"][0], "default_config");
@@ -746,12 +766,13 @@ mod tests {
 
     /// The priced cost of the symbols tracks what they add to the rendered capsule, once the fixed
     /// cost of the header, the file table and the table header is set aside. The fixed part is
-    /// small and constant, so a capsule packed to a budget stays near it.
+    /// small and constant, so a capsule packed to a budget stays near it. It is measured on a
+    /// capsule of one symbol, because the file table is only printed for a row that points at it.
     #[test]
     fn priced_cost_tracks_the_rendered_cost() {
         let options = RenderOptions::default();
-        let (empty, _) = priced_capsule(0);
-        let base = f64::from(measure(&empty, &options));
+        let (one, one_priced) = priced_capsule(1);
+        let base = f64::from(measure(&one, &options)) - f64::from(one_priced);
         for count in [4, 16, 64] {
             let (capsule, priced) = priced_capsule(count);
             let added = f64::from(measure(&capsule, &options)) - base;

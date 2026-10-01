@@ -221,6 +221,14 @@ impl RefKind {
     }
 }
 
+/// The qualifier recorded when the receiver of a reference is an expression rather than a name,
+/// such as the `items()` of `items().first()`.
+///
+/// Nothing can be said about what such a receiver is, except that it is something other than the
+/// referencing symbol, and resolution needs to know that much: a call on an expression is a call
+/// on some other object, which may come from a library and only share the method's name.
+pub const EXPRESSION_QUALIFIER: &str = "(expr)";
+
 /// A mention of another symbol's name inside a file, before it is resolved to a definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReferenceDraft {
@@ -232,7 +240,8 @@ pub struct ReferenceDraft {
     pub line: u32,
     /// Index of the symbol that contains the reference, or `None` at file level.
     pub owner: Option<usize>,
-    /// The receiver or namespace written before the name, such as `self` or `models`, if any.
+    /// The receiver or namespace written before the name, such as `self` or `models`, if any, or
+    /// [`EXPRESSION_QUALIFIER`] when it is an expression that has no name.
     pub qualifier: Option<String>,
 }
 

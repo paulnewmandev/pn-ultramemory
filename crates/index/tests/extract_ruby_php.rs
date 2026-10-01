@@ -14,7 +14,7 @@
 mod common;
 
 use common::{assert_ref, extract, extract_clean, index_of, symbol};
-use pn_ultramemory_core::{Language, RefKind, SymbolKind, Visibility};
+use pn_ultramemory_core::{EXPRESSION_QUALIFIER, Language, RefKind, SymbolKind, Visibility};
 
 /// Ruby: modules, classes, methods and constants with their parents.
 #[test]
@@ -405,12 +405,14 @@ fn php_references_and_imports() {
         Some("Shop.Billing.Invoice.fromArray"),
         Some("static"),
     );
+    // `static::query()->where(...)`: `where` is called on what `query()` returns, an expression
+    // with no name, which is recorded as such rather than as a plain call.
     assert_ref(
         &file,
         "where",
         RefKind::Call,
         Some("Shop.Billing.Invoice.fromArray"),
-        None,
+        Some(EXPRESSION_QUALIFIER),
     );
     assert_ref(
         &file,

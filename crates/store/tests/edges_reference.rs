@@ -133,9 +133,16 @@ fn random_refs(rng: &mut Rng, symbol_count: usize) -> Vec<ModelRef> {
             } else {
                 Some(rng.below(symbol_count))
             };
-            let qualifier = match rng.below(4) {
+            // Receivers that point nowhere (`other`), at a directory (`ui`, `widgets`), at a type
+            // (`Type1`, the prefix of some qualified names) or at nothing nameable (an expression),
+            // besides the symbol itself and no receiver at all.
+            let qualifier = match rng.below(8) {
                 0 => Some("self".to_owned()),
                 1 => Some("other".to_owned()),
+                2 => Some("ui".to_owned()),
+                3 => Some("$this->widgets".to_owned()),
+                5 => Some("Type1".to_owned()),
+                4 => Some(pn_ultramemory_core::EXPRESSION_QUALIFIER.to_owned()),
                 _ => None,
             };
             let kind = [
@@ -195,6 +202,139 @@ fn edge_kind_of(kind: RefKind) -> &'static str {
     }
 }
 
+/// The last word of a receiver, lowercased, as the store derives it: `None` for no receiver of
+/// its own, empty for an expression.
+fn receiver_word(qualifier: Option<&str>) -> Option<String> {
+    let own = [
+        "self", "this", "Self", "cls", "$this", "static", "super", "crate", "parent",
+    ];
+    let qualifier = qualifier?;
+    if own.contains(&qualifier) {
+        return None;
+    }
+    if qualifier == pn_ultramemory_core::EXPRESSION_QUALIFIER {
+        return Some(String::new());
+    }
+    let last = qualifier
+        .rsplit(['.', ':', '>', '\\', '/', '#', '@'])
+        .find(|part| !part.is_empty())
+        .unwrap_or_default()
+        .trim_start_matches('$');
+    if own.contains(&last) {
+        return None;
+    }
+    Some(last.to_lowercase())
+}
+
+/// Whether a receiver word names the type of a symbol. The model's symbols have no enclosing
+/// symbol, so only the qualified-name rule applies: the segment before the name equals the word,
+/// or ends with it when the word has at least four letters.
+fn names_type(word: &str, qualified: &str, name: &str) -> bool {
+    let qualified = qualified.to_lowercase();
+    let name = name.to_lowercase();
+    !word.is_empty()
+        && ["::", "."].iter().any(|sep| {
+            let tail = format!("{word}{sep}{name}");
+            qualified == tail
+                || qualified.ends_with(&format!("{sep}{tail}"))
+                || (word.len() >= 4 && qualified.ends_with(&tail))
+        })
+}
+
+/// Whether a receiver word names the place of a symbol in a file at `path`: the file or one of
+/// its directories.
+fn points_at(word: &str, path: &str) -> bool {
+    let path = path.to_lowercase();
+    !word.is_empty()
+        && (path.contains(&format!("/{word}."))
+            || path.starts_with(&format!("{word}."))
+            || path.contains(&format!("/{word}/"))
+            || path.starts_with(&format!("{word}/")))
+}
+
+/// The candidates one reference of file `fi` links to, and at what confidence, by the tiers of the
+/// rules: `candidates` are (file index, symbol index) pairs with the reference's name, in its
+/// family, without the owner when it is excluded.
+fn choose(
+    files: &[ModelFile],
+    ids: &[Vec<i64>],
+    fi: usize,
+    reference: &ModelRef,
+    mut candidates: Vec<(usize, usize)>,
+) -> Option<(Vec<(usize, usize)>, Confidence)> {
+    let shared_prefix =
+        |a: &str, b: &str| a.bytes().zip(b.bytes()).take_while(|(x, y)| x == y).count();
+    let word = receiver_word(reference.qualifier.as_deref());
+    let typed = |w: &str, (cf, cs): (usize, usize)| {
+        let symbol = &files[cf].symbols[cs];
+        names_type(w, &symbol.qualified, &symbol.name)
+    };
+    // A receiver only allows the candidates of the same file that it points at.
+    let mut same: Vec<(usize, usize)> = candidates
+        .iter()
+        .copied()
+        .filter(|c| c.0 == fi)
+        .filter(|c| {
+            word.as_deref()
+                .is_none_or(|w| typed(w, *c) || points_at(w, &files[c.0].path))
+        })
+        .collect();
+    // The one candidate the receiver points at: by type when exactly one has it, by place only
+    // when none does.
+    let hint = match word.as_deref() {
+        Some(w) if !w.is_empty() => {
+            let by_type: Vec<(usize, usize)> = candidates
+                .iter()
+                .copied()
+                .filter(|c| typed(w, *c))
+                .collect();
+            let by_place: Vec<(usize, usize)> = candidates
+                .iter()
+                .copied()
+                .filter(|c| points_at(w, &files[c.0].path))
+                .collect();
+            match (by_type.as_slice(), by_place.as_slice()) {
+                ([one], _) | ([], [one]) => Some(*one),
+                _ => None,
+            }
+        }
+        _ => None,
+    };
+    if !same.is_empty() {
+        same.sort_by_key(|&(cf, cs)| {
+            let distance =
+                (i64::from(files[cf].symbols[cs].line) - i64::from(reference.line)).abs();
+            (distance, ids[cf][cs])
+        });
+        same.truncate(4);
+        return Some((same, Confidence::Resolved));
+    }
+    if candidates.len() == 1 {
+        let confidence = if word.is_none() || hint == Some(candidates[0]) {
+            Confidence::Heuristic
+        } else {
+            Confidence::Guess
+        };
+        return Some((candidates, confidence));
+    }
+    if let Some(hint) = hint {
+        return Some((vec![hint], Confidence::Heuristic));
+    }
+    if candidates.len() < 2 {
+        return None;
+    }
+    let from = &files[fi].path;
+    candidates.sort_by_key(|&(cf, cs)| {
+        (
+            std::cmp::Reverse(shared_prefix(&files[cf].path, from)),
+            files[cf].path.clone(),
+            ids[cf][cs],
+        )
+    });
+    candidates.truncate(4);
+    Some((candidates, Confidence::Guess))
+}
+
 /// The reference implementation of the resolution rules, written for clarity, not speed.
 fn oracle(store: &SqliteStorage, files: &[ModelFile]) -> Vec<EdgeView> {
     // Identities are read back from the store, in source order, like the tie-breaks need.
@@ -209,8 +349,6 @@ fn oracle(store: &SqliteStorage, files: &[ModelFile]) -> Vec<EdgeView> {
                 .collect()
         })
         .collect();
-    let shared_prefix =
-        |a: &str, b: &str| a.bytes().zip(b.bytes()).take_while(|(x, y)| x == y).count();
     let mut edges: BTreeMap<(i64, i64, &'static str), (Confidence, u32)> = BTreeMap::new();
     let mut describe: BTreeMap<i64, String> = BTreeMap::new();
     for (fi, file) in files.iter().enumerate() {
@@ -240,30 +378,7 @@ fn oracle(store: &SqliteStorage, files: &[ModelFile]) -> Vec<EdgeView> {
                     }
                 }
             }
-            let same: Vec<(usize, usize)> =
-                candidates.iter().copied().filter(|c| c.0 == fi).collect();
-            let (chosen, confidence): (Vec<(usize, usize)>, Confidence) = if !same.is_empty() {
-                let mut same = same;
-                same.sort_by_key(|&(cf, cs)| {
-                    let distance =
-                        (i64::from(files[cf].symbols[cs].line) - i64::from(reference.line)).abs();
-                    (distance, ids[cf][cs])
-                });
-                same.truncate(4);
-                (same, Confidence::Resolved)
-            } else if candidates.len() == 1 {
-                (candidates, Confidence::Heuristic)
-            } else if candidates.len() >= 2 {
-                candidates.sort_by_key(|&(cf, cs)| {
-                    (
-                        std::cmp::Reverse(shared_prefix(&files[cf].path, &file.path)),
-                        files[cf].path.clone(),
-                        ids[cf][cs],
-                    )
-                });
-                candidates.truncate(4);
-                (candidates, Confidence::Guess)
-            } else {
+            let Some((chosen, confidence)) = choose(files, &ids, fi, reference, candidates) else {
                 continue;
             };
             for (cf, cs) in chosen {
