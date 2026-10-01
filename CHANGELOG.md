@@ -9,6 +9,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-01
+
 ### Added
 
 - **Spanish questions find English code.** Most code is written in English whatever its authors
@@ -196,6 +198,7 @@ the shapes they return — is what a 1.x promises not to break.
 - `scripts/bump-version`, `scripts/check-headers`, `scripts/ratchet`, `scripts/check-offline`.
 - Community health files, issue and pull request templates, and two CI workflows.
 
-[Unreleased]: https://github.com/paulnewmandev/pn-ultramemory/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/paulnewmandev/pn-ultramemory/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/paulnewmandev/pn-ultramemory/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/paulnewmandev/pn-ultramemory/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/paulnewmandev/pn-ultramemory/releases/tag/v1.0.0
