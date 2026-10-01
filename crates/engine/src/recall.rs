@@ -27,6 +27,7 @@
 
 mod assemble;
 mod candidates;
+mod glossary;
 pub(crate) mod ranking;
 mod seeds;
 mod tuning;

@@ -21,8 +21,15 @@ It runs on **your** repository and prints your hit rate and token cost against r
 ## How good is it at plain questions?
 
 Good when the question uses the code's own words, weaker when it shares none. The search is over
-words: nothing is embedded and nothing is translated. "validate coupon discount on order" finds
-`CouponService::validate` first; a question in Spanish about code written in English finds little.
+words: nothing is embedded. "validate coupon discount on order" finds `CouponService::validate`
+first.
+
+A question in Spanish about code written in English gets help from a built-in glossary of about
+180 programming and business words: "¿cómo se estima el número de tokens?" finds
+`estimate_tokens`, "aplicar un descuento al pedido" finds `applyDiscount`. The question keeps its
+own words too, so code documented in Spanish is found as before. Words outside the glossary, and
+other languages, are searched as written; a question that reads as English is never translated.
+
 `bench` builds its questions from each symbol's own documentation, so its numbers measure finding a
 known thing, not answering any question, and it says so in its output.
 

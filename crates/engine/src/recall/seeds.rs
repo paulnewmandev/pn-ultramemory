@@ -9,6 +9,7 @@ use pn_ultramemory_core::{
 };
 
 use super::candidates::{CandidateSet, EdgeBook, SeenEdge};
+use super::glossary;
 use super::ranking::{
     coaccess_relevance, content_terms, neighbor_relevance, partial_relevance, split_words,
     text_relevance,
@@ -16,6 +17,7 @@ use super::ranking::{
 use super::tuning;
 use crate::engine::Engine;
 use crate::error::EngineError;
+use crate::memory::tongue::reads_as_english;
 
 /// What gathering produced.
 pub(super) struct Gathered {
@@ -136,10 +138,18 @@ fn relaxed_seeds(
     already: usize,
     set: &mut CandidateSet,
 ) -> Result<(), EngineError> {
-    let terms = content_terms(text, tuning::RELAX_TERMS);
+    // A question that does not read as English loses its Spanish function words too, and gains
+    // the English words code is written in beside its own (see `glossary`).
+    let spanish = !reads_as_english(text);
+    let terms = content_terms(text, tuning::RELAX_TERMS, spanish);
     if terms.is_empty() {
         return Ok(());
     }
+    let english = if spanish {
+        glossary::translate(&terms)
+    } else {
+        Vec::new()
+    };
     let mut found = already;
     let mut all_words = split_words(text);
     all_words.sort_unstable();
@@ -153,11 +163,13 @@ fn relaxed_seeds(
         }
         found += hits.len();
     }
-    if found >= tuning::RELAX_BELOW || terms.len() < 2 {
+    if found >= tuning::RELAX_BELOW || terms.len() + english.len() < 2 {
         return Ok(());
     }
+    let mut words = terms;
+    words.extend(english);
     let query = SearchQuery {
-        text: terms.join(" "),
+        text: words.join(" "),
         kinds: Vec::new(),
         path_prefix: prefix.map(str::to_owned),
         any_word: true,

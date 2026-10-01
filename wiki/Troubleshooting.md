@@ -49,8 +49,9 @@ pn-ultramemory stats
 - `files: 0`: the index is empty. Run `pn-ultramemory index` from the project root.
 - Few symbols for many files: the language goes through the lexical fallback. Search still works;
   the graph is thinner.
-- The right code exists but is not found: use the words the code uses. The search is over words and
-  nothing is translated. `--explain` shows why each symbol was chosen.
+- The right code exists but is not found: use the words the code uses. The search is over words;
+  a Spanish question gains the English words of a built-in glossary, and anything outside it is
+  searched as written. `--explain` shows why each symbol was chosen.
 
 ## A file of mine is missing
 

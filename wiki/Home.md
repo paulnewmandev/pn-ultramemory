@@ -44,7 +44,8 @@ Both read the same index and the same memories, so what one learns the other see
 
 ## What it is not
 
-It does not understand meaning: every comparison is over words, and nothing is translated. It
+It does not understand meaning: every comparison is over words, and only Spanish programming
+vocabulary is translated. It
 cannot tell a true statement from a false one; *stale* means the code changed. It does not measure
 whether your agent solved your problem. And it is new, with one author and few users so far: try it,
 measure it on your own code with `pn-ultramemory bench`, and report what breaks.

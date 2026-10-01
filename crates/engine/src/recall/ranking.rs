@@ -6,6 +6,7 @@
 use pn_ultramemory_core::Confidence;
 
 use super::tuning;
+use crate::memory::tongue::{Tongue, folded};
 
 /// The relevance of a text match, from its score and the best score of the same result list.
 ///
@@ -164,10 +165,15 @@ pub(crate) fn split_words(text: &str) -> Vec<String> {
 
 /// The distinct words of a query that mean something: stop words and one-letter words are dropped,
 /// the order of first appearance is kept and at most `limit` are returned.
-pub(crate) fn content_terms(text: &str, limit: usize) -> Vec<String> {
+///
+/// With `spanish`, the Spanish function words go too, accented or not (*cómo*, *el*, *de*), before
+/// the limit is counted, so a Spanish question keeps its nouns and verbs rather than its grammar.
+pub(crate) fn content_terms(text: &str, limit: usize, spanish: bool) -> Vec<String> {
     let mut terms: Vec<String> = Vec::new();
     for word in split_words(text) {
-        let meaningful = word.chars().count() >= 2 && !is_stop_word(&word);
+        let meaningful = word.chars().count() >= 2
+            && !is_stop_word(&word)
+            && !(spanish && Tongue::Spanish.is_stop(&folded(&word)));
         if meaningful && !terms.contains(&word) {
             terms.push(word);
             if terms.len() == limit {
@@ -283,18 +289,27 @@ mod tests {
     #[test]
     fn content_terms_keep_the_meaning() {
         assert_eq!(
-            content_terms("How do I load the configuration from a file?", 8),
+            content_terms("How do I load the configuration from a file?", 8, false),
             ["load", "configuration", "file"]
         );
         assert_eq!(
-            content_terms("parse parse PARSE config", 8),
+            content_terms("parse parse PARSE config", 8, false),
             ["parse", "config"]
         );
         assert_eq!(
-            content_terms("alpha beta gamma delta", 2),
+            content_terms("alpha beta gamma delta", 2, false),
             ["alpha", "beta"]
         );
-        assert!(content_terms("the of a", 8).is_empty());
+        assert!(content_terms("the of a", 8, false).is_empty());
+        // A Spanish question keeps its meaning, not its grammar, accented or not.
+        assert_eq!(
+            content_terms("¿Cómo se estima el número de tokens?", 3, true),
+            ["estima", "número", "tokens"]
+        );
+        assert_eq!(
+            content_terms("como se estima", 8, false),
+            ["como", "se", "estima"]
+        );
     }
 
     /// Clipping counts characters, not bytes, and marks the cut.

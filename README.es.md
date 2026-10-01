@@ -173,9 +173,11 @@ documentación con un 95 % menos de tokens, y entre un 85 y un 93 % a partir del
 **Lee estas cifras por lo que son.** Las preguntas salen de la propia documentación de los
 símbolos, así que miden encontrar algo conocido, no resolver una tarea, y la herramienta lo dice en
 su salida. Las preguntas libres funcionan bien cuando usan las palabras del código ("validate coupon
-discount on order" encuentra primero `CouponService::validate`); funcionan peor cuando no comparten
-ninguna, y nada se traduce, así que una pregunta en español sobre código escrito en inglés encuentra
-poco. Mide tu propio repositorio con `pn-ultramemory bench`: el ahorro es lo que habría costado leer
+discount on order" encuentra primero `CouponService::validate`) y peor cuando no comparten ninguna.
+Las preguntas en español sobre código escrito en inglés se apoyan en un glosario incorporado de
+vocabulario de programación y de negocio: "¿cómo se estima el número de tokens?" encuentra
+`estimate_tokens`, y "dividir la cuenta entre clientes" encuentra `BillSplitService`. Las palabras
+fuera del glosario, y los demás idiomas, se buscan tal cual. Mide tu propio repositorio con `pn-ultramemory bench`: el ahorro es lo que habría costado leer
 archivos enteros, así que un proyecto pequeño ahorra menos.
 
 | Velocidad, este repositorio, portátil Apple silicon | |
@@ -274,7 +276,10 @@ todos los que encuentre. Escribe solo su propia entrada, `--dry-run` muestra el 
 
 - **No entiende el significado.** Toda comparación es por palabras: una paráfrasis que no comparte
   palabras con el código o con una memoria no se reconoce.
-- **No traduce.** Una pregunta en un idioma sobre código escrito en otro encuentra poco.
+- **Solo traduce del español, y solo su vocabulario de programación.** Un glosario de unas 180
+  palabras (*validar*, *pedido*, *factura*, …) añade a una pregunta en español las palabras en
+  inglés que usa el código; todo lo demás se busca tal cual, y una palabra pegada dentro de un
+  identificador (`recalculate`) no se encuentra por una de sus partes.
 - **No distingue lo verdadero de lo falso.** *Obsoleta* significa que el código cambió, no que la
   memoria sea falsa; eso lo decide una persona con `reanchor` o `forget`.
 - **No sabe si tu agente lo logró.** `bench` informa el éxito de la tarea como no observable en

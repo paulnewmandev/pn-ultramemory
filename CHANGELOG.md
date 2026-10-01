@@ -9,6 +9,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
+### Added
+
+- **Spanish questions find English code.** Most code is written in English whatever its authors
+  speak, so a question in Spanish shared almost no words with it: "¿cómo se estima el número de
+  tokens?" returned a JavaScript helper called `el`. A question that does not read as English now
+  drops its Spanish function words, accented or not, and gains the English words of a built-in
+  glossary of about 180 programming and business terms (*validar* → `validate`, *pedido* →
+  `order`, *factura* → `invoice`). It finds `estimate_tokens`; on a Laravel application, "dividir la
+  cuenta entre clientes" finds `BillSplitService` and "aplicar un descuento al pedido" finds
+  `applyDiscount`. The question keeps its own words, so code documented in Spanish is found as
+  before; an English question is never translated; nothing leaves the machine.
+
 ## [1.1.0] - 2026-10-01
 
 ### Added

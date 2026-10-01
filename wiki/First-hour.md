@@ -38,7 +38,8 @@ pn-ultramemory recall "how are prices rounded" -b 800
 ```
 
 You should see the symbols you expected near the top, at mixed levels of detail, with `used:` under
-800. Use the words your code uses: the search is over words, and nothing is translated. If the
+800. Use the words your code uses: the search is over words, and only Spanish programming words are
+translated (*validar*, *pedido*, *factura*, …). If the
 answer is wrong, find out why before you wire it into an agent; `--explain` says why each symbol is
 there.
 

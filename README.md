@@ -168,8 +168,11 @@ tokens, and 85–93% from names against 66% for reading files.
 **Read these numbers for what they are.** The questions come from the symbols' own documentation,
 so this measures finding a known thing, not solving a task, and the tool says so in its output.
 Plain questions do well when they use the code's own words ("validate coupon discount on order"
-finds `CouponService::validate` first); they do worse when they share none, and nothing is
-translated, so a question in Spanish about code written in English finds little. Measure your own
+finds `CouponService::validate` first) and worse when they share none. Spanish questions about code
+written in English get help from a built-in glossary of programming and business words:
+"¿cómo se estima el número de tokens?" finds `estimate_tokens`, and "dividir la cuenta entre
+clientes" finds `BillSplitService`. Words outside the glossary, and other languages, are searched as
+written. Measure your own
 repository with `pn-ultramemory bench`: the saving is what reading whole files would have cost, so a
 small project saves less.
 
@@ -268,7 +271,10 @@ leaves the file byte for byte as it was.
 
 - **It does not understand meaning.** Every comparison is over words: a paraphrase that shares no
   words with the code or with a memory is not recognised.
-- **It does not translate.** A question in one language about code written in another finds little.
+- **It translates only Spanish, and only its programming vocabulary.** A glossary of about 180
+  words (*validar*, *pedido*, *factura*, …) adds the English words code uses to a Spanish question;
+  everything else is searched as written, and a word glued inside an identifier (`recalculate`) is
+  not found by a part of it.
 - **It cannot tell true from false.** *Stale* means the code changed, not that the memory became
   wrong; a person decides that with `reanchor` or `forget`.
 - **It does not know whether your agent succeeded.** `bench` reports task success as unobservable

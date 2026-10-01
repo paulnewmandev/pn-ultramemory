@@ -73,6 +73,17 @@ whole so that a word found in eight symbols weighs more than one found in two hu
 matches are expanded along the graph, symbols used together in the past are added, and what was
 learned from `feedback` adjusts the order.
 
+### Questions in Spanish
+
+Most code is written in English whatever its authors speak, so a Spanish question shares almost no
+words with it. A question that does not read as English (it carries no English function words, or
+fewer than Spanish ones) loses its Spanish function words, accented or not, and gains the English
+words of a built-in glossary beside its own: *validar* adds `validate`, *pedido* adds `order`,
+*número* adds `number` and `count`. A stem matches only when a Spanish ending follows it, so the
+English *page* is not read as *pagar*. The question keeps its own words, so code documented in
+Spanish is found as before. Nothing is guessed: a word is in the glossary or it is searched as
+written.
+
 ### Packing
 
 `recall` chooses one level per candidate to maximise value inside the budget: a multiple-choice

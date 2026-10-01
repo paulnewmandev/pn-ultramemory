@@ -146,7 +146,7 @@ impl Tongue {
     }
 
     /// Whether `word` is a stop word in this language.
-    pub(super) fn is_stop(self, word: &str) -> bool {
+    pub(crate) fn is_stop(self, word: &str) -> bool {
         self.stop().contains(&word)
     }
 
@@ -211,6 +211,47 @@ pub fn detect_tongue(text: &str) -> Tongue {
     }
 }
 
+/// The word in lowercase with its accents folded: *Cómo* becomes *como*, *contraseña* becomes
+/// *contrasena*. The lists of this module are written without accents, and a question is typed with
+/// or without them.
+pub(crate) fn folded(word: &str) -> String {
+    word.chars()
+        .flat_map(char::to_lowercase)
+        .map(|c| match c {
+            'á' | 'à' | 'ä' => 'a',
+            'é' | 'è' | 'ë' => 'e',
+            'í' | 'ì' | 'ï' => 'i',
+            'ó' | 'ò' | 'ö' => 'o',
+            'ú' | 'ù' | 'ü' => 'u',
+            'ñ' => 'n',
+            other => other,
+        })
+        .collect()
+}
+
+/// Whether a question reads as English: it carries English function words, at least as many as
+/// Spanish ones.
+///
+/// Unlike [`detect_tongue`], a text with no function words at all (*validar cupón*, a few nouns)
+/// does **not** read as English. That is the right default for a question, where the cost of the
+/// two mistakes is reversed: treating a Spanish question as English finds nothing, while treating a
+/// few English nouns as Spanish only adds a related word or none.
+pub(crate) fn reads_as_english(text: &str) -> bool {
+    let mut english = 0_usize;
+    let mut spanish = 0_usize;
+    for word in split_words(text) {
+        let word = folded(&word);
+        let english_word = EN_STOP.contains(&word.as_str());
+        let spanish_word = ES_STOP.contains(&word.as_str());
+        match (english_word, spanish_word) {
+            (true, false) => english += 1,
+            (false, true) => spanish += 1,
+            _ => {}
+        }
+    }
+    english > 0 && english >= spanish
+}
+
 /// Splits a text into lowercase words, keeping only what could be a word.
 pub(super) fn split_words(text: &str) -> impl Iterator<Item = String> + '_ {
     text.split(|c: char| !c.is_alphanumeric() && c != '_' && c != '\'')
@@ -220,7 +261,18 @@ pub(super) fn split_words(text: &str) -> impl Iterator<Item = String> + '_ {
 
 #[cfg(test)]
 mod tests {
-    use super::{ES_STOP, Tongue, detect_tongue};
+    use super::{ES_STOP, Tongue, detect_tongue, folded, reads_as_english};
+
+    /// A question reads as English only when it carries English function words.
+    #[test]
+    fn questions_read_as_english_only_with_english_words() {
+        assert!(reads_as_english("how are the tokens estimated"));
+        assert!(!reads_as_english("¿cómo se estima el número de tokens?"));
+        assert!(!reads_as_english("validar cupón"));
+        assert!(!reads_as_english(""));
+        assert_eq!(folded("Cómo"), "como");
+        assert_eq!(folded("CONTRASEÑA"), "contrasena");
+    }
 
     /// A sentence in either language is recognised, and a short or empty one falls back to English.
     #[test]
