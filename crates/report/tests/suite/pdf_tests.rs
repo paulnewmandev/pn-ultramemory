@@ -23,9 +23,11 @@ fn sample_is_a_valid_pdf() {
 fn known_sentences_are_present() {
     let original = check_pdf(&render_pdf(&sample(), Lang::En)).expect("valid PDF");
     let en_text = original.pages.join("\n");
+    // The footer names the version the report data carries, which the sample fixes; the version
+    // of the build would make this test fail on every release.
     assert!(en_text.contains(&format!(
         "Generated locally by pn-ultramemory {}. No data left this machine.",
-        env!("CARGO_PKG_VERSION")
+        super::fixtures::SAMPLE_VERSION
     )));
     assert!(en_text.contains("Executive summary"));
     assert!(en_text.contains("Nimbus Ledger"));
