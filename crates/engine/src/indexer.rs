@@ -30,6 +30,7 @@ use serde_json::{Value, json};
 use crate::engine::Engine;
 use crate::error::EngineError;
 use crate::metrics::Event;
+use crate::pagerank;
 use pipeline::{Lookahead, ordered_parallel};
 
 /// The most files stored in one transaction.
@@ -374,6 +375,53 @@ impl Engine {
             let scope = ResolveScope::Touching { file_ids, names };
             report.edges_written = self.storage().resolve_edges(&scope)?.edges_written;
         }
+
+        // Structural scoring: recompute PageRank on full index or when edges changed
+        // significantly. Incremental updates keep the previous scores; the local signals
+        // (neighbor, coaccess) compensate for mild staleness between full recomputes.
+        if first_index || options.force || report.edges_written > 50 {
+            let edges = self.storage().all_edges()?;
+            let stats = self.storage().stats()?;
+            let node_count = stats.symbols as usize;
+            if node_count > 0 && !edges.is_empty() {
+                // Build a compact index: SymbolId -> 0..node_count. The symbol ids in the
+                // store are dense after indexing, but we map explicitly to be safe.
+                let mut id_to_idx: std::collections::HashMap<i64, usize> =
+                    std::collections::HashMap::with_capacity(node_count);
+                let mut next_idx = 0_usize;
+                let mut compact_edges: Vec<(usize, usize)> = Vec::with_capacity(edges.len());
+                for (src, dst) in &edges {
+                    let src_idx = *id_to_idx.entry(src.0).or_insert_with(|| {
+                        let i = next_idx;
+                        next_idx += 1;
+                        i
+                    });
+                    let dst_idx = *id_to_idx.entry(dst.0).or_insert_with(|| {
+                        let i = next_idx;
+                        next_idx += 1;
+                        i
+                    });
+                    compact_edges.push((src_idx, dst_idx));
+                }
+                let scores = pagerank::compute(&compact_edges, next_idx);
+                let scored: Vec<(pn_ultramemory_core::SymbolId, f64)> = id_to_idx
+                    .iter()
+                    .filter_map(|(&id, &idx)| {
+                        scores.get(idx).and_then(|&s| {
+                            if s > 0.0 {
+                                Some((pn_ultramemory_core::SymbolId(id), s))
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                    .collect();
+                if !scored.is_empty() {
+                    self.storage().update_pageranks(&scored)?;
+                }
+            }
+        }
+
         self.storage().set_meta("last_index_at", &now.to_string())?;
 
         report.elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);

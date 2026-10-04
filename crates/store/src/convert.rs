@@ -31,6 +31,22 @@ pub(crate) fn u64_from_sql(value: i64) -> u64 {
     u64::from_ne_bytes(value.to_ne_bytes())
 }
 
+/// Reads a floating-point column that SQLite may have stored as INTEGER (e.g. a DEFAULT 0.0
+/// written by ALTER TABLE ADD COLUMN). Rusqlite 0.40 refuses to coerce INTEGER → f64 on its
+/// own, so we inspect the raw value ref and convert manually.
+pub(crate) fn f64_from_sql(row: &rusqlite::Row<'_>, idx: usize) -> rusqlite::Result<f64> {
+    match row.get_ref(idx)? {
+        rusqlite::types::ValueRef::Real(v) => Ok(v),
+        rusqlite::types::ValueRef::Integer(v) => Ok(v as f64),
+        rusqlite::types::ValueRef::Null => Ok(0.0),
+        other => Err(rusqlite::Error::InvalidColumnType(
+            idx,
+            String::from("f64_column"),
+            other.data_type(),
+        )),
+    }
+}
+
 /// Stores a byte count, saturating at the largest representable value.
 pub(crate) fn size_to_sql(size: u64) -> i64 {
     i64::try_from(size).unwrap_or(i64::MAX)

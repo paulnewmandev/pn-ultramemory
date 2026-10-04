@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520" role="img" aria-label="Terminal mockup showing pn-ultramemory recall output with capsule table, budget indicator and memory annotations">
+<title>Terminal Recall View</title>
+<defs>
+ <linearGradient id="term-bg" x1="0" y1="0" x2="0" y2="1">
+ <stop offset="0%" stop-color="#1a1f2e"/>
+ <stop offset="100%" stop-color="#0f1219"/>
+ </linearGradient>
+</defs>
+<!-- Terminal window frame -->
+<rect width="800" height="520" rx="12" fill="url(#term-bg)" stroke="#2b3648" stroke-width="1.5"/>
+<!-- Title bar -->
+<rect width="800" height="36" rx="12" fill="#161b28"/>
+<rect y="24" width="800" height="12" fill="#161b28"/>
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/>
+<circle cx="40" cy="18" r="6" fill="#febc2e"/>
+<circle cx="60" cy="18" r="6" fill="#28c840"/>
+<text x="400" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#6b7684" text-anchor="middle">pn-ultramemory — recall</text>
+<!-- Command line -->
+<text x="24" y="64" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#0fe58b">$ pn-ultramemory recall "how does the packer respect the token budget" -b 800</text>
+<!-- Capsule header -->
+<text x="24" y="96" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">┌─ capsule ────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="24" y="112" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">│ query: "how does the packer respect the token budget"                                    │</text>
+<text x="24" y="128" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">│ budget: 800 tokens · used: 743 · symbols: 6 · memories: 2                               │</text>
+<text x="24" y="144" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">├──────────────────────────────────────────────────────────────────────────────────────────┤</text>
+<!-- Symbol table header -->
+<text x="24" y="162" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" font-weight="600" fill="#8f97bd">│ #  relevance  symbol                        level  file                                │</text>
+<text x="24" y="176" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">├──────────────────────────────────────────────────────────────────────────────────────────┤</text>
+<!-- Row 1 (highest relevance) -->
+<text x="24" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e8ecff">│ 1  ████████░░  packer::pack                  L3     crates/engine/src/recall/pack.rs    │</text>
+<!-- Row 2 -->
+<text x="24" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e8ecff">│ 2  ███████░░░  assemble::assemble            L4     crates/engine/src/recall/assemble.rs│</text>
+<!-- Row 3 -->
+<text x="24" y="230" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#cdd3f5">│ 3  ██████░░░░  tuning::RELEVANCE_CAP         L1     crates/engine/src/recall/tuning.rs  │</text>
+<!-- Row 4 -->
+<text x="24" y="248" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#cdd3f5">│ 4  █████░░░░░  candidates::rank              L2     crates/engine/src/recall/candidates │</text>
+<!-- Row 5 with PageRank indicator -->
+<text x="24" y="266" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#9aa4ad">│ 5  ████░░░░░░  pagerank::compute        PR   L2     crates/engine/src/pagerank.rs       │</text>
+<!-- Row 6 -->
+<text x="24" y="284" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#9aa4ad">│ 6  ███░░░░░░░  learn::Session                L1     crates/engine/src/learn.rs          │</text>
+<text x="24" y="298" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">├──────────────────────────────────────────────────────────────────────────────────────────┤</text>
+<!-- Memory section -->
+<text x="24" y="316" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" font-weight="600" fill="#ffd166">│ ⬡ MEMORIES                                                                             │</text>
+<text x="24" y="334" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#ffd166">│ decision · anchored to packer::pack                                                    │</text>
+<text x="24" y="350" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e8ecff">│ Packer never exceeds budget; lowers detail levels before dropping rows.                 │</text>
+<text x="24" y="370" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#ff4d6d">│ ⚠ stale (body changed) · anchored to assemble::assemble                                │</text>
+<text x="24" y="386" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e8ecff">│ Assembly sorts by relevance then utility; signature-first when budget is tight.         │</text>
+<text x="24" y="400" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">├──────────────────────────────────────────────────────────────────────────────────────────┤</text>
+<!-- Footer / feedback hint -->
+<text x="24" y="420" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">│ 💡 pn-ultramemory feedback useful --about packer::pack   ← teach the ranking           │</text>
+<text x="24" y="436" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b7684">└──────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<!-- Annotations outside the terminal -->
+<line x1="680" y1="194" x2="720" y2="194" stroke="#7cf4ff" stroke-width="1" stroke-dasharray="3,2"/>
+<rect x="724" y="182" width="68" height="24" rx="6" fill="#7cf4ff" fill-opacity="0.12" stroke="#7cf4ff" stroke-opacity="0.4"/>
+<text x="758" y="198" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#7cf4ff" text-anchor="middle">L3 = outline</text>
+<line x1="680" y1="266" x2="720" y2="266" stroke="#5ee7ff" stroke-width="1" stroke-dasharray="3,2"/>
+<rect x="724" y="254" width="68" height="24" rx="6" fill="#5ee7ff" fill-opacity="0.12" stroke="#5ee7ff" stroke-opacity="0.4"/>
+<text x="758" y="270" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#5ee7ff" text-anchor="middle">PR = PageRank</text>
+<line x1="680" y1="370" x2="720" y2="370" stroke="#ff4d6d" stroke-width="1" stroke-dasharray="3,2"/>
+<rect x="724" y="358" width="68" height="24" rx="6" fill="#ff4d6d" fill-opacity="0.12" stroke="#ff4d6d" stroke-opacity="0.4"/>
+<text x="758" y="374" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#ff4d6d" text-anchor="middle">stale reason</text>
+<!-- Bottom caption -->
+<text x="400" y="490" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#9aa4ad" text-anchor="middle">Every answer fits a budget. The capsule shows what matters, at the right detail, with memories beside the code.</text>
+<text x="400" y="508" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#6b7684" text-anchor="middle">PageRank surfaces structural hubs (PR). Staleness says why. Feedback teaches the next answer.</text>
+</svg>

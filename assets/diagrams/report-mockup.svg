@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 540" width="800" height="540" role="img" aria-label="HTML report mockup showing repository graph summary, symbol table with relevance bars, memory annotations and PageRank indicators">
+<title>HTML Report View</title>
+<defs>
+<linearGradient id="report-bg" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#0f172a"/>
+<stop offset="100%" stop-color="#0b1120"/>
+</linearGradient>
+<linearGradient id="bar-fill" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0%" stop-color="#7cf4ff"/>
+<stop offset="100%" stop-color="#5ee7ff"/>
+</linearGradient>
+</defs>
+<!-- Page background -->
+<rect width="800" height="540" rx="12" fill="url(#report-bg)" stroke="#2b3648" stroke-width="1"/>
+<!-- Header bar -->
+<rect x="0" y="0" width="800" height="64" rx="12" fill="#16203a"/>
+<rect x="0" y="48" width="800" height="16" fill="#16203a"/>
+<circle cx="32" cy="32" r="6" fill="#7cf4ff"/>
+<text x="48" y="30" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700" fill="#e8ecff">pn-ultramemory · report</text>
+<text x="48" y="50" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12" fill="#8f97bd">my-project · generated 2026-10-04 · 2,847 symbols · 12,430 edges · 34 memories</text>
+<!-- Summary cards row -->
+<rect x="24" y="80" width="178" height="72" rx="10" fill="#16203a" stroke="#2b3648"/>
+<text x="40" y="104" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">SYMBOLS</text>
+<text x="40" y="134" font-family="ui-monospace, SFMono-Regular, monospace" font-size="24" font-weight="700" fill="#e8ecff">2,847</text>
+<rect x="214" y="80" width="178" height="72" rx="10" fill="#16203a" stroke="#2b3648"/>
+<text x="230" y="104" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">CONNECTIONS</text>
+<text x="230" y="134" font-family="ui-monospace, SFMono-Regular, monospace" font-size="24" font-weight="700" fill="#e8ecff">12,430</text>
+<rect x="404" y="80" width="178" height="72" rx="10" fill="#16203a" stroke="#2b3648"/>
+<text x="420" y="104" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">MEMORIES</text>
+<text x="420" y="134" font-family="ui-monospace, SFMono-Regular, monospace" font-size="24" font-weight="700" fill="#ffd166">34</text>
+<rect x="594" y="80" width="178" height="72" rx="10" fill="#16203a" stroke="#2b3648"/>
+<text x="610" y="104" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">STALE</text>
+<text x="610" y="134" font-family="ui-monospace, SFMono-Regular, monospace" font-size="24" font-weight="700" fill="#ff4d6d">3</text>
+<!-- Section title -->
+<text x="32" y="184" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="600" fill="#e8ecff">Top symbols by structural relevance (PageRank)</text>
+<line x1="32" y1="192" x2="768" y2="192" stroke="#2b3648"/>
+<!-- Table header -->
+<text x="32" y="212" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" font-weight="600" fill="#6b7684">#</text>
+<text x="56" y="212" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" font-weight="600" fill="#6b7684">Symbol</text>
+<text x="340" y="212" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" font-weight="600" fill="#6b7684">Relevance</text>
+<text x="560" y="212" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" font-weight="600" fill="#6b7684">File</text>
+<!-- Row 1 -->
+<text x="32" y="236" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#9aa4ad">1</text>
+<text x="56" y="236" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12" font-weight="600" fill="#e8ecff">Engine::answer</text>
+<rect x="340" y="226" width="180" height="12" rx="3" fill="#1e293b"/>
+<rect x="340" y="226" width="170" height="12" rx="3" fill="url(#bar-fill)"/>
+<text x="528" y="236" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#7cf4ff">0.94</text>
+<text x="560" y="236" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#8f97bd">crates/engine/src/lib.rs</text>
+<!-- Row 2 -->
+<text x="32" y="260" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#9aa4ad">2</text>
+<text x="56" y="260" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12" font-weight="600" fill="#e8ecff">recall::pack</text>
+<rect x="340" y="250" width="180" height="12" rx="3" fill="#1e293b"/>
+<rect x="340" y="250" width="156" height="12" rx="3" fill="url(#bar-fill)"/>
+<text x="528" y="260" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#7cf4ff">0.87</text>
+<text x="560" y="260" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#8f97bd">crates/engine/src/recall/pack.rs</text>
+<!-- Row 3 with memory indicator -->
+<text x="32" y="284" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#9aa4ad">3</text>
+<text x="56" y="284" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12" font-weight="600" fill="#e8ecff">SqliteStorage::open</text>
+<circle cx="218" cy="280" r="4" fill="#ffd166" opacity="0.8"/>
+<rect x="340" y="274" width="180" height="12" rx="3" fill="#1e293b"/>
+<rect x="340" y="274" width="142" height="12" rx="3" fill="url(#bar-fill)"/>
+<text x="528" y="284" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#7cf4ff">0.79</text>
+<text x="560" y="284" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#8f97bd">crates/store/src/db.rs</text>
+<!-- Row 4 stale indicator -->
+<text x="32" y="308" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#9aa4ad">4</text>
+<text x="56" y="308" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12" font-weight="600" fill="#cdd3f5">assemble::sort_candidates</text>
+<circle cx="252" cy="304" r="4" fill="#ff4d6d" opacity="0.8"/>
+<rect x="340" y="298" width="180" height="12" rx="3" fill="#1e293b"/>
+<rect x="340" y="298" width="120" height="12" rx="3" fill="#8f97bd" opacity="0.5"/>
+<text x="528" y="308" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#8f97bd">0.67</text>
+<text x="560" y="308" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#8f97bd">crates/engine/src/recall/assemble.rs</text>
+<!-- Memory section -->
+<text x="32" y="348" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="600" fill="#e8ecff">Recent memories</text>
+<line x1="32" y1="356" x2="768" y2="356" stroke="#2b3648"/>
+<!-- Memory card 1 -->
+<rect x="32" y="368" width="360" height="64" rx="8" fill="#ffd166" fill-opacity="0.06" stroke="#ffd166" stroke-opacity="0.28"/>
+<text x="48" y="388" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#ffd166">decision</text>
+<text x="110" y="388" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#8f97bd">anchored to Engine::answer</text>
+<text x="48" y="406" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#e8ecff">Answer is the only public entry; everything else is</text>
+<text x="48" y="422" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#e8ecff">pub(crate) so the API surface stays minimal.</text>
+<!-- Memory card 2 (stale) -->
+<rect x="408" y="368" width="360" height="64" rx="8" fill="#ff4d6d" fill-opacity="0.06" stroke="#ff4d6d" stroke-opacity="0.35"/>
+<text x="424" y="388" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#ff4d6d">⚠ stale (body changed)</text>
+<text x="576" y="388" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#8f97bd">anchored to assemble::sort</text>
+<text x="424" y="406" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#e8ecff">Sort by relevance descending; ties broken by utility</text>
+<text x="424" y="422" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#e8ecff">so richer detail wins when budget allows.</text>
+<!-- Legend / footer -->
+<line x1="32" y1="452" x2="768" y2="452" stroke="#2b3648"/>
+<circle cx="44" cy="472" r="4" fill="#ffd166"/><text x="56" y="476" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8f97bd">Memory anchored</text>
+<circle cx="180" cy="472" r="4" fill="#ff4d6d"/><text x="192" y="476" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8f97bd">Stale (reason shown)</text>
+<rect x="330" y="466" width="40" height="12" rx="3" fill="url(#bar-fill)"/><text x="378" y="476" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8f97bd">PageRank score</text>
+<text x="32" y="504" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#6b7684">Generated offline by pn-ultramemory. Nothing on this page reaches the network.</text>
+<text x="32" y="524" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#6b7684">Structural hubs surface through PageRank even without keyword matches. Staleness says why a memory needs review.</text>
+</svg>

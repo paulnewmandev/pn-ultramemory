@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Modern brain view mockup: 3D particle graph with glassmorphism panels, search bar and symbol detail panel">
+<title>Second Brain View — Redesigned</title>
+<defs>
+  <radialGradient id="bg-glow" cx="50%" cy="45%" r="65%">
+    <stop offset="0%" stop-color="#1a1f3a"/>
+    <stop offset="100%" stop-color="#060814"/>
+  </radialGradient>
+  <filter id="glass-blur">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+  </filter>
+  <linearGradient id="accent-grad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#7cf4ff"/>
+    <stop offset="100%" stop-color="#5ee7ff"/>
+  </linearGradient>
+</defs>
+<!-- Background -->
+<rect width="800" height="500" rx="16" fill="url(#bg-glow)"/>
+<!-- Vignette -->
+<rect width="800" height="500" rx="16" fill="url(#bg-glow)" opacity="0.3"/>
+<!-- Particle field (stylized nodes) -->
+<g opacity="0.7">
+  <!-- Hub nodes (large, bright) -->
+  <circle cx="400" cy="230" r="8" fill="#7cf4ff" opacity="0.95"><animate attributeName="r" values="8;9;8" dur="3s" repeatCount="indefinite"/></circle>
+  <circle cx="320" cy="180" r="6" fill="#5ee7ff" opacity="0.85"/>
+  <circle cx="480" cy="200" r="7" fill="#5ee7ff" opacity="0.85"/>
+  <circle cx="360" cy="300" r="6.5" fill="#5ee7ff" opacity="0.8"/>
+  <circle cx="450" cy="280" r="5.5" fill="#5ee7ff" opacity="0.8"/>
+  <!-- Medium nodes -->
+  <circle cx="260" cy="150" r="4" fill="#8f97bd" opacity="0.7"/>
+  <circle cx="540" cy="170" r="4.5" fill="#8f97bd" opacity="0.7"/>
+  <circle cx="280" cy="340" r="4" fill="#8f97bd" opacity="0.65"/>
+  <circle cx="520" cy="320" r="4.5" fill="#8f97bd" opacity="0.65"/>
+  <circle cx="200" cy="220" r="3.5" fill="#8f97bd" opacity="0.6"/>
+  <circle cx="600" cy="250" r="4" fill="#8f97bd" opacity="0.6"/>
+  <!-- Small peripheral nodes -->
+  <circle cx="150" cy="130" r="2.5" fill="#5d6488" opacity="0.5"/>
+  <circle cx="650" cy="140" r="2.5" fill="#5d6488" opacity="0.5"/>
+  <circle cx="130" cy="300" r="2" fill="#5d6488" opacity="0.45"/>
+  <circle cx="670" cy="350" r="2.5" fill="#5d6488" opacity="0.45"/>
+  <circle cx="180" cy="380" r="2" fill="#5d6488" opacity="0.4"/>
+  <circle cx="620" cy="400" r="2" fill="#5d6488" opacity="0.4"/>
+  <!-- Memory beacons (gold) -->
+  <circle cx="400" cy="230" r="12" fill="none" stroke="#ffd166" stroke-width="1.5" opacity="0.6"><animate attributeName="r" values="12;15;12" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.6;0.3;0.6" dur="4s" repeatCount="indefinite"/></circle>
+  <circle cx="320" cy="180" r="10" fill="none" stroke="#ffd166" stroke-width="1" opacity="0.45"/>
+  <!-- Stale memory beacon (red) -->
+  <circle cx="480" cy="200" r="10" fill="none" stroke="#ff4d6d" stroke-width="1.2" opacity="0.5"/>
+</g>
+<!-- Fibres (edges) -->
+<g stroke="#8ca0ff" stroke-opacity="0.14" stroke-width="1" fill="none">
+  <line x1="400" y1="230" x2="320" y2="180"/>
+  <line x1="400" y1="230" x2="480" y2="200"/>
+  <line x1="400" y1="230" x2="360" y2="300"/>
+  <line x1="400" y1="230" x2="450" y2="280"/>
+  <line x1="320" y1="180" x2="260" y2="150"/>
+  <line x1="480" y1="200" x2="540" y2="170"/>
+  <line x1="360" y1="300" x2="280" y2="340"/>
+  <line x1="450" y1="280" x2="520" y2="320"/>
+  <line x1="260" y1="150" x2="200" y2="220"/>
+  <line x1="540" y1="170" x2="600" y2="250"/>
+  <line x1="320" y1="180" x2="360" y2="300"/>
+  <line x1="480" y1="200" x2="450" y2="280"/>
+</g>
+<!-- Glass header / brand -->
+<rect x="20" y="16" width="260" height="56" rx="14" fill="#0c0e1c" fill-opacity="0.78" stroke="#8ca0ff" stroke-opacity="0.14"/>
+<circle cx="38" cy="36" r="5" fill="url(#accent-grad)"><animate attributeName="opacity" values="1;0.7;1" dur="2.5s" repeatCount="indefinite"/></circle>
+<text x="52" y="40" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700" fill="#e8ecff">pn-ultramemory · brain</text>
+<text x="36" y="60" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#8f97bd">2,847 symbols · 12,430 fibres · 34 memories</text>
+<!-- Search bar (glass) -->
+<rect x="220" y="16" width="360" height="44" rx="14" fill="#0c0e1c" fill-opacity="0.78" stroke="#8ca0ff" stroke-opacity="0.14"/>
+<text x="244" y="43" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#5d6488">Search symbols, files and memories…</text>
+<text x="556" y="43" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#5d6488">/</text>
+<!-- Legend panel (left, glass) -->
+<rect x="20" y="88" width="180" height="260" rx="14" fill="#0c0e1c" fill-opacity="0.78" stroke="#8ca0ff" stroke-opacity="0.14"/>
+<text x="34" y="112" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">REGIONS</text>
+<circle cx="38" cy="130" r="4.5" fill="#7cf4ff"/><text x="50" y="134" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#e8ecff">core</text><text x="186" y="134" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#5d6488" text-anchor="end">412</text>
+<circle cx="38" cy="152" r="4.5" fill="#5ee7ff"/><text x="50" y="156" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#e8ecff">engine</text><text x="186" y="156" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#5d6488" text-anchor="end">1,204</text>
+<circle cx="38" cy="174" r="4.5" fill="#ffa45e"/><text x="50" y="178" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#e8ecff">store</text><text x="186" y="178" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#5d6488" text-anchor="end">891</text>
+<circle cx="38" cy="196" r="4.5" fill="#ffd166"/><text x="50" y="200" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#e8ecff">report</text><text x="186" y="200" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#5d6488" text-anchor="end">340</text>
+<text x="34" y="234" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">VIEW</text>
+<rect x="32" y="246" width="60" height="22" rx="11" fill="#7cf4ff" fill-opacity="0.08" stroke="#7cf4ff" stroke-opacity="0.45"/><text x="62" y="261" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#e8ecff" text-anchor="middle">Fibres</text>
+<rect x="98" y="246" width="68" height="22" rx="11" fill="transparent" stroke="#8ca0ff" stroke-opacity="0.14"/><text x="132" y="261" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8f97bd" text-anchor="middle">Signals</text>
+<rect x="32" y="274" width="74" height="22" rx="11" fill="transparent" stroke="#8ca0ff" stroke-opacity="0.14"/><text x="69" y="289" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8f97bd" text-anchor="middle">Memories</text>
+<rect x="112" y="274" width="62" height="22" rx="11" fill="transparent" stroke="#8ca0ff" stroke-opacity="0.14"/><text x="143" y="289" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8f97bd" text-anchor="middle">Labels</text>
+<text x="34" y="330" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#5d6488">Drag to turn · Scroll to zoom</text>
+<!-- Detail panel (right, glass, open on selected symbol) -->
+<rect x="530" y="16" width="254" height="380" rx="14" fill="#0c0e1c" fill-opacity="0.78" stroke="#8ca0ff" stroke-opacity="0.14"/>
+<text x="548" y="44" font-family="ui-monospace, SFMono-Regular, monospace" font-size="16" font-weight="600" fill="#e8ecff">recall::assemble</text>
+<text x="548" y="62" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#8f97bd">fn(cap: Capsule) → Table</text>
+<rect x="548" y="74" width="120" height="20" rx="6" fill="transparent" stroke="#7cf4ff" stroke-opacity="0.4" stroke-dasharray="3,2"/><text x="558" y="88" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#7cf4ff">crates/engine/src/recall/assemble.rs:42</text>
+<text x="548" y="118" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">SIGNATURE</text>
+<rect x="546" y="126" width="222" height="48" rx="8" fill="#000" fill-opacity="0.35" stroke="#8ca0ff" stroke-opacity="0.14"/>
+<text x="556" y="144" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#cdd3f5">pub(crate) fn assemble(</text>
+<text x="564" y="160" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#cdd3f5">cap: &amp;Capsule, budget: u32</text>
+<text x="556" y="170" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10.5" fill="#cdd3f5">) → SymbolTable</text>
+<text x="548" y="200" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">CALLED BY</text>
+<circle cx="554" cy="216" r="3.5" fill="#ffa45e"/><text x="564" y="220" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#e8ecff">recall::pack</text><text x="770" y="220" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#5d6488" text-anchor="end">recall.rs</text>
+<circle cx="554" cy="238" r="3.5" fill="#ffa45e"/><text x="564" y="242" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#e8ecff">engine::answer</text><text x="770" y="242" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#5d6488" text-anchor="end">lib.rs</text>
+<text x="548" y="272" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#8f97bd" letter-spacing="0.08em">MEMORIES</text>
+<rect x="546" y="282" width="222" height="52" rx="8" fill="#ffd166" fill-opacity="0.05" stroke="#ffd166" stroke-opacity="0.28"/>
+<text x="556" y="298" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#ffd166">decision</text>
+<text x="556" y="314" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#e8ecff">Packer never exceeds budget; lowers</text>
+<text x="556" y="328" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#e8ecff">detail levels before dropping rows.</text>
+<!-- Bottom hint bar -->
+<rect x="20" y="456" width="760" height="30" rx="10" fill="#0c0e1c" fill-opacity="0.6" stroke="#8ca0ff" stroke-opacity="0.1"/>
+<text x="400" y="476" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#5d6488" text-anchor="middle">drag to turn · right-drag to move · scroll to zoom · / search · Esc clear</text>
+</svg>

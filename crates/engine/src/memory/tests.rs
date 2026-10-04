@@ -23,6 +23,7 @@ fn memory(id: i64, kind: MemoryKind, text: &str, about: &[&str]) -> MemoryRecord
         provenance: Provenance::User,
         created_at: 0,
         stale_since: None,
+        stale_reason: None,
         anchors: about
             .iter()
             .map(|name| Anchor {

@@ -66,6 +66,24 @@ pub(crate) fn coaccess_relevance(seed: f64, weight: f64) -> f64 {
     seed * tuning::COACCESS_FACTOR * (weight / tuning::COACCESS_FULL_WEIGHT).min(1.0)
 }
 
+/// The relevance a symbol earns from its precomputed PageRank score.
+///
+/// `pagerank` is the normalized score (0..=1) stored during indexing; `max` is the highest score
+/// seen in the current candidate set so the range adapts to each query. The result lives in
+/// `[STRUCTURAL_FLOOR, STRUCTURAL_FLOOR + STRUCTURAL_SPAN]` and is always additive — it lifts
+/// every symbol a little and lifts hubs more, without ever dominating text or neighbor signals.
+pub(crate) fn structural_relevance(pagerank: f64, max: f64) -> f64 {
+    if !pagerank.is_finite() || pagerank <= 0.0 {
+        return tuning::STRUCTURAL_FLOOR;
+    }
+    let normalized = if !max.is_finite() || max <= 0.0 {
+        0.0
+    } else {
+        (pagerank / max).clamp(0.0, 1.0)
+    };
+    tuning::STRUCTURAL_FLOOR + tuning::STRUCTURAL_SPAN * normalized
+}
+
 /// Applies a learned multiplier to a relevance, never going above [`tuning::RELEVANCE_CAP`].
 /// A multiplier that is not a finite positive number counts as `1.0`.
 pub(crate) fn boosted(relevance: f64, multiplier: f64) -> f64 {

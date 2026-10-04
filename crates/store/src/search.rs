@@ -96,7 +96,8 @@ pub(crate) fn search_symbols(
     );
     query_all(conn, &sql, params_from_iter(values.iter()), |row| {
         let symbol = symbol_from_row(row)?;
-        let bm25: f64 = row.get(18)?;
+        // symbol_columns! now includes pagerank as column 18, so bm25 shifts to 19.
+        let bm25: f64 = row.get(19)?;
         Ok(SearchHit {
             symbol,
             score: -bm25,

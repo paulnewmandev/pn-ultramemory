@@ -14,10 +14,12 @@
 //! is the `upsert` module, and text search is the `search` module.
 
 use pn_ultramemory_core::{Confidence, FileId, Span, SymbolId, SymbolRecord};
-use rusqlite::{Connection, Row, params};
+use rusqlite::{Connection, Row, TransactionBehavior, params};
+
+use crate::error::DbResult;
 
 use crate::convert::{
-    confidence_to_sql, decode_names, language, limit_to_sql, prefix_upper_bound, symbol_kind,
+    confidence_to_sql, decode_names, f64_from_sql, language, limit_to_sql, prefix_upper_bound, symbol_kind,
     u64_from_sql, visibility,
 };
 use crate::error::Result;
@@ -28,7 +30,7 @@ macro_rules! symbol_columns {
     () => {
         "s.id, s.file_id, f.path, f.language, s.name, s.qualified_name, s.kind, s.signature, \
          s.doc, s.visibility, s.start_line, s.end_line, s.start_byte, s.end_byte, s.parent_id, \
-         s.outline, s.sig_hash, s.body_hash"
+         s.outline, s.sig_hash, s.body_hash, s.pagerank"
     };
 }
 
@@ -75,6 +77,7 @@ pub(crate) fn symbol_from_row(row: &Row<'_>) -> rusqlite::Result<SymbolRecord> {
         outline: decode_names(&outline),
         sig_hash: u64_from_sql(row.get(16)?),
         body_hash: u64_from_sql(row.get(17)?),
+        pagerank: f64_from_sql(row, 18)?,
     })
 }
 
@@ -156,7 +159,8 @@ pub(crate) fn central_symbols(
         params![heuristic, lower, upper, limit_to_sql(limit)],
         |row| {
             let record = symbol_from_row(row)?;
-            let degree: i64 = row.get(18)?;
+            // symbol_columns! now includes pagerank as column 18, so degree shifts to 19.
+            let degree: i64 = row.get(19)?;
             Ok((record, u32::try_from(degree).unwrap_or(u32::MAX)))
         },
     )
@@ -184,4 +188,27 @@ pub(crate) fn undocumented_public(
         params![lower, upper, limit_to_sql(limit)],
         symbol_from_row,
     )
+}
+
+/// Persists precomputed PageRank scores for symbols in a single batched transaction.
+pub(crate) fn update_pageranks(
+    conn: &mut Connection,
+    scores: &[(pn_ultramemory_core::SymbolId, f64)],
+) -> Result<()> {
+    if scores.is_empty() {
+        return Ok(());
+    }
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .db()?;
+    {
+        let mut stmt = tx
+            .prepare_cached("UPDATE symbols SET pagerank = ?1 WHERE id = ?2")
+            .db()?;
+        for (id, score) in scores {
+            stmt.execute(params![score, id.0]).db()?;
+        }
+    }
+    tx.commit().db()?;
+    Ok(())
 }

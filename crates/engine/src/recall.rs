@@ -30,7 +30,7 @@ mod candidates;
 mod glossary;
 pub(crate) mod ranking;
 mod seeds;
-mod tuning;
+pub(crate) mod tuning;
 
 use std::collections::BTreeMap;
 use std::time::Instant;

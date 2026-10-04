@@ -23,7 +23,8 @@
 //! Position in the architecture: the memory side of the storage adapter.
 
 use pn_ultramemory_core::{
-    Anchor, MemoryFilter, MemoryId, MemoryKind, MemoryRecord, NewMemory, StorageError, SymbolId,
+    Anchor, MemoryFilter, MemoryId, MemoryKind, MemoryRecord, NewMemory, StaleReason, StorageError,
+    SymbolId,
 };
 use rusqlite::{Connection, TransactionBehavior, params};
 
@@ -153,6 +154,7 @@ pub(crate) fn add_memory(conn: &mut Connection, new: &NewMemory, now: i64) -> Re
         provenance: new.provenance,
         created_at: now,
         stale_since: None,
+        stale_reason: None,
         anchors,
     })
 }
@@ -161,21 +163,24 @@ pub(crate) fn add_memory(conn: &mut Connection, new: &NewMemory, now: i64) -> Re
 fn load_memory(conn: &Connection, id: i64) -> Result<Option<MemoryRecord>> {
     let head = query_opt(
         conn,
-        "SELECT kind, text, provenance, created_at, stale_since FROM memories WHERE id = ?1",
+        "SELECT kind, text, provenance, created_at, stale_since, stale_reason \
+         FROM memories WHERE id = ?1",
         params![id],
         |row| {
             let kind: String = row.get(0)?;
             let source: String = row.get(2)?;
+            let reason: Option<String> = row.get(5)?;
             Ok((
                 memory_kind(&kind, 0)?,
                 row.get::<_, String>(1)?,
                 provenance(&source, 2)?,
                 row.get::<_, i64>(3)?,
                 row.get::<_, Option<i64>>(4)?,
+                reason.and_then(|r| StaleReason::from_name(&r)),
             ))
         },
     )?;
-    let Some((kind, text, provenance, created_at, stale_since)) = head else {
+    let Some((kind, text, provenance, created_at, stale_since, stale_reason)) = head else {
         return Ok(None);
     };
     let anchors = query_all(
@@ -201,6 +206,7 @@ fn load_memory(conn: &Connection, id: i64) -> Result<Option<MemoryRecord>> {
         provenance,
         created_at,
         stale_since,
+        stale_reason,
         anchors,
     }))
 }
@@ -385,9 +391,74 @@ pub(crate) fn reanchor_memory(conn: &mut Connection, id: MemoryId) -> Result<boo
     }
     execute(
         &tx,
-        "UPDATE memories SET stale_since = NULL WHERE id = ?1",
+        "UPDATE memories SET stale_since = NULL, stale_reason = NULL WHERE id = ?1",
         params![id.0],
     )?;
     tx.commit().db()?;
     Ok(true)
+}
+
+/// Persists a new draft memory suggested from observed agent behavior.
+pub(crate) fn save_draft(
+    conn: &mut Connection,
+    draft: &pn_ultramemory_core::DraftMemory,
+) -> Result<i64> {
+    let about = draft.about_symbols.join(",");
+    execute(
+        conn,
+        "INSERT INTO draft_memories (kind, text, about_symbols, suggested_at, source_query) \
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            draft.kind.as_str(),
+            draft.text,
+            about,
+            draft.suggested_at,
+            draft.source_query
+        ],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// Lists pending drafts, newest first.
+pub(crate) fn list_drafts(
+    conn: &Connection,
+    limit: usize,
+) -> Result<Vec<pn_ultramemory_core::DraftMemory>> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+    query_all(
+        conn,
+        "SELECT id, kind, text, about_symbols, suggested_at, source_query \
+         FROM draft_memories ORDER BY suggested_at DESC, id DESC LIMIT ?1",
+        params![limit_to_sql(limit)],
+        |row| {
+            let id: i64 = row.get(0)?;
+            let kind_str: String = row.get(1)?;
+            let text: String = row.get(2)?;
+            let about_raw: String = row.get(3)?;
+            let suggested_at: i64 = row.get(4)?;
+            let source_query: String = row.get(5)?;
+            let kind = memory_kind(&kind_str, 1)?;
+            let about_symbols: Vec<String> = if about_raw.is_empty() {
+                Vec::new()
+            } else {
+                about_raw.split(',').map(|s| s.to_owned()).collect()
+            };
+            Ok(pn_ultramemory_core::DraftMemory {
+                id,
+                kind,
+                text,
+                about_symbols,
+                suggested_at,
+                source_query,
+            })
+        },
+    )
+}
+
+/// Removes a draft after confirmation or discard. Returns `false` when it did not exist.
+pub(crate) fn discard_draft(conn: &mut Connection, id: i64) -> Result<bool> {
+    let removed = execute(conn, "DELETE FROM draft_memories WHERE id = ?1", params![id])?;
+    Ok(removed > 0)
 }

@@ -53,6 +53,7 @@ fn record(name: &str, line: u32, visibility: Visibility) -> SymbolRecord {
         outline: Vec::new(),
         sig_hash: 0,
         body_hash: 0,
+        pagerank: 0.0,
     }
 }
 

@@ -53,13 +53,16 @@ const MIGRATIONS: &[(u32, &str)] = &[
     (2, include_str!("../migrations/0002_report_totals.sql")),
     (3, include_str!("../migrations/0003_language_families.sql")),
     (4, include_str!("../migrations/0004_receivers.sql")),
+    (5, include_str!("../migrations/0005_stale_reason.sql")),
+    (6, include_str!("../migrations/0006_pagerank.sql")),
+    (7, include_str!("../migrations/0007_draft_memories.sql")),
 ];
 
 /// The scratch tables of a connection.
 const TEMP_TABLES: &str = include_str!("../sql/temp_tables.sql");
 
 /// The schema version this build reads and writes: the version of the last migration.
-pub(crate) const SCHEMA_VERSION: u32 = 4;
+pub(crate) const SCHEMA_VERSION: u32 = 7;
 
 /// Runs a step that SQLite may refuse with "busy" without consulting the busy timeout (switching
 /// a fresh file to WAL is one: several processes opening a new database together can hit it), and

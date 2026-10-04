@@ -102,6 +102,8 @@ pub struct SymbolRecord {
     pub sig_hash: u64,
     /// Whitespace-normalized hash of the whole declaration.
     pub body_hash: u64,
+    /// Precomputed PageRank score (0..=1), populated during full index. Zero means not yet scored.
+    pub pagerank: f64,
 }
 
 /// What an edge between two symbols means.
@@ -192,6 +194,44 @@ pub struct SearchHit {
     pub score: f64,
 }
 
+/// Why a memory went stale: what changed in the code it was anchored to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum StaleReason {
+    /// The symbol no longer exists anywhere in the index.
+    SymbolDeleted,
+    /// The symbol's signature (name, parameters, return type) changed.
+    SignatureChanged,
+    /// Only the symbol's body changed; its signature is intact.
+    BodyChanged,
+    /// The file that held the symbol was removed from the repository.
+    FileRemoved,
+}
+
+impl StaleReason {
+    /// Stable lowercase name used in storage and output.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::SymbolDeleted => "symbol_deleted",
+            Self::SignatureChanged => "signature_changed",
+            Self::BodyChanged => "body_changed",
+            Self::FileRemoved => "file_removed",
+        }
+    }
+
+    /// Looks a reason up by the name returned from [`StaleReason::as_str`].
+    #[must_use]
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "symbol_deleted" => Some(Self::SymbolDeleted),
+            "signature_changed" => Some(Self::SignatureChanged),
+            "body_changed" => Some(Self::BodyChanged),
+            "file_removed" => Some(Self::FileRemoved),
+            _ => None,
+        }
+    }
+}
+
 /// A link between a memory and a symbol, remembering what the symbol looked like at that moment.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Anchor {
@@ -230,9 +270,43 @@ impl Anchor {
     /// ```
     #[must_use]
     pub const fn is_stale_against(&self, current: Option<(u64, u64)>) -> bool {
+        self.stale_reason_against(current).is_some()
+    }
+
+    /// Returns why the anchor is stale, or `None` when the code still matches.
+    ///
+    /// This is the richer version of [`is_stale_against`](Self::is_stale_against): instead of a
+    /// bare boolean it names the change so a brief can tell an agent *what* moved.
+    ///
+    /// # Examples
+    /// ```
+    /// use pn_ultramemory_core::{Anchor, StaleReason};
+    ///
+    /// let anchor = Anchor {
+    ///     symbol: None,
+    ///     qualified_name: "f".into(),
+    ///     path: "a.rs".into(),
+    ///     sig_hash: 1,
+    ///     body_hash: 2,
+    /// };
+    /// assert_eq!(anchor.stale_reason_against(Some((1, 2))), None);
+    /// assert_eq!(anchor.stale_reason_against(Some((9, 2))), Some(StaleReason::SignatureChanged));
+    /// assert_eq!(anchor.stale_reason_against(Some((1, 9))), Some(StaleReason::BodyChanged));
+    /// assert_eq!(anchor.stale_reason_against(None), Some(StaleReason::SymbolDeleted));
+    /// ```
+    #[must_use]
+    pub const fn stale_reason_against(&self, current: Option<(u64, u64)>) -> Option<StaleReason> {
         match current {
-            None => true,
-            Some((sig_hash, body_hash)) => sig_hash != self.sig_hash || body_hash != self.body_hash,
+            None => Some(StaleReason::SymbolDeleted),
+            Some((sig_hash, body_hash)) => {
+                if sig_hash != self.sig_hash {
+                    Some(StaleReason::SignatureChanged)
+                } else if body_hash != self.body_hash {
+                    Some(StaleReason::BodyChanged)
+                } else {
+                    None
+                }
+            }
         }
     }
 }
@@ -252,6 +326,8 @@ pub struct MemoryRecord {
     pub created_at: i64,
     /// When the code it describes first changed, if it did. `None` means still fresh.
     pub stale_since: Option<i64>,
+    /// Why the memory went stale, when known. `None` means fresh or legacy (pre-v5).
+    pub stale_reason: Option<StaleReason>,
     /// The symbols it is about.
     pub anchors: Vec<Anchor>,
 }
@@ -267,6 +343,28 @@ pub struct NewMemory {
     pub provenance: Provenance,
     /// The symbols it is about. Storage looks each up to record its current hashes.
     pub about: Vec<SymbolId>,
+}
+
+/// A memory suggested automatically from observed agent behavior, awaiting confirmation.
+///
+/// Drafts are created when the engine detects that an expand-after-recall pattern likely
+/// resolved the agent's query, and surfaced in `brief` so the next session can accept or
+/// discard them without restating what already happened. They never participate in ranking
+/// until confirmed through [`NewMemory`] with [`Provenance::Auto`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DraftMemory {
+    /// Identity of the draft, assigned by storage on insert.
+    pub id: i64,
+    /// What kind of memory this would become if confirmed.
+    pub kind: MemoryKind,
+    /// The suggested text.
+    pub text: String,
+    /// Qualified names of the symbols this draft is about, comma-separated for storage.
+    pub about_symbols: Vec<String>,
+    /// When the draft was suggested, in seconds since the Unix epoch.
+    pub suggested_at: i64,
+    /// The recall query that led to this suggestion, if any.
+    pub source_query: String,
 }
 
 /// Which memories to list.

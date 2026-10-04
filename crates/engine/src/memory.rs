@@ -220,14 +220,24 @@ pub fn memory_to_value(memory: &MemoryRecord) -> Value {
         .iter()
         .map(|anchor| anchor.qualified_name.as_str())
         .collect();
-    json!({
-        "id": memory.id.0,
-        "kind": memory.kind.as_str(),
-        "by": memory.provenance.as_str(),
-        "stale": if memory.stale_since.is_some() { "yes" } else { "no" },
-        "about": about.join(" "),
-        "text": memory.text,
-    })
+    let mut entry = serde_json::Map::new();
+    entry.insert("id".into(), Value::from(memory.id.0));
+    entry.insert("kind".into(), Value::from(memory.kind.as_str()));
+    entry.insert("by".into(), Value::from(memory.provenance.as_str()));
+    entry.insert(
+        "stale".into(),
+        Value::from(if memory.stale_since.is_some() {
+            "yes"
+        } else {
+            "no"
+        }),
+    );
+    if let Some(reason) = memory.stale_reason {
+        entry.insert("stale_reason".into(), Value::from(reason.as_str()));
+    }
+    entry.insert("about".into(), Value::from(about.join(" ")));
+    entry.insert("text".into(), Value::from(memory.text.clone()));
+    Value::Object(entry)
 }
 
 /// Several memories as a uniform table, which prints compactly.

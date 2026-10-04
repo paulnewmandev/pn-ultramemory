@@ -49,6 +49,7 @@ pub(super) fn gather(
     let mut book = EdgeBook::default();
     expand(engine, &seeds, prefix, &mut set, &mut book)?;
     coaccess(engine, &seeds, prefix, now, &mut set)?;
+    set.apply_structural();
     apply_learning(engine, &mut set);
     Ok(Gathered {
         set,

@@ -19,10 +19,10 @@ use std::path::Path;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use pn_ultramemory_core::{
-    Confidence, Direction, DocCoverageRow, FileExtract, FileInput, FileRecord, FileTotals,
-    IndexStats, LearningStatus, MemoryFilter, MemoryId, MemoryRecord, ModuleEdge, ModuleStats,
-    Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit, SearchQuery, SignalKind, Storage,
-    StorageError, SymbolId, SymbolRecord, Target, UpsertOutcome, UtilityState,
+    Confidence, Direction, DocCoverageRow, DraftMemory, FileExtract, FileInput, FileRecord,
+    FileTotals, IndexStats, LearningStatus, MemoryFilter, MemoryId, MemoryRecord, ModuleEdge,
+    ModuleStats, Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit, SearchQuery,
+    SignalKind, Storage, StorageError, SymbolId, SymbolRecord, Target, UpsertOutcome, UtilityState,
 };
 use rusqlite::Connection;
 
@@ -376,5 +376,25 @@ impl Storage for SqliteStorage {
 
     fn set_meta(&self, key: &str, value: &str) -> Result<()> {
         self.with(|conn| meta::set_meta(conn, key, value))
+    }
+
+    fn all_edges(&self) -> Result<Vec<(SymbolId, SymbolId)>> {
+        self.with(|conn| edges::all_edges(conn))
+    }
+
+    fn update_pageranks(&self, scores: &[(SymbolId, f64)]) -> Result<()> {
+        self.with(|conn| symbols::update_pageranks(conn, scores))
+    }
+
+    fn save_draft(&self, draft: &DraftMemory) -> Result<i64> {
+        self.with(|conn| memories::save_draft(conn, draft))
+    }
+
+    fn list_drafts(&self, limit: usize) -> Result<Vec<DraftMemory>> {
+        self.with(|conn| memories::list_drafts(conn, limit))
+    }
+
+    fn discard_draft(&self, id: i64) -> Result<bool> {
+        self.with(|conn| memories::discard_draft(conn, id))
     }
 }

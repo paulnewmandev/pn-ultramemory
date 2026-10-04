@@ -217,12 +217,15 @@ fn sections_of(insights: &crate::insights::Insights) -> Vec<Section> {
                 .iter()
                 .take(MAX_MEMORIES)
                 .map(|m| {
-                    json!({
-                        "id": m.id.0,
-                        "kind": m.kind.as_str(),
-                        "stale": m.stale_since.is_some(),
-                        "text": m.text,
-                    })
+                    let mut entry = serde_json::Map::new();
+                    entry.insert("id".into(), Value::from(m.id.0));
+                    entry.insert("kind".into(), Value::from(m.kind.as_str()));
+                    entry.insert("stale".into(), Value::from(m.stale_since.is_some()));
+                    if let Some(reason) = m.stale_reason {
+                        entry.insert("stale_reason".into(), Value::from(reason.as_str()));
+                    }
+                    entry.insert("text".into(), Value::from(m.text.clone()));
+                    Value::Object(entry)
                 })
                 .collect(),
         },

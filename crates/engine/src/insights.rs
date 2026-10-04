@@ -210,15 +210,18 @@ impl Insights {
             .memories
             .iter()
             .map(|memory| {
-                json!({
-                    "id": memory.id.0,
-                    "kind": memory.kind.as_str(),
-                    "provenance": memory.provenance.as_str(),
-                    "stale": memory.stale_since.is_some(),
-                    "created_at": memory.created_at,
-                    "about": about_of(memory),
-                    "text": memory.text,
-                })
+                let mut entry = serde_json::Map::new();
+                entry.insert("id".into(), Value::from(memory.id.0));
+                entry.insert("kind".into(), Value::from(memory.kind.as_str()));
+                entry.insert("provenance".into(), Value::from(memory.provenance.as_str()));
+                entry.insert("stale".into(), Value::from(memory.stale_since.is_some()));
+                if let Some(reason) = memory.stale_reason {
+                    entry.insert("stale_reason".into(), Value::from(reason.as_str()));
+                }
+                entry.insert("created_at".into(), Value::from(memory.created_at));
+                entry.insert("about".into(), Value::from(about_of(memory)));
+                entry.insert("text".into(), Value::from(memory.text.clone()));
+                Value::Object(entry)
             })
             .collect();
         json!({
@@ -397,6 +400,7 @@ mod tests {
             provenance: Provenance::Tool,
             created_at: 10,
             stale_since: None,
+            stale_reason: None,
             anchors: Vec::new(),
         };
         assert_eq!(about_of(&memory), "");

@@ -13,6 +13,10 @@ use core::fmt;
 pub enum Provenance {
     /// Captured from the output of a tool, a web page or a file. Untrusted.
     Tool,
+    /// Suggested automatically by the system from observed agent behavior; must be
+    /// confirmed before it counts as knowledge. Less trusted than an explicit agent
+    /// write because the trigger is heuristic, not intentional.
+    Auto,
     /// Written by a coding agent. Useful, but may be wrong or manipulated.
     Agent,
     /// Written or explicitly confirmed by a human.
@@ -39,6 +43,7 @@ impl Provenance {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Tool => "tool",
+            Self::Auto => "auto",
             Self::Agent => "agent",
             Self::User => "user",
         }
@@ -51,11 +56,12 @@ impl Provenance {
     /// use pn_ultramemory_core::Provenance;
     ///
     /// assert_eq!(Provenance::from_name("agent"), Some(Provenance::Agent));
+    /// assert_eq!(Provenance::from_name("auto"), Some(Provenance::Auto));
     /// assert_eq!(Provenance::from_name("robot"), None);
     /// ```
     #[must_use]
     pub fn from_name(name: &str) -> Option<Self> {
-        [Self::Tool, Self::Agent, Self::User]
+        [Self::Tool, Self::Auto, Self::Agent, Self::User]
             .into_iter()
             .find(|p| p.as_str() == name)
     }
@@ -162,12 +168,14 @@ impl fmt::Display for MemoryKind {
 mod tests {
     use super::{MemoryKind, Provenance};
 
-    /// Trust grows from tool output to agent to human.
+    /// Trust grows from tool output through auto-suggested to agent to human.
     #[test]
     fn provenance_is_ordered_by_trust() {
-        assert!(Provenance::Tool < Provenance::Agent);
+        assert!(Provenance::Tool < Provenance::Auto);
+        assert!(Provenance::Auto < Provenance::Agent);
         assert!(Provenance::Agent < Provenance::User);
         assert!(!Provenance::Tool.is_human_verified());
+        assert!(!Provenance::Auto.is_human_verified());
     }
 
     /// Storage names of memory kinds are unique.

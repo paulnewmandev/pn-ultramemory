@@ -42,6 +42,7 @@ mod memory;
 mod metrics;
 mod naming;
 mod outline;
+mod pagerank;
 mod recall;
 mod render;
 mod sources;

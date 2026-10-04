@@ -12,10 +12,10 @@ use core::fmt;
 use std::error::Error;
 
 use crate::{
-    Confidence, Direction, DocCoverageRow, FileExtract, FileInput, FileRecord, FileTotals,
-    IndexStats, Language, LearningStatus, MemoryFilter, MemoryId, MemoryRecord, ModuleEdge,
-    ModuleStats, Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit, SearchQuery, SymbolId,
-    SymbolKind, SymbolRecord, Target, UpsertOutcome, UtilityState,
+    Confidence, Direction, DocCoverageRow, DraftMemory, FileExtract, FileInput, FileRecord,
+    FileTotals, IndexStats, Language, LearningStatus, MemoryFilter, MemoryId, MemoryRecord,
+    ModuleEdge, ModuleStats, Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit,
+    SearchQuery, SymbolId, SymbolKind, SymbolRecord, Target, UpsertOutcome, UtilityState,
 };
 
 /// Why an extraction failed.
@@ -460,4 +460,29 @@ pub trait Storage: Send + Sync {
 
     /// Writes a metadata value.
     fn set_meta(&self, key: &str, value: &str) -> Result<(), StorageError>;
+
+    // ---- structural scoring -----------------------------------------------------------------
+
+    /// Returns every resolved edge as `(src, dst)` pairs. Used by the indexer to compute
+    /// PageRank after a full resolve; callers that only need local neighborhoods should use
+    /// [`neighbors`](Self::neighbors) instead.
+    fn all_edges(&self) -> Result<Vec<(SymbolId, SymbolId)>, StorageError>;
+
+    /// Persists precomputed PageRank scores for symbols. The slice contains `(id, score)` pairs;
+    /// scores are normalized to `0..=1` by the caller. Implementations should batch the writes
+    /// because this runs once per full index over every symbol in the repository.
+    fn update_pageranks(&self, scores: &[(SymbolId, f64)]) -> Result<(), StorageError>;
+
+    // ---- draft memories ---------------------------------------------------------------------
+
+    /// Persists a new draft memory suggested from observed agent behavior. Returns the id
+    /// assigned by storage. Drafts never participate in ranking until confirmed.
+    fn save_draft(&self, draft: &DraftMemory) -> Result<i64, StorageError>;
+
+    /// Lists pending drafts, newest first. Used by `brief` and `memories --drafts`.
+    fn list_drafts(&self, limit: usize) -> Result<Vec<DraftMemory>, StorageError>;
+
+    /// Removes a draft after it has been confirmed or discarded. Returns `false` when the
+    /// draft did not exist.
+    fn discard_draft(&self, id: i64) -> Result<bool, StorageError>;
 }

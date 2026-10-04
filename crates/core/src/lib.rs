@@ -38,7 +38,8 @@ pub use ports::{
     SourceTree, Storage, StorageError,
 };
 pub use records::{
-    Anchor, Direction, DocCoverageRow, EdgeKind, EdgeRecord, FileId, FileInput, FileRecord,
+    Anchor, Direction, DocCoverageRow, DraftMemory, EdgeKind, EdgeRecord, FileId, FileInput, FileRecord,
+    StaleReason,
     FileTotals, IndexStats, LearningStatus, MemoryFilter, MemoryId, MemoryRecord, ModuleEdge,
     ModuleStats, Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit, SearchQuery, SymbolId,
     SymbolRecord, UpsertOutcome,

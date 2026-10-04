@@ -19,6 +19,7 @@
 //!   algorithm and its guarantees.
 
 pub mod capsule;
+pub mod compress;
 pub mod packer;
 pub mod tokens;
 

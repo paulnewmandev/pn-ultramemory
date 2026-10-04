@@ -9,6 +9,28 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
+### Added
+
+- **Linguistic compression for capsule text.** Memories and notes are now compressed before rendering
+  using controlled-language rules inspired by ASD-STE100 and projects like Caveman: filler phrases,
+  articles before unambiguous nouns, and redundant qualifiers are stripped while code spans, numbers,
+  negations and file paths are preserved verbatim. This cuts 30–50% of tokens on verbose memories
+  without losing information critical to the LLM.
+- **PageRank as a structural relevance signal.** Recall already ranks by text match, neighbor
+  propagation and learned co-access, but all of those are local: they need a seed to start from.
+  A symbol that everything calls but nothing names explicitly (a config loader, an error type, a
+  shared allocator) can be invisible to keyword search. PageRank is computed once per full index
+  over the whole graph (damping `0.85`, up to 20 iterations, L1 convergence below `1e-6`) and
+  stored per symbol, so the packer can offer those hubs even when no seed points at them directly.
+- **Draft memories.** When an agent expands a symbol shortly after recalling it, the engine writes
+  a draft instead of a confirmed memory. The next session can review and accept it without having
+  to restate what it already did. Drafts live in their own table, expire if nobody confirms them,
+  and never count as corroborations until accepted.
+- **Stale reasons.** A stale memory now records whether the symbol's signature changed, its body
+  changed, or the symbol disappeared entirely. `memories --stale` shows the reason, so a reanchor
+  decision can distinguish "body-only edit, probably safe" from "signature gone, revisit the
+  decision".
+
 ## [1.2.0] - 2026-10-01
 
 ### Added

@@ -451,8 +451,14 @@ pub(super) fn assemble(
         reserve = needed;
     }
 
+    // Apply linguistic compression to memories and notes before measuring, so the packer budgets
+    // the shorter text and the renderer prints it. Compression is idempotent and never touches
+    // code spans, numbers or negations.
+    pn_ultramemory_codec::compress::compress_memories(&mut memories);
+
     loop {
         let mut capsule = compose(settings, prepared, &chosen, &memories);
+        pn_ultramemory_codec::compress::compress_notes(&mut capsule.notes);
         let Err(over) = settle(&mut capsule, settings.budget) else {
             let (capsule, chosen) =
                 refill(settings, prepared, &memories, capsule, chosen, available);
@@ -616,6 +622,7 @@ mod tests {
             outline: outline.iter().map(|s| (*s).to_owned()).collect(),
             sig_hash: 1,
             body_hash: 2,
+            pagerank: 0.0,
         }
     }
 

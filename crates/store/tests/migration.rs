@@ -92,7 +92,7 @@ fn a_version_1_database_migrates_cleanly() {
         rows(&path, "PRAGMA user_version", 1),
         [[i64::from(SqliteStorage::SCHEMA_VERSION)]]
     );
-    assert_eq!(SqliteStorage::SCHEMA_VERSION, 4);
+    assert_eq!(SqliteStorage::SCHEMA_VERSION, 7);
 
     // What version 1 stored is all still there.
     assert_eq!(store.list_files().unwrap().len(), 2);
@@ -378,7 +378,7 @@ fn a_version_3_database_is_marked_for_reading_again() {
     drop(raw);
 
     let store = SqliteStorage::open(&path).unwrap();
-    assert_eq!(rows(&path, "PRAGMA user_version", 1), [[4]]);
+    assert_eq!(rows(&path, "PRAGMA user_version", 1), [[7]]);
     // Every file reads as changed, and the stored reference has no receiver word.
     assert_eq!(store.file_hash("src/a.rs").unwrap().as_deref(), Some(""));
     assert_eq!(

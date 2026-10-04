@@ -111,7 +111,7 @@ pub(crate) fn remove_files_not_in(
         )?;
         execute(
             &tx,
-            "UPDATE memories SET stale_since = ?1 \
+            "UPDATE memories SET stale_since = ?1, stale_reason = 'file_removed' \
              WHERE stale_since IS NULL AND id IN ( \
                  SELECT a.memory_id FROM memory_anchors a \
                  WHERE a.path IN (SELECT path FROM files \

@@ -132,6 +132,23 @@ impl CandidateSet {
         all
     }
 
+    /// Adds the structural (PageRank) signal to every candidate's relevance.
+    ///
+    /// The score is additive and bounded by [`super::ranking::structural_relevance`], so it lifts
+    /// hubs without drowning text or neighbor signals. Symbols with no precomputed score get the
+    /// floor value, which keeps them visible but never dominant.
+    pub(super) fn apply_structural(&mut self) {
+        let max = self
+            .map
+            .values()
+            .map(|c| c.record.pagerank)
+            .fold(0.0_f64, f64::max);
+        for cand in self.map.values_mut() {
+            let boost = super::ranking::structural_relevance(cand.record.pagerank, max);
+            cand.relevance += boost;
+        }
+    }
+
     /// Applies each learned multiplier to its candidate. Symbols missing from `multipliers` keep
     /// their relevance.
     pub(super) fn apply_multipliers(&mut self, multipliers: &dyn Fn(SymbolId) -> Option<f64>) {
@@ -213,6 +230,7 @@ mod tests {
             outline: Vec::new(),
             sig_hash: 0,
             body_hash: 0,
+            pagerank: 0.0,
         }
     }
 

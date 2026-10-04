@@ -224,7 +224,8 @@ impl<'c> Writer<'c> {
                  WHERE a.path = ?1 AND m.stale_since IS NULL",
             )?,
             mark_stale: prepare(
-                "UPDATE memories SET stale_since = ?1 WHERE id = ?2 AND stale_since IS NULL",
+                "UPDATE memories SET stale_since = ?1, stale_reason = ?3 \
+                 WHERE id = ?2 AND stale_since IS NULL",
             )?,
             dirty_candidates: BTreeSet::new(),
             scratch: Scratch::default(),
@@ -634,19 +635,19 @@ impl<'c> Writer<'c> {
                 .entry(draft.qualified_name.as_str())
                 .or_insert(hashes);
         }
-        let mut stale: BTreeSet<i64> = BTreeSet::new();
+        let mut stale: Vec<(i64, &'static str)> = Vec::new();
         for (memory, anchor) in &anchors {
             let current = match anchor.symbol {
                 Some(symbol) => by_id.get(&symbol.0).copied(),
                 None => by_name.get(anchor.qualified_name.as_str()).copied(),
             };
-            if anchor.is_stale_against(current) {
-                stale.insert(*memory);
+            if let Some(reason) = anchor.stale_reason_against(current) {
+                stale.push((*memory, reason.as_str()));
             }
         }
         let mut marked = 0_u32;
-        for memory in stale {
-            let changed = self.mark_stale.execute(params![now, memory]).db()?;
+        for (memory, reason) in stale {
+            let changed = self.mark_stale.execute(params![now, memory, reason]).db()?;
             marked += u32::from(changed > 0);
         }
         Ok(marked)

@@ -29,7 +29,8 @@
 use std::collections::{HashMap, VecDeque};
 
 use pn_ultramemory_core::{
-    Detail, LearningStatus, MemoryId, SignalKind, StorageError, SymbolId, Target, UtilityState,
+    Detail, DraftMemory, LearningStatus, MemoryId, MemoryKind, SignalKind, StorageError, SymbolId,
+    Target, UtilityState,
 };
 use serde_json::{Value, json};
 
@@ -52,6 +53,9 @@ const COACCESS_WINDOW: usize = 8;
 /// Evidence below this after decay counts as no evidence: the target is not re-ranked.
 const MIN_EVIDENCE: f64 = 0.05;
 
+/// An expansion within this many seconds of a recall can trigger a draft memory suggestion.
+const DRAFT_WINDOW_SECS: i64 = 5 * 60;
+
 /// What was shown to the agent recently and what it did next.
 #[derive(Debug, Default)]
 pub(crate) struct Session {
@@ -70,6 +74,13 @@ pub(crate) struct Session {
     pub(crate) recent: VecDeque<SymbolId>,
     /// How many storage errors the hooks swallowed.
     pub(crate) errors: u64,
+    /// The most recent recall query text, used to seed draft suggestions when the agent
+    /// expands a symbol shortly after searching. Cleared on settlement or when stale.
+    pub(crate) last_query: Option<String>,
+    /// When `last_query` was recorded, in seconds since the Unix epoch.
+    pub(crate) last_query_at: Option<i64>,
+    /// Symbols that already have a pending draft in this session, so we do not suggest another.
+    pub(crate) drafted_symbols: Vec<SymbolId>,
 }
 
 /// The symbols of the previous capsule that the agent ignored.
@@ -182,11 +193,10 @@ impl Engine {
 
     /// Records that the agent asked for the full source of a symbol.
     ///
-    /// Called by the expand operation, which is being written; until then nothing invokes it.
-    #[allow(
-        dead_code,
-        reason = "called by the expand operation, which is being written"
-    )]
+    /// When the expansion happens shortly after a recall and no memory already covers this
+    /// symbol, a draft decision is saved so the next session can confirm it without restating
+    /// what just happened. The co-access signal is always recorded regardless of whether a
+    /// draft is produced.
     pub(crate) fn note_expanded(&self, id: SymbolId) {
         let now = self.now();
         let mut session = self.session();
@@ -208,6 +218,42 @@ impl Engine {
         session.recent.push_back(id);
         while session.recent.len() > COACCESS_WINDOW + 1 {
             session.recent.pop_front();
+        }
+        // Draft detection: if the agent expanded a symbol within DRAFT_WINDOW_SECS of a
+        // recall and we have not already suggested a draft for this symbol in this session,
+        // save one. Rate-limited to one draft per recall-expansion pair.
+        let should_draft = session.last_query.is_some()
+            && session
+                .last_query_at
+                .map(|t| now.saturating_sub(t) <= DRAFT_WINDOW_SECS)
+                .unwrap_or(false)
+            && !session.drafted_symbols.contains(&id);
+        if should_draft {
+            if let Some(query) = &session.last_query {
+                match self.storage().symbol(id) {
+                    Ok(Some(record)) => {
+                        let draft = DraftMemory {
+                            id: 0,
+                            kind: MemoryKind::Decision,
+                            text: format!(
+                                "Expanded {} while investigating \"{}\".",
+                                record.qualified_name, query
+                            ),
+                            about_symbols: vec![record.qualified_name.clone()],
+                            suggested_at: now,
+                            source_query: query.clone(),
+                        };
+                        if self.storage().save_draft(&draft).is_ok() {
+                            session.drafted_symbols.push(id);
+                        } else {
+                            session.errors += 1;
+                        }
+                    }
+                    Ok(None) | Err(_) => {
+                        session.errors += 1;
+                    }
+                }
+            }
         }
         if !session.expanded.contains(&id) {
             session.expanded.push(id);

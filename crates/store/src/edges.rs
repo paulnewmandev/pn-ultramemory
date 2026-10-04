@@ -711,16 +711,17 @@ pub(crate) fn neighbors(
         params![id.0, confidence_to_sql(min_confidence), limit_to_sql(limit)],
         |row| {
             let symbol = symbol_from_row(row)?;
-            let kind_name: String = row.get(20)?;
-            let confidence: i64 = row.get(21)?;
+            // symbol_columns! now includes pagerank as column 18, so edge columns shift by one.
+            let kind_name: String = row.get(21)?;
+            let confidence: i64 = row.get(22)?;
             Ok(Neighbor {
                 symbol,
                 edge: EdgeRecord {
-                    src: SymbolId(row.get(18)?),
-                    dst: SymbolId(row.get(19)?),
-                    kind: edge_kind(&kind_name, 20)?,
-                    confidence: confidence_from_sql(confidence, 21)?,
-                    line: row.get(22)?,
+                    src: SymbolId(row.get(19)?),
+                    dst: SymbolId(row.get(20)?),
+                    kind: edge_kind(&kind_name, 21)?,
+                    confidence: confidence_from_sql(confidence, 22)?,
+                    line: row.get(23)?,
                 },
             })
         },
@@ -799,4 +800,18 @@ mod tests {
         let none = best_candidates(&[], "src/x.rs");
         assert!(none.is_empty());
     }
+}
+
+/// Returns every resolved edge as `(src, dst)` pairs for structural scoring.
+pub(crate) fn all_edges(conn: &Connection) -> Result<Vec<(pn_ultramemory_core::SymbolId, pn_ultramemory_core::SymbolId)>> {
+    query_all(
+        conn,
+        "SELECT src, dst FROM edges",
+        [],
+        |row| {
+            let src: i64 = row.get(0)?;
+            let dst: i64 = row.get(1)?;
+            Ok((pn_ultramemory_core::SymbolId(src), pn_ultramemory_core::SymbolId(dst)))
+        },
+    )
 }

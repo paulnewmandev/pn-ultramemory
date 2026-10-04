@@ -1,33 +1,31 @@
 <p align="center">
-  <img src="assets/logo/banner.svg" alt="pn-ultramemory" width="380">
-</p>
-
-<h1 align="center">pn-ultramemory</h1>
-
-<p align="center">
-  <b>A second brain for your codebase, shared by you and your coding agent.</b><br>
-  It indexes the repository into a graph, answers questions in a few hundred tokens instead of whole
-  files, remembers decisions anchored to the code, and lets you fly through all of it in 3D.
+<img src="assets/logo/banner.svg" alt="pn-ultramemory" width="380">
 </p>
 
 <p align="center">
-  <a href="README.md">🇬🇧 English</a> ·
-  <a href="README.es.md">🇪🇸 Español</a>
+<b>A second brain for your codebase, shared by you and your coding agent.</b><br>
+It indexes the repository into a graph, answers questions in a few hundred tokens instead of whole
+files, remembers decisions anchored to the code, and lets you fly through all of it in 3D.
 </p>
 
 <p align="center">
-  <a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml"><img alt="Guards" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml/badge.svg?branch=main"></a>
-  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-  <img alt="Built with Rust" src="https://img.shields.io/badge/built%20with-Rust-000000?logo=rust&logoColor=white">
-  <img alt="1368 tests passing" src="https://img.shields.io/badge/tests-1368%20passing-success">
-  <img alt="Network: never" src="https://img.shields.io/badge/network-never-success">
-  <img alt="Telemetry: none" src="https://img.shields.io/badge/telemetry-none-success">
-  <img alt="Status: new project" src="https://img.shields.io/badge/status-new%20project-orange">
+<a href="README.md">🇬🇧 English</a> ·
+<a href="README.es.md">🇪🇸 Español</a>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/brain-overview.jpg" alt="This repository drawn as a brain: thousands of glowing particles, one per symbol, coloured by folder, with tests in the cerebellum and golden rings for the memories" width="860">
+<a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+<a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml"><img alt="Guards" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml/badge.svg?branch=main"></a>
+<a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+<img alt="Built with Rust" src="https://img.shields.io/badge/built%20with-Rust-000000?logo=rust&logoColor=white">
+<img alt="1368 tests passing" src="https://img.shields.io/badge/tests-1368%20passing-success">
+<img alt="Network: never" src="https://img.shields.io/badge/network-never-success">
+<img alt="Telemetry: none" src="https://img.shields.io/badge/telemetry-none-success">
+<img alt="Status: new project" src="https://img.shields.io/badge/status-new%20project-orange">
+</p>
+
+<p align="center">
+<img src="assets/screenshots/brain-overview.jpg" alt="This repository drawn as a brain: thousands of glowing particles, one per symbol, coloured by folder, with tests in the cerebellum and golden rings for the memories" width="860">
 </p>
 
 ---
@@ -44,7 +42,14 @@ pn-ultramemory keeps that knowledge on disk instead:
 - **Answers, not files.** A question returns a *capsule*: the symbols that matter, each at the
   level of detail that fits, inside a token budget you set.
 - **Memories that cannot silently lie.** Decisions and lessons are anchored to the code they
-  describe. When that code changes, the memory is marked stale instead of being trusted.
+  describe. When that code changes, the memory is marked stale — now *with the reason* (signature
+  changed, body changed, or symbol gone) — instead of being trusted.
+- **PageRank for structural hubs.** Every symbol gets a baseline importance from the graph's shape
+  alone, so config loaders, error types and shared allocators surface even when no keyword points
+  at them.
+- **Draft memories.** When an agent expands a symbol shortly after recalling it, the engine writes
+  a draft instead of a confirmed memory, so the next session can review and accept it without
+  restating what it already did.
 - **A brain you can walk through.** The same graph and memories, drawn in 3D in your browser, so a
   person can see the shape of the code and hand any part of it to an agent.
 
@@ -52,7 +57,7 @@ One static binary. It never opens a network connection, writes nothing inside yo
 costs nothing.
 
 <p align="center">
-  <img src="assets/diagrams/why.svg" alt="On this repository a question costs 16,520 tokens read as files, and finds the right code 84% of the time; a capsule costs 464 tokens and finds it 100% of the time" width="760">
+<img src="assets/diagrams/why.svg" alt="On this repository a question costs 16,520 tokens read as files, and finds the right code 84% of the time; a capsule costs 464 tokens and finds it 100% of the time" width="760">
 </p>
 
 ---
@@ -101,11 +106,11 @@ per session.
 | `impact` | What depends on this, and how sure that answer is | Grepping for the name |
 | `map` | Which files exist and what is in them | Listing the tree |
 | `remember` | Keep this decision, anchored to the code | A comment nobody reads |
-| `memories` | What do we already know, and what went stale | Asking again |
+| `memories` | What do we already know, and what went stale (with reasons) | Asking again |
 | `feedback` | That answer helped, or it did not | Nothing |
 
 <p align="center">
-  <img src="assets/diagrams/session.svg" alt="A new session calls brief to learn the project, recall and outline to work, remember to keep a decision and feedback to say what helped; the graph on disk outlives the session" width="760">
+<img src="assets/diagrams/session.svg" alt="A new session calls brief to learn the project, recall and outline to work, remember to keep a decision and feedback to say what helped; the graph on disk outlives the session" width="760">
 </p>
 
 A session starts with `brief`, asks `recall` with a budget, writes `remember` when something is
@@ -125,7 +130,7 @@ pn-ultramemory brain              # --lang es for Spanish
 ```
 
 <p align="center">
-  <img src="assets/screenshots/brain-symbol.jpg" alt="One symbol opened in the brain view: its fibres highlighted, pulses travelling along them, and a side panel with its signature, documentation, a memory anchored to it, two callers and thirteen callees" width="860">
+<img src="assets/screenshots/brain-symbol.jpg" alt="One symbol opened in the brain view: its fibres highlighted, pulses travelling along them, and a side panel with its signature, documentation, a memory anchored to it, two callers and thirteen callees" width="860">
 </p>
 
 - **The shape means something.** Each folder is a region of the cortex, in mirrored pairs over
@@ -172,9 +177,8 @@ finds `CouponService::validate` first) and worse when they share none. Spanish q
 written in English get help from a built-in glossary of programming and business words:
 "¿cómo se estima el número de tokens?" finds `estimate_tokens`, and "dividir la cuenta entre
 clientes" finds `BillSplitService`. Words outside the glossary, and other languages, are searched as
-written. Measure your own
-repository with `pn-ultramemory bench`: the saving is what reading whole files would have cost, so a
-small project saves less.
+written. Measure your own repository with `pn-ultramemory bench`: the saving is what reading whole
+files would have cost, so a small project saves less.
 
 | Speed, this repository, Apple silicon laptop | |
 |---|---|
@@ -188,7 +192,7 @@ small project saves less.
 ## How it works
 
 <p align="center">
-  <img src="assets/diagrams/how.svg" alt="The repository is indexed into a graph; a question finds seeds, the graph is walked, candidates are ranked and packed to a budget, and the capsule is measured before it is returned" width="760">
+<img src="assets/diagrams/how.svg" alt="The repository is indexed into a graph; a question finds seeds, the graph is walked, candidates are ranked and packed to a budget, and the capsule is measured before it is returned" width="760">
 </p>
 
 **A graph that says how sure it is.** Twelve languages are parsed with tree-sitter (Rust, Python,
@@ -203,6 +207,12 @@ by its type, its file or its directory, is only a `Guess`, which keeps it out of
 and the brain by default. The receiver also helps: `engine.recall()` resolves to `Engine::recall`
 among several `recall` methods.
 
+**PageRank gives every symbol a baseline importance.** Text match, neighbor propagation and learned
+co-access are all local: they need a seed to start from. A symbol that everything calls but nothing
+names explicitly can be invisible to keyword search. PageRank is computed once per full index over
+the whole graph (damping 0.85, up to 20 iterations, L1 convergence below 1e-6) and stored per
+symbol, so the packer can offer structural hubs even when no seed points at them directly.
+
 **An answer is a packing problem.** Every symbol can be shown at five levels: name, signature,
 summary, outline of what it calls, or full source. `recall` picks one level per symbol to give the
 most value inside the budget (a multiple-choice knapsack, checked against an exact solver), then
@@ -211,7 +221,7 @@ least their signature while anything else can still be given up, and a tight bud
 instead of dropping answers.
 
 <p align="center">
-  <img src="assets/diagrams/levels.svg" alt="Five levels of detail for one symbol, from its name alone to its whole source, each costing more than the one below" width="760">
+<img src="assets/diagrams/levels.svg" alt="Five levels of detail for one symbol, from its name alone to its whole source, each costing more than the one below" width="760">
 </p>
 
 **`impact` never says "safe".** It answers `exact` (the set is complete), `lower-bound` (at least
@@ -224,8 +234,17 @@ similarity, because negating a sentence changes almost none of its words, and th
 never merged. English and Spanish are both read properly.
 
 <p align="center">
-  <img src="assets/diagrams/memory.svg" alt="A memory is stored with hashes of the symbol it describes; when that symbol changes the memory is marked stale rather than deleted or trusted" width="760">
+<img src="assets/diagrams/memory.svg" alt="A memory is stored with hashes of the symbol it describes; when that symbol changes the memory is marked stale rather than deleted or trusted" width="760">
 </p>
+
+**Draft memories capture observed decisions.** When an agent expands a symbol shortly after recalling
+it, the engine writes a draft instead of a confirmed memory. Drafts live in their own table, expire
+if nobody confirms them, and never count as corroborations until accepted. They are the system's way
+of saying "I noticed something; should I keep it?" rather than silently manufacturing a fact.
+
+**Staleness says why.** A stale memory records whether the symbol's signature changed, its body
+changed, or the symbol disappeared entirely. `memories --stale` shows the reason, so a reanchor
+decision can distinguish "body-only edit, probably safe" from "signature gone, revisit the decision".
 
 ---
 
@@ -317,9 +336,3 @@ and [AI_POLICY.md](AI_POLICY.md).
 
 Apache-2.0: use it, change it, sell it, fork it. See [LICENSE](LICENSE) and
 [TRADEMARKS.md](TRADEMARKS.md). [Code of conduct](CODE_OF_CONDUCT.md) ·
-[Security](SECURITY.md) · [Support](SUPPORT.md) · [Governance](GOVERNANCE.md)
-
-<p align="center"><sub>
-Built by <a href="https://github.com/paulnewmandev">Paul Newman</a>. No telemetry, no account, no
-network. Free, and staying that way.
-</sub></p>
