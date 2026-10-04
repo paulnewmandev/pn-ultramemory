@@ -14,7 +14,7 @@
       search: 'Search symbols, files and memories', files: 'files', symbols: 'symbols',
       edges: 'connections', memories: 'memories', stale: 'stale', regions: 'Regions', view: 'View',
       tEdges: 'Fibres', tSignals: 'Signals', tMemories: 'Memories', tCortex: 'Cortex',
-      tLabels: 'Labels', tRotate: 'Rotate', tLayers: 'Layers', calledBy: 'Called by', calls: 'Calls',
+      tLabels: 'Labels', tRotate: 'Rotate', tLayers: 'Layers', tDetail: 'Detail', calledBy: 'Called by', calls: 'Calls',
       sig: 'Signature', mems: 'Memories', copyCtx: 'Copy context for an agent',
       copyLoc: 'Copy location', copied: 'Copied to the clipboard', copyFail: 'Could not copy',
       focus: 'Fly to it', more: (n) => `+${n} more`, noMatch: 'No match',
@@ -34,7 +34,7 @@
       search: 'Busca símbolos, archivos y memorias', files: 'archivos', symbols: 'símbolos',
       edges: 'conexiones', memories: 'memorias', stale: 'obsoletas', regions: 'Regiones', view: 'Vista',
       tEdges: 'Fibras', tSignals: 'Señales', tMemories: 'Memorias', tCortex: 'Corteza',
-      tLabels: 'Etiquetas', tRotate: 'Girar', tLayers: 'Capas', calledBy: 'Lo llaman', calls: 'Llama a',
+      tLabels: 'Etiquetas', tRotate: 'Girar', tLayers: 'Capas', tDetail: 'Detalle', calledBy: 'Lo llaman', calls: 'Llama a',
       sig: 'Firma', mems: 'Memorias', copyCtx: 'Copiar contexto para un agente',
       copyLoc: 'Copiar ubicación', copied: 'Copiado al portapapeles', copyFail: 'No se pudo copiar',
       focus: 'Volar hasta aquí', more: (n) => `${n} más`, noMatch: 'Sin resultados',
@@ -636,19 +636,24 @@
     return labelPool[k];
   }
   const hubs = Array.from({ length: N }, (_, i) => i).sort((a, b) => DEG[b] - DEG[a]).slice(0, 12);
+  // Detail level controls: 0=minimal (5 hubs), 1=normal (12 hubs), 2=expert (24 hubs + more neighbors)
+  const DETAIL_HUB_COUNT = [5, 12, 24];
+  const DETAIL_NEIGHBOR_COUNT = [6, 16, 32];
   function drawLabels() {
     const want = [];
     if (state.show.labels) {
+      const hubLimit = DETAIL_HUB_COUNT[state.detailLevel] || 12;
+      const neighborLimit = DETAIL_NEIGHBOR_COUNT[state.detailLevel] || 16;
       if (state.selected >= 0) {
         want.push([state.selected, 'sel']);
         const around = OUT[state.selected].map((e) => EDST[e]).concat(IN[state.selected].map((e) => ESRC[e]));
-        [...new Set(around)].sort((a, b) => DEG[b] - DEG[a]).slice(0, 16).forEach((i) => want.push([i, '']));
+        [...new Set(around)].sort((a, b) => DEG[b] - DEG[a]).slice(0, neighborLimit).forEach((i) => want.push([i, '']));
       } else if (state.selectedMem >= 0) {
-        MEM[state.selectedMem].anchors.slice(0, 16).forEach((i) => want.push([i, '']));
+        MEM[state.selectedMem].anchors.slice(0, neighborLimit).forEach((i) => want.push([i, '']));
       } else if (state.region >= 0) {
-        Array.from({ length: N }, (_, i) => i).filter((i) => REGION[i] === state.region).sort((a, b) => DEG[b] - DEG[a]).slice(0, 14).forEach((i) => want.push([i, 'hub']));
+        Array.from({ length: N }, (_, i) => i).filter((i) => REGION[i] === state.region).sort((a, b) => DEG[b] - DEG[a]).slice(0, hubLimit).forEach((i) => want.push([i, 'hub']));
       } else {
-        hubs.forEach((i) => want.push([i, 'hub']));
+        hubs.slice(0, hubLimit).forEach((i) => want.push([i, 'hub']));
       }
     }
     if (state.hovered >= 0 && !want.some((w) => w[0] === state.hovered)) want.push([state.hovered, 'sel']);
@@ -776,7 +781,11 @@
     const close = el('button', 'close', '×'); close.setAttribute('aria-label', 'close'); close.addEventListener('click', clearSelection); panel.appendChild(close);
     panel.appendChild(el('div', 'chips')).appendChild(chip(S.memory + ' #' + m.id, m.stale ? STALE_RGB : MEM_RGB, 'mem'));
     panel.appendChild(memoryCard(k));
-    if (m.stale) panel.appendChild(el('p', 'doc', S.staleWhy));
+    if (m.stale) {
+      const reasons = m.stale_reasons || [];
+      const whyText = reasons.length ? `${S.staleWhy}: ${reasons.join(', ')}` : S.staleWhy;
+      panel.appendChild(el('p', 'doc stale-reason', whyText));
+    }
     panel.appendChild(heading(S.anchored));
     if (m.anchors.length) panel.appendChild(linkList(m.anchors));
     const drawn = new Set(m.anchors.map((a) => QUAL[a]));
@@ -857,6 +866,24 @@
     label.append(box, document.createTextNode(toggleNames[key]));
     $('toggles').appendChild(label);
   });
+  // Persona-adaptive detail level selector
+  {
+    const wrap = el('div', 'detail-wrap');
+    const lbl = el('label', '', S.tDetail || 'Detail');
+    const sel = document.createElement('select');
+    sel.id = 'detail-level';
+    DETAIL_LABELS.forEach((name, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      opt.textContent = name;
+      if (idx === state.detailLevel) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', updateDetailLevel);
+    lbl.appendChild(sel);
+    wrap.appendChild(lbl);
+    $('toggles').appendChild(wrap);
+  }
   $('regions-title').textContent = S.regions;
   $('view-title').textContent = S.view;
   {
@@ -953,6 +980,28 @@
     if (pos < text.length) frag.appendChild(document.createTextNode(text.slice(pos)));
     return frag;
   }
+  // Fuzzy match: returns score > 0 if all chars of query appear in order within target
+  function fuzzyScore(query, target) {
+    let qi = 0, score = 0, consecutive = 0;
+    for (let ti = 0; ti < target.length && qi < query.length; ti++) {
+      if (target[ti] === query[qi]) {
+        qi++;
+        consecutive++;
+        score += consecutive * 2 + (ti === 0 || target[ti - 1] === '/' || target[ti - 1] === '.' ? 5 : 0);
+      } else {
+        consecutive = 0;
+      }
+    }
+    return qi === query.length ? score : 0;
+  }
+  // Persona-adaptive detail: controls label density and edge visibility based on zoom/detail level
+  state.detailLevel = 1; // 0=minimal, 1=normal, 2=expert
+  const DETAIL_LABELS = ['Minimal', 'Normal', 'Expert'];
+  function updateDetailLevel() {
+    const sel = $('detail-level');
+    if (sel) state.detailLevel = parseInt(sel.value, 10);
+    refresh();
+  }
   function runSearch() {
     const q = search.value.trim().toLowerCase();
     found = []; active = 0;
@@ -965,6 +1014,8 @@
         let s = 0;
         if (LOWER_NAME[i] === t) s = 120; else if (LOWER_NAME[i].startsWith(t)) s = 80; else if (LOWER_NAME[i].includes(t)) s = 55;
         else if (LOWER_QUAL[i].includes(t)) s = 38; else if (LOWER_PATH[i].includes(t)) s = 20; else if (LOWER_DOC[i].includes(t)) s = 8;
+        // Fuzzy fallback when no exact/substring match
+        if (!s) { const fs = fuzzyScore(t, LOWER_NAME[i]); if (fs > 0) s = Math.min(40, fs); }
         if (!s) { score = 0; break; }
         score += s;
       }
@@ -972,7 +1023,7 @@
     }
     MEM.forEach((m, k) => {
       const text = m.text.toLowerCase();
-      if (terms.every((t) => text.includes(t) || m.kind.includes(t))) found.push({ mem: k, score: 45 });
+      if (terms.every((t) => text.includes(t) || m.kind.includes(t) || fuzzyScore(t, text) > 0)) found.push({ mem: k, score: 45 });
     });
     found.sort((a, b) => b.score - a.score);
     found = found.slice(0, 14);
