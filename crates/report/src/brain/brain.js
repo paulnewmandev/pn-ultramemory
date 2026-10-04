@@ -14,7 +14,7 @@
       search: 'Search symbols, files and memories', files: 'files', symbols: 'symbols',
       edges: 'connections', memories: 'memories', stale: 'stale', regions: 'Regions', view: 'View',
       tEdges: 'Fibres', tSignals: 'Signals', tMemories: 'Memories', tCortex: 'Cortex',
-      tLabels: 'Labels', tRotate: 'Rotate', calledBy: 'Called by', calls: 'Calls',
+      tLabels: 'Labels', tRotate: 'Rotate', tLayers: 'Layers', calledBy: 'Called by', calls: 'Calls',
       sig: 'Signature', mems: 'Memories', copyCtx: 'Copy context for an agent',
       copyLoc: 'Copy location', copied: 'Copied to the clipboard', copyFail: 'Could not copy',
       focus: 'Fly to it', more: (n) => `+${n} more`, noMatch: 'No match',
@@ -34,7 +34,7 @@
       search: 'Busca símbolos, archivos y memorias', files: 'archivos', symbols: 'símbolos',
       edges: 'conexiones', memories: 'memorias', stale: 'obsoletas', regions: 'Regiones', view: 'Vista',
       tEdges: 'Fibras', tSignals: 'Señales', tMemories: 'Memorias', tCortex: 'Corteza',
-      tLabels: 'Etiquetas', tRotate: 'Girar', calledBy: 'Lo llaman', calls: 'Llama a',
+      tLabels: 'Etiquetas', tRotate: 'Girar', tLayers: 'Capas', calledBy: 'Lo llaman', calls: 'Llama a',
       sig: 'Firma', mems: 'Memorias', copyCtx: 'Copiar contexto para un agente',
       copyLoc: 'Copiar ubicación', copied: 'Copiado al portapapeles', copyFail: 'No se pudo copiar',
       focus: 'Volar hasta aquí', more: (n) => `${n} más`, noMatch: 'Sin resultados',
@@ -450,7 +450,7 @@
   const nodeData = new Float32Array(N * POINT_STRIDE);
   function writeNodes() {
     for (let i = 0, o = 0; i < N; i++, o += POINT_STRIDE) {
-      const c = REGION_RGB[REGION[i]];
+      const c = state.show.layers ? LAYER_RGB[NODE_LAYER[i]] : REGION_RGB[REGION[i]];
       nodeData[o] = POS[i * 3]; nodeData[o + 1] = POS[i * 3 + 1]; nodeData[o + 2] = POS[i * 3 + 2];
       nodeData[o + 3] = c[0]; nodeData[o + 4] = c[1]; nodeData[o + 5] = c[2];
       nodeData[o + 6] = nodeSize(i) * (i === state.selected ? 1.6 : 1);
@@ -754,6 +754,10 @@
     const d1 = el('span'); d1.appendChild(el('b', '', fmt(callers.length))); d1.appendChild(document.createTextNode(' ' + S.calledBy.toLowerCase()));
     const d2 = el('span'); d2.appendChild(el('b', '', fmt(callees.length))); d2.appendChild(document.createTextNode(' ' + S.calls.toLowerCase()));
     deg.append(d1, d2); panel.appendChild(deg);
+    if (state.show.layers) {
+      const layerIdx = NODE_LAYER[i];
+      chips.appendChild(chip(LAYER_NAMES[layerIdx] || 'Utility', LAYER_RGB[layerIdx]));
+    }
     if (SIG[i]) { panel.appendChild(heading(S.sig)); panel.appendChild(el('pre', '', SIG[i])); }
     if (DOC[i]) panel.appendChild(el('p', 'doc', DOC[i]));
     if (MEM_OF[i].length) { panel.appendChild(heading(S.mems, MEM_RGB)); MEM_OF[i].forEach((k) => panel.appendChild(memoryCard(k))); }
@@ -788,6 +792,7 @@
     state.selected = i; state.selectedMem = -1;
     refresh();
     renderNode(i);
+    pushHistory({ id: ID[i], type: 'node', name: QUAL[i], color: rgbCss(REGION_RGB[REGION[i]]), ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
     if (fly) flyTo(POS[i * 3], POS[i * 3 + 1], POS[i * 3 + 2], Math.min(cam.dist, 1.6));
     try { history.replaceState(null, '', '#s=' + ID[i]); } catch (_) { /* a file URL may refuse */ }
   }
@@ -796,6 +801,7 @@
     refresh();
     renderMemory(k);
     const m = MEM[k];
+    pushHistory({ id: String(m.id), type: 'mem', name: m.text.length > 40 ? m.text.slice(0, 39) + '…' : m.text, color: rgbCss(m.stale ? STALE_RGB : MEM_RGB), ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
     if (fly) flyTo(m.pos[0], m.pos[1], m.pos[2], Math.min(cam.dist, 1.6));
     try { history.replaceState(null, '', '#m=' + m.id); } catch (_) { /* a file URL may refuse */ }
   }
@@ -830,11 +836,24 @@
       ul.appendChild(li);
     });
   }
-  const toggleNames = { edges: S.tEdges, signals: S.tSignals, memories: S.tMemories, cortex: S.tCortex, labels: S.tLabels, rotate: S.tRotate };
+  // Layer classification: derive architectural layer from path/kind for dashboard-style coloring
+  const LAYER_NAMES = ['API', 'Service', 'Data', 'UI', 'Utility'];
+  const LAYER_RGB = [[0.2,0.6,1],[0.4,0.85,0.4],[0.95,0.65,0.2],[0.85,0.35,0.7],[0.6,0.6,0.6]];
+  function classifyLayer(i) {
+    const p = pathOf(i).toLowerCase(), k = kindName(i).toLowerCase();
+    if (p.includes('/api/') || p.includes('/routes/') || p.includes('/controller') || k.includes('handler') || k.includes('route')) return 0;
+    if (p.includes('/service/') || p.includes('/domain/') || p.includes('/usecase') || k.includes('service') || k.includes('manager')) return 1;
+    if (p.includes('/data/') || p.includes('/store/') || p.includes('/model/') || p.includes('/db/') || k.includes('repo') || k.includes('model')) return 2;
+    if (p.includes('/ui/') || p.includes('/view/') || p.includes('/component') || p.includes('/page') || k.includes('view') || k.includes('component')) return 3;
+    return 4;
+  }
+  const NODE_LAYER = Array.from({ length: N }, (_, i) => classifyLayer(i));
+  state.show.layers = false;
+  const toggleNames = { edges: S.tEdges, signals: S.tSignals, memories: S.tMemories, cortex: S.tCortex, labels: S.tLabels, layers: S.tLayers, rotate: S.tRotate };
   Object.keys(toggleNames).forEach((key) => {
     const label = el('label'), box = el('input');
     box.type = 'checkbox'; box.checked = state.show[key];
-    box.addEventListener('change', () => { state.show[key] = box.checked; });
+    box.addEventListener('change', () => { state.show[key] = box.checked; refresh(); });
     label.append(box, document.createTextNode(toggleNames[key]));
     $('toggles').appendChild(label);
   });
