@@ -1069,7 +1069,12 @@ fn run() -> Result<(), CliError> {
         })?;
 
     if shows_banner(&cli.command) && !global.quiet && global.format == OutFormat::Text {
-        banner::print(env!("CARGO_PKG_VERSION"));
+        let repo_name = locations
+            .repo
+            .file_name()
+            .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+        let data_dir = locations.data_dir.to_string_lossy().into_owned();
+        banner::print_full(env!("CARGO_PKG_VERSION"), &repo_name, &data_dir);
     }
 
     match &cli.command {

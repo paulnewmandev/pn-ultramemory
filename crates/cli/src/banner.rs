@@ -162,6 +162,114 @@ pub fn render(version: &str, colour: bool) -> String {
     out
 }
 
+/// The available tool categories and their commands, matching the MCP server surface.
+const TOOL_CATEGORIES: &[(&str, &str)] = &[
+    ("code", "brief, recall, expand, impact, outline, map, graph"),
+    ("memory", "remember, memories, forget, reanchor, feedback"),
+    ("learn", "status, reset, why"),
+    ("docs", "gaps, apply, build"),
+    ("report", "stats, report, brain, bench"),
+    ("setup", "install, uninstall, doctor, mcp-config"),
+];
+
+/// Renders the dashboard-style info panel below the wordmark.
+fn render_panel(version: &str, colour: bool, repo_name: &str, data_dir: &str) -> String {
+    let (green, dim, bold, reset, cyan) = if colour {
+        (
+            "\u{1b}[38;5;48m",
+            "\u{1b}[2m",
+            "\u{1b}[1m",
+            "\u{1b}[0m",
+            "\u{1b}[38;5;81m",
+        )
+    } else {
+        ("", "", "", "", "")
+    };
+
+    let mut out = String::new();
+
+    // Box top
+    let box_width = 72;
+    let _ = writeln!(out, "{dim}╭{}╮{reset}", "─".repeat(box_width));
+
+    // Version line centered
+    let version_line = format!("pn-ultramemory v{version}");
+    let pad_left = (box_width - version_line.len()) / 2;
+    let pad_right = box_width - version_line.len() - pad_left;
+    let _ = writeln!(
+        out,
+        "{dim}│{reset}{pad_left}{bold}{version_line}{reset}{pad_right}{dim}│{reset}",
+        pad_left = " ".repeat(pad_left),
+        pad_right = " ".repeat(pad_right)
+    );
+
+    // Separator
+    let _ = writeln!(out, "{dim}├{}{reset}", "─".repeat(box_width));
+
+    // Workspace section
+    let _ = writeln!(
+        out,
+        "{dim}│{reset} {green}{bold}workspace{reset}{pad}{dim}│{reset}",
+        pad = " ".repeat(box_width - 9 - 1)
+    );
+    let root_display = if repo_name.len() > 50 {
+        format!("...{}", &repo_name[repo_name.len() - 47..])
+    } else {
+        repo_name.to_owned()
+    };
+    let _ = writeln!(
+        out,
+        "{dim}│{reset}   root    {root_display}{pad}{dim}│{reset}",
+        pad = " ".repeat(box_width.saturating_sub(13 + root_display.len()))
+    );
+    let data_display = if data_dir.len() > 50 {
+        format!("...{}", &data_dir[data_dir.len() - 47..])
+    } else {
+        data_dir.to_owned()
+    };
+    let _ = writeln!(
+        out,
+        "{dim}│{reset}   data    {data_display}{pad}{dim}│{reset}",
+        pad = " ".repeat(box_width.saturating_sub(13 + data_display.len()))
+    );
+
+    // Separator
+    let _ = writeln!(out, "{dim}├{}┤{reset}", "─".repeat(box_width));
+
+    // Available tools section
+    let _ = writeln!(
+        out,
+        "{dim}│{reset} {cyan}{bold}available tools{reset}{pad}{dim}│{reset}",
+        pad = " ".repeat(box_width.saturating_sub(17))
+    );
+    for (category, tools) in TOOL_CATEGORIES {
+        // Visible length: 2 (border+space) + category (padded to 8) + 1 (space) + tools + 1 (border)
+        let visible_len = 2 + 8 + 1 + tools.len() + 1;
+        let pad = box_width.saturating_sub(visible_len);
+        let _ = writeln!(
+            out,
+            "{dim}│{reset}  {green}{category:<8}{reset} {tools}{pad}{dim}│{reset}",
+            pad = " ".repeat(pad)
+        );
+    }
+
+    // Box bottom
+    let _ = write!(out, "{dim}╰{}╯{reset}", "─".repeat(box_width));
+
+    out
+}
+
+/// Prints the banner to standard output when it is wanted, followed by a blank line.
+///
+/// When `repo_name` and `data_dir` are provided, also prints the dashboard panel.
+pub fn print_full(version: &str, repo_name: &str, data_dir: &str) {
+    if wanted() {
+        let colour = coloured();
+        println!("{}\n", render(version, colour));
+        println!("{}\n", render_panel(version, colour, repo_name, data_dir));
+    }
+}
+
 /// Prints the banner to standard output when it is wanted, followed by a blank line.
 pub fn print(version: &str) {
     if wanted() {
