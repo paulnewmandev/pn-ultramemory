@@ -39,6 +39,7 @@ crates/cli/src/main.rs	style
 crates/codec/src/capsule.rs	CapsuleMemory
 crates/codec/src/capsule.rs	SymbolView::qualified_name
 crates/codec/src/lib.rs	capsule
+crates/codec/src/lib.rs	compress
 crates/codec/src/lib.rs	packer
 crates/codec/src/lib.rs	tokens
 crates/core/src/language.rs	Language::C

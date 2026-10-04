@@ -46,6 +46,7 @@ crates/cli/src/style.rs	(fraction * f64::from(BAR_WIDTH)).round() as u32	Progres
 crates/cli/src/style.rs	line[indent.len()..]	highlight_line
 crates/cli/src/style.rs	rest[..colon]	highlight_line
 crates/cli/src/style.rs	rest[bracket..]	highlight_line
+crates/codec/src/compress.rs	out[article.len()..]	compress
 crates/codec/src/packer.rs	chosen[index]	fill_leftover
 crates/codec/src/packer.rs	envelopes[index]	pack
 crates/codec/src/packer.rs	envelopes[index][count - 1]	pack
@@ -119,6 +120,7 @@ crates/engine/src/guard/words.rs	lower as u64	fold_letter
 crates/engine/src/guard/words.rs	table[slot]	build_table
 crates/engine/src/guard/words.rs	word[i]	hash_word
 crates/engine/src/indexer.rs	self.files[index]	Workload::process
+crates/engine/src/indexer.rs	stats.symbols as usize	Engine::index_reporting
 crates/engine/src/indexer.rs	value["skipped"]	IndexReport::to_value
 crates/engine/src/indexer.rs	work[index]	Engine::index_reporting
 crates/engine/src/indexer/pipeline.rs	self.prefix[consumed]	Shared::within_window
@@ -132,6 +134,12 @@ crates/engine/src/memory/similarity.rs	previous[index]	longest_common_subsequenc
 crates/engine/src/memory/similarity.rs	previous[right.len()]	longest_common_subsequence
 crates/engine/src/memory/similarity.rs	right[..right.len().min(MAX_SEQUENCE_WORDS)]	longest_common_subsequence
 crates/engine/src/outline.rs	flat[..stop]	first_sentence
+crates/engine/src/pagerank.rs	in_edges[dst]	compute
+crates/engine/src/pagerank.rs	in_edges[i]	compute
+crates/engine/src/pagerank.rs	next[i]	compute
+crates/engine/src/pagerank.rs	out_degree[src]	compute
+crates/engine/src/pagerank.rs	scores[i]	compute
+crates/engine/src/pagerank.rs	scores[src]	compute
 crates/engine/src/recall/assemble.rs	chosen[*index]	notes
 crates/engine/src/recall/assemble.rs	chosen[*index]	relations
 crates/engine/src/recall/assemble.rs	chosen[index]	cheapest_step_down
