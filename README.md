@@ -25,7 +25,11 @@ files, remembers decisions anchored to the code, and lets you fly through all of
 </p>
 
 <p align="center">
-<img src="assets/screenshots/brain-overview.jpg" alt="This repository drawn as a brain: thousands of glowing particles, one per symbol, coloured by folder, with tests in the cerebellum and golden rings for the memories" width="860">
+<img src="docs/cli-banner-mockup.png" alt="CLI dashboard banner showing version, workspace info and available tool categories" width="760">
+</p>
+
+<p align="center">
+<img src="docs/brain-mockup.png" alt="3D brain view with responsive layout, search highlighting, layer view toggle and persona-adaptive detail levels" width="860">
 </p>
 
 ---
