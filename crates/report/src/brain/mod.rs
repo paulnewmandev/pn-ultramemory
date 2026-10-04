@@ -89,7 +89,7 @@ pub(crate) fn render(data: &str, title: &str, lang: Lang) -> String {
         "<div id=\"repo\" class=\"repo\"></div><div id=\"stats\" class=\"stats\"></div></header>\n",
         "<div id=\"searchbox\" class=\"glass\"><span class=\"icon\">&#9906;</span>",
         "<input id=\"search\" type=\"search\" autocomplete=\"off\" spellcheck=\"false\">",
-        "<kbd>/</kbd><ul id=\"results\"></ul></div>\n",
+        "<kbd>/</kbd><ul id=\"results\"></ul><ul id=\"history\"></ul></div>\n",
         "<aside id=\"legend\" class=\"glass\"><h3 id=\"regions-title\"></h3><ul id=\"regions\"></ul>",
         "<h3 id=\"view-title\"></h3><div id=\"toggles\"></div><p id=\"legend-note\" class=\"note\"></p></aside>\n",
         "<aside id=\"panel\" class=\"glass\"></aside>\n",

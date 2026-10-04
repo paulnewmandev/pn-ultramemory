@@ -869,15 +869,76 @@
   if (N === 0) showMessage(S.empty);
 
   // ---------------------------------------------------------------- search
-  const search = $('search'), results = $('results');
+  const search = $('search'), results = $('results'), historyEl = $('history');
   search.placeholder = S.search;
   const LOWER_NAME = NAME.map((s) => s.toLowerCase()), LOWER_QUAL = QUAL.map((s) => s.toLowerCase());
   const LOWER_PATH = Array.from({ length: N }, (_, i) => pathOf(i).toLowerCase()), LOWER_DOC = DOC.map((s) => s.toLowerCase());
   let found = [], active = 0;
+
+  // Session history (sessionStorage)
+  const HIST_KEY = 'pn-ultramemory-brain-history';
+  let sessionHistory = [];
+  try { sessionHistory = JSON.parse(sessionStorage.getItem(HIST_KEY) || '[]'); } catch (_) { sessionHistory = []; }
+  function pushHistory(entry) {
+    sessionHistory = sessionHistory.filter((h) => h.id !== entry.id);
+    sessionHistory.unshift(entry);
+    if (sessionHistory.length > 12) sessionHistory.length = 12;
+    try { sessionStorage.setItem(HIST_KEY, JSON.stringify(sessionHistory)); } catch (_) { /* quota */ }
+    renderHistory();
+  }
+  function renderHistory() {
+    if (!historyEl) return;
+    historyEl.replaceChildren();
+    if (!sessionHistory.length) { historyEl.classList.remove('open'); return; }
+    sessionHistory.forEach((h) => {
+      const li = el('li');
+      const d = el('span', 'dot');
+      d.style.background = h.color || '#888';
+      li.appendChild(d);
+      li.appendChild(el('span', 'nm', h.name));
+      li.appendChild(el('span', 'ts', h.ts || ''));
+      li.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        if (h.type === 'mem') { const k = MEM.findIndex((m) => String(m.id) === h.id); if (k >= 0) selectMemory(k, true); }
+        else { const i = ID.indexOf(h.id); if (i >= 0) select(i, true); }
+        historyEl.classList.remove('open');
+      });
+      historyEl.appendChild(li);
+    });
+  }
+  function highlightText(text, terms) {
+    if (!terms.length) return document.createTextNode(text);
+    const frag = document.createDocumentFragment();
+    const lower = text.toLowerCase();
+    let last = 0;
+    const matches = [];
+    for (const t of terms) {
+      let idx = lower.indexOf(t, last);
+      while (idx >= 0) { matches.push([idx, idx + t.length]); last = idx + t.length; idx = lower.indexOf(t, last); }
+    }
+    matches.sort((a, b) => a[0] - b[0]);
+    // Merge overlapping
+    const merged = [];
+    for (const m of matches) {
+      if (merged.length && m[0] <= merged[merged.length - 1][1]) merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], m[1]);
+      else merged.push([...m]);
+    }
+    let pos = 0;
+    for (const [s, e] of merged) {
+      if (s > pos) frag.appendChild(document.createTextNode(text.slice(pos, s)));
+      const mark = document.createElement('mark');
+      mark.textContent = text.slice(s, e);
+      frag.appendChild(mark);
+      pos = e;
+    }
+    if (pos < text.length) frag.appendChild(document.createTextNode(text.slice(pos)));
+    return frag;
+  }
   function runSearch() {
     const q = search.value.trim().toLowerCase();
     found = []; active = 0;
-    if (!q) { results.classList.remove('open'); return; }
+    if (!q) { results.classList.remove('open'); if (historyEl && sessionHistory.length) { historyEl.classList.add('open'); renderHistory(); } return; }
+    if (historyEl) historyEl.classList.remove('open');
     const terms = q.split(/\s+/).filter(Boolean);
     for (let i = 0; i < N; i++) {
       let score = 0;
@@ -896,22 +957,28 @@
     });
     found.sort((a, b) => b.score - a.score);
     found = found.slice(0, 14);
-    renderResults();
+    renderResults(terms);
   }
-  function renderResults() {
+  function renderResults(terms) {
     results.replaceChildren();
     if (!found.length) { results.appendChild(el('li', 'empty', S.noMatch)); results.classList.add('open'); return; }
+    const t = terms || [];
     found.forEach((f, k) => {
       const li = el('li', k === active ? 'active' : '');
       if (f.mem != null) {
         const m = MEM[f.mem];
         li.appendChild(dot(m.stale ? STALE_RGB : MEM_RGB));
-        li.appendChild(el('span', 'nm', m.text.length > 70 ? m.text.slice(0, 69) + '…' : m.text));
+        const nm = el('span', 'nm');
+        const txt = m.text.length > 70 ? m.text.slice(0, 69) + '…' : m.text;
+        nm.appendChild(highlightText(txt, t));
+        li.appendChild(nm);
         li.appendChild(el('span', 'pt', m.kind));
       } else {
         const i = f.node;
         li.appendChild(dot(REGION_RGB[REGION[i]]));
-        li.appendChild(el('span', 'nm', QUAL[i]));
+        const nm = el('span', 'nm');
+        nm.appendChild(highlightText(QUAL[i], t));
+        li.appendChild(nm);
         li.appendChild(el('span', 'pt', `${pathOf(i)}:${LINE[i]}`));
       }
       li.addEventListener('mousedown', (ev) => { ev.preventDefault(); choose(k); });
@@ -927,13 +994,13 @@
     search.blur();
   }
   search.addEventListener('input', runSearch);
-  search.addEventListener('focus', () => { if (search.value.trim()) runSearch(); });
-  search.addEventListener('blur', () => setTimeout(() => results.classList.remove('open'), 120));
+  search.addEventListener('focus', () => { if (search.value.trim()) runSearch(); else if (historyEl && sessionHistory.length) { historyEl.classList.add('open'); renderHistory(); } });
+  search.addEventListener('blur', () => setTimeout(() => { results.classList.remove('open'); if (historyEl) historyEl.classList.remove('open'); }, 120));
   search.addEventListener('keydown', (ev) => {
     if (ev.key === 'ArrowDown') { active = Math.min(found.length - 1, active + 1); renderResults(); ev.preventDefault(); }
     else if (ev.key === 'ArrowUp') { active = Math.max(0, active - 1); renderResults(); ev.preventDefault(); }
     else if (ev.key === 'Enter') { choose(active); ev.preventDefault(); }
-    else if (ev.key === 'Escape') { search.value = ''; results.classList.remove('open'); search.blur(); }
+    else if (ev.key === 'Escape') { search.value = ''; results.classList.remove('open'); if (historyEl) historyEl.classList.remove('open'); search.blur(); }
   });
   document.addEventListener('keydown', (ev) => {
     if (document.activeElement === search) return;
