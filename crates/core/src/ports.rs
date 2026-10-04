@@ -464,11 +464,11 @@ pub trait Storage: Send + Sync {
     // ---- structural scoring -----------------------------------------------------------------
 
     /// Returns every resolved edge as `(src, dst)` pairs. Used by the indexer to compute
-    /// PageRank after a full resolve; callers that only need local neighborhoods should use
+    /// `PageRank` after a full resolve; callers that only need local neighborhoods should use
     /// [`neighbors`](Self::neighbors) instead.
     fn all_edges(&self) -> Result<Vec<(SymbolId, SymbolId)>, StorageError>;
 
-    /// Persists precomputed PageRank scores for symbols. The slice contains `(id, score)` pairs;
+    /// Persists precomputed `PageRank` scores for symbols. The slice contains `(id, score)` pairs;
     /// scores are normalized to `0..=1` by the caller. Implementations should batch the writes
     /// because this runs once per full index over every symbol in the repository.
     fn update_pageranks(&self, scores: &[(SymbolId, f64)]) -> Result<(), StorageError>;

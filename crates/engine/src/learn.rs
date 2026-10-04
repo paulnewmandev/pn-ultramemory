@@ -225,8 +225,7 @@ impl Engine {
         let should_draft = session.last_query.is_some()
             && session
                 .last_query_at
-                .map(|t| now.saturating_sub(t) <= DRAFT_WINDOW_SECS)
-                .unwrap_or(false)
+                .is_some_and(|t| now.saturating_sub(t) <= DRAFT_WINDOW_SECS)
             && !session.drafted_symbols.contains(&id);
         if should_draft {
             if let Some(query) = &session.last_query {

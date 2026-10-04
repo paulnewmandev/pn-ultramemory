@@ -75,6 +75,7 @@ const ARTICLES: &[&str] = &["a ", "an ", "the "];
 /// Returns `None` when compression would not save at least one token, so callers can skip the
 /// allocation. The function is idempotent: compressing already-compressed text returns the same
 /// result.
+#[must_use]
 pub fn compress(text: &str) -> Option<String> {
     if text.len() < MIN_COMPRESS_BYTES {
         return None;
@@ -119,14 +120,6 @@ pub fn compress(text: &str) -> Option<String> {
     } else {
         Some(trimmed)
     }
-}
-
-/// Estimates token savings between original and compressed text.
-fn estimate_saving(original: &str, compressed: &str) -> u32 {
-    // Rough heuristic: ~4 bytes per token on average for English prose.
-    let orig_tokens = original.len() / 4;
-    let comp_tokens = compressed.len() / 4;
-    orig_tokens.saturating_sub(comp_tokens) as u32
 }
 
 /// Compresses all memory texts in a capsule, mutating them in place.
@@ -193,7 +186,10 @@ mod tests {
         let input = "It is important to note that basically the parser rejects oversized files";
         let first = compress(input).expect("first pass");
         let second = compress(&first);
-        assert_eq!(second.as_ref().map_or(first.as_str(), |s| s.as_str()), first.as_str());
+        assert_eq!(
+            second.as_ref().map_or(first.as_str(), |s| s.as_str()),
+            first.as_str()
+        );
     }
 
     #[test]

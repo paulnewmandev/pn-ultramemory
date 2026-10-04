@@ -37,6 +37,7 @@ pub(crate) fn u64_from_sql(value: i64) -> u64 {
 pub(crate) fn f64_from_sql(row: &rusqlite::Row<'_>, idx: usize) -> rusqlite::Result<f64> {
     match row.get_ref(idx)? {
         rusqlite::types::ValueRef::Real(v) => Ok(v),
+        #[allow(clippy::cast_precision_loss)]
         rusqlite::types::ValueRef::Integer(v) => Ok(v as f64),
         rusqlite::types::ValueRef::Null => Ok(0.0),
         other => Err(rusqlite::Error::InvalidColumnType(

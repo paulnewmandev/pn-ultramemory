@@ -66,7 +66,7 @@ pub(crate) fn coaccess_relevance(seed: f64, weight: f64) -> f64 {
     seed * tuning::COACCESS_FACTOR * (weight / tuning::COACCESS_FULL_WEIGHT).min(1.0)
 }
 
-/// The relevance a symbol earns from its precomputed PageRank score.
+/// The relevance a symbol earns from its precomputed `PageRank` score.
 ///
 /// `pagerank` is the normalized score (0..=1) stored during indexing; `max` is the highest score
 /// seen in the current candidate set so the range adapts to each query. The result lives in

@@ -9,6 +9,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
+## [1.3.0]
+
 ### Added
 
 - **Linguistic compression for capsule text.** Memories and notes are now compressed before rendering

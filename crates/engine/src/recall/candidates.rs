@@ -132,7 +132,7 @@ impl CandidateSet {
         all
     }
 
-    /// Adds the structural (PageRank) signal to every candidate's relevance.
+    /// Adds the structural (`PageRank`) signal to every candidate's relevance.
     ///
     /// The score is additive and bounded by [`super::ranking::structural_relevance`], so it lifts
     /// hubs without drowning text or neighbor signals. Symbols with no precomputed score get the

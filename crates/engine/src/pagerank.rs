@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-//! PageRank over the symbol graph, computed once per full index and stored as a structural
+//! `PageRank` over the symbol graph, computed once per full index and stored as a structural
 //! relevance signal for recall.
 //!
-//! # Why PageRank here
+//! # Why `PageRank` here
 //! Recall already ranks symbols by text match, neighbor propagation and learned co-access, but all
 //! of those are *local*: they need a seed to start from. A symbol that everything calls but nothing
 //! names explicitly (a config loader, an error type, a shared allocator) can be invisible to a
-//! keyword search and only reachable through a lucky neighbor. PageRank gives every symbol a
+//! keyword search and only reachable through a lucky neighbor. `PageRank` gives every symbol a
 //! baseline importance derived purely from the shape of the graph, so the packer can offer it even
 //! when no seed points at it directly.
 //!
 //! # The algorithm
-//! Standard power-iteration PageRank with damping `d = 0.85`. Each node starts with `1/N`. On
+//! Standard power-iteration `PageRank` with damping `d = 0.85`. Each node starts with `1/N`. On
 //! every iteration each node keeps `(1 - d) / N` and receives `d * score[src] / out_degree[src]`
 //! from every incoming edge. Dangling nodes (no outgoing edges) redistribute their score evenly so
 //! probability is conserved. Iteration stops when the L1 delta between two rounds falls below
@@ -32,12 +32,13 @@
 
 use crate::recall::tuning;
 
-/// Computes PageRank scores for a directed graph given as an edge list.
+/// Computes `PageRank` scores for a directed graph given as an edge list.
 ///
 /// `edges` are `(src, dst)` pairs where both indices are in `0..node_count`. Nodes with no edges
 /// still participate: they receive the dangling-node share on every iteration. Returns a vector of
 /// length `node_count` with non-negative scores summing to approximately `1.0`; an empty graph
 /// returns an empty vector.
+#[allow(clippy::cast_precision_loss)]
 pub(crate) fn compute(edges: &[(usize, usize)], node_count: usize) -> Vec<f64> {
     if node_count == 0 {
         return Vec::new();
@@ -89,10 +90,7 @@ pub(crate) fn compute(edges: &[(usize, usize)], node_count: usize) -> Vec<f64> {
     }
 
     // Normalize so the maximum score is 1.0; ranking only needs relative order.
-    let max = scores
-        .iter()
-        .copied()
-        .fold(0.0_f64, f64::max);
+    let max = scores.iter().copied().fold(0.0_f64, f64::max);
     if max > 0.0 {
         for s in &mut scores {
             *s /= max;
@@ -138,7 +136,10 @@ mod tests {
         let edges: Vec<(usize, usize)> = (0..n).map(|i| (i, (i + 1) % n)).collect();
         let scores = compute(&edges, n);
         for s in &scores {
-            assert!((s - scores[0]).abs() < 1e-6, "cycle scores should be uniform");
+            assert!(
+                (s - scores[0]).abs() < 1e-6,
+                "cycle scores should be uniform"
+            );
         }
     }
 

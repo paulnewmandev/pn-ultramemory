@@ -293,6 +293,7 @@ impl Engine {
     ///
     /// # Errors
     /// The same failures as [`Engine::index`].
+    #[allow(clippy::too_many_lines)]
     pub fn index_reporting(
         &self,
         options: &IndexOptions,
@@ -382,6 +383,7 @@ impl Engine {
         if first_index || options.force || report.edges_written > 50 {
             let edges = self.storage().all_edges()?;
             let stats = self.storage().stats()?;
+            #[allow(clippy::cast_possible_truncation)]
             let node_count = stats.symbols as usize;
             if node_count > 0 && !edges.is_empty() {
                 // Build a compact index: SymbolId -> 0..node_count. The symbol ids in the
@@ -403,13 +405,13 @@ impl Engine {
                     });
                     compact_edges.push((src_idx, dst_idx));
                 }
-                let scores = pagerank::compute(&compact_edges, next_idx);
+                let pr_scores = pagerank::compute(&compact_edges, next_idx);
                 let scored: Vec<(pn_ultramemory_core::SymbolId, f64)> = id_to_idx
                     .iter()
-                    .filter_map(|(&id, &idx)| {
-                        scores.get(idx).and_then(|&s| {
+                    .filter_map(|(&sym_id, &node_idx)| {
+                        pr_scores.get(node_idx).and_then(|&s| {
                             if s > 0.0 {
-                                Some((pn_ultramemory_core::SymbolId(id), s))
+                                Some((pn_ultramemory_core::SymbolId(sym_id), s))
                             } else {
                                 None
                             }

@@ -163,16 +163,16 @@ pub(super) const QUERY_ECHO_MIN_CHARS: usize = 24;
 
 // ---- structural (PageRank) ----------------------------------------------------------------------
 
-/// The lowest relevance a symbol gets from its PageRank score; never zero so hubs always surface.
+/// The lowest relevance a symbol gets from its `PageRank` score; never zero so hubs always surface.
 pub(super) const STRUCTURAL_FLOOR: f64 = 0.05;
 
-/// How much of the relevance range the normalized PageRank score decides.
+/// How much of the relevance range the normalized `PageRank` score decides.
 pub(super) const STRUCTURAL_SPAN: f64 = 0.15;
 
-/// Damping factor for the PageRank iteration.
+/// Damping factor for the `PageRank` iteration.
 pub(crate) const PAGERANK_DAMPING: f64 = 0.85;
 
-/// Maximum number of PageRank iterations before giving up on convergence.
+/// Maximum number of `PageRank` iterations before giving up on convergence.
 pub(crate) const PAGERANK_ITERATIONS: usize = 20;
 
 /// Convergence threshold: when the L1 delta between iterations falls below this, stop early.

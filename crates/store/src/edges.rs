@@ -728,6 +728,20 @@ pub(crate) fn neighbors(
     )
 }
 
+/// Returns every resolved edge as `(src, dst)` pairs for structural scoring.
+pub(crate) fn all_edges(
+    conn: &Connection,
+) -> Result<Vec<(pn_ultramemory_core::SymbolId, pn_ultramemory_core::SymbolId)>> {
+    query_all(conn, "SELECT src, dst FROM edges", [], |row| {
+        let src: i64 = row.get(0)?;
+        let dst: i64 = row.get(1)?;
+        Ok((
+            pn_ultramemory_core::SymbolId(src),
+            pn_ultramemory_core::SymbolId(dst),
+        ))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Candidate, best_candidates, common_prefix, receiver_word};
@@ -800,18 +814,4 @@ mod tests {
         let none = best_candidates(&[], "src/x.rs");
         assert!(none.is_empty());
     }
-}
-
-/// Returns every resolved edge as `(src, dst)` pairs for structural scoring.
-pub(crate) fn all_edges(conn: &Connection) -> Result<Vec<(pn_ultramemory_core::SymbolId, pn_ultramemory_core::SymbolId)>> {
-    query_all(
-        conn,
-        "SELECT src, dst FROM edges",
-        [],
-        |row| {
-            let src: i64 = row.get(0)?;
-            let dst: i64 = row.get(1)?;
-            Ok((pn_ultramemory_core::SymbolId(src), pn_ultramemory_core::SymbolId(dst)))
-        },
-    )
 }

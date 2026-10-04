@@ -38,11 +38,10 @@ pub use ports::{
     SourceTree, Storage, StorageError,
 };
 pub use records::{
-    Anchor, Direction, DocCoverageRow, DraftMemory, EdgeKind, EdgeRecord, FileId, FileInput, FileRecord,
-    StaleReason,
-    FileTotals, IndexStats, LearningStatus, MemoryFilter, MemoryId, MemoryRecord, ModuleEdge,
-    ModuleStats, Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit, SearchQuery, SymbolId,
-    SymbolRecord, UpsertOutcome,
+    Anchor, Direction, DocCoverageRow, DraftMemory, EdgeKind, EdgeRecord, FileId, FileInput,
+    FileRecord, FileTotals, IndexStats, LearningStatus, MemoryFilter, MemoryId, MemoryRecord,
+    ModuleEdge, ModuleStats, Neighbor, NewMemory, ResolveScope, ResolveStats, SearchHit,
+    SearchQuery, StaleReason, SymbolId, SymbolRecord, UpsertOutcome,
 };
 pub use symbol::{
     EXPRESSION_QUALIFIER, FileExtract, RefKind, ReferenceDraft, Span, SymbolDraft, SymbolKind,

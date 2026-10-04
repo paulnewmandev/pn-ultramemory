@@ -19,8 +19,8 @@ use rusqlite::{Connection, Row, TransactionBehavior, params};
 use crate::error::DbResult;
 
 use crate::convert::{
-    confidence_to_sql, decode_names, f64_from_sql, language, limit_to_sql, prefix_upper_bound, symbol_kind,
-    u64_from_sql, visibility,
+    confidence_to_sql, decode_names, f64_from_sql, language, limit_to_sql, prefix_upper_bound,
+    symbol_kind, u64_from_sql, visibility,
 };
 use crate::error::Result;
 use crate::query::{query_all, query_opt};
@@ -190,7 +190,7 @@ pub(crate) fn undocumented_public(
     )
 }
 
-/// Persists precomputed PageRank scores for symbols in a single batched transaction.
+/// Persists precomputed `PageRank` scores for symbols in a single batched transaction.
 pub(crate) fn update_pageranks(
     conn: &mut Connection,
     scores: &[(pn_ultramemory_core::SymbolId, f64)],

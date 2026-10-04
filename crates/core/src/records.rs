@@ -102,7 +102,7 @@ pub struct SymbolRecord {
     pub sig_hash: u64,
     /// Whitespace-normalized hash of the whole declaration.
     pub body_hash: u64,
-    /// Precomputed PageRank score (0..=1), populated during full index. Zero means not yet scored.
+    /// Precomputed `PageRank` score (0..=1), populated during full index. Zero means not yet scored.
     pub pagerank: f64,
 }
 

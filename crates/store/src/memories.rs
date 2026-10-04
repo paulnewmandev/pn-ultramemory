@@ -443,7 +443,7 @@ pub(crate) fn list_drafts(
             let about_symbols: Vec<String> = if about_raw.is_empty() {
                 Vec::new()
             } else {
-                about_raw.split(',').map(|s| s.to_owned()).collect()
+                about_raw.split(',').map(str::to_owned).collect()
             };
             Ok(pn_ultramemory_core::DraftMemory {
                 id,
@@ -459,6 +459,10 @@ pub(crate) fn list_drafts(
 
 /// Removes a draft after confirmation or discard. Returns `false` when it did not exist.
 pub(crate) fn discard_draft(conn: &mut Connection, id: i64) -> Result<bool> {
-    let removed = execute(conn, "DELETE FROM draft_memories WHERE id = ?1", params![id])?;
+    let removed = execute(
+        conn,
+        "DELETE FROM draft_memories WHERE id = ?1",
+        params![id],
+    )?;
     Ok(removed > 0)
 }
