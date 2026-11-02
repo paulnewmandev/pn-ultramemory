@@ -83,101 +83,88 @@ pub fn render(version: &str, colour: bool) -> String {
     out
 }
 
-/// Renders the compact info panel below the header.
+/// How many columns the panel occupies between its two borders.
+const PANEL_INNER: usize = 68;
+
+/// One row of the panel: `plain` is what the row says, `painted` the same text with colour.
+///
+/// The padding is computed from `plain`, counted in characters rather than bytes, so the right
+/// border stays in its column whatever the row holds: accents, `ñ` or escape sequences.
+fn panel_row(out: &mut String, plain: &str, painted: &str, dim: &str, reset: &str) {
+    let pad = PANEL_INNER.saturating_sub(plain.chars().count());
+    let _ = writeln!(
+        out,
+        "{dim}\u{2502}{reset}{painted}{}{dim}\u{2502}{reset}",
+        " ".repeat(pad)
+    );
+}
+
+/// Renders the compact info panel below the header, its title set into the top border.
 fn render_panel(version: &str, colour: bool, repo_name: &str, data_dir: &str) -> String {
     let (green, dim, bold, reset, cyan, blue) = if colour {
         (GREEN, DIM, BOLD, RESET, CYAN, BLUE)
     } else {
         ("", "", "", "", "", "")
     };
-
     let mut out = String::new();
-    let box_width = 68;
-
-    // Top border
+    let title = format!(" pn-ultramemory v{version} ");
+    let rule = PANEL_INNER.saturating_sub(title.chars().count() + 1);
     let _ = writeln!(
         out,
-        "{dim}\u{256d}{}\u{256e}{reset}",
-        "\u{2500}".repeat(box_width)
+        "{dim}\u{256d}\u{2500}{reset}{bold}{title}{reset}{dim}{}\u{256e}{reset}",
+        "\u{2500}".repeat(rule)
     );
-
-    // Version centred
-    let version_line = format!("pn-ultramemory v{version}");
-    let pad_left = (box_width - version_line.len()) / 2;
-    let pad_right = box_width - version_line.len() - pad_left;
-    let _ = writeln!(
-        out,
-        "{dim}\u{2502}{reset}{pad_left}{bold}{version_line}{reset}{pad_right}{dim}\u{2502}{reset}",
-        pad_left = " ".repeat(pad_left),
-        pad_right = " ".repeat(pad_right)
+    panel_row(
+        &mut out,
+        " workspace",
+        &format!(" {green}{bold}workspace{reset}"),
+        dim,
+        reset,
     );
-
-    // Separator
-    let _ = writeln!(
-        out,
-        "{dim}\u{251c}{}\u{2524}{reset}",
-        "\u{2500}".repeat(box_width)
-    );
-
-    // Workspace section
-    let _ = writeln!(
-        out,
-        "{dim}\u{2502}{reset} {green}{bold}workspace{reset}{pad}{dim}\u{2502}{reset}",
-        pad = " ".repeat(box_width.saturating_sub(10))
-    );
-    let root_display = truncate_path(repo_name, 48);
-    let _ = writeln!(
-        out,
-        "{dim}\u{2502}{reset}   {dim}root{reset}  {blue}{root_display}{reset}{pad}{dim}\u{2502}{reset}",
-        pad = " ".repeat(box_width.saturating_sub(12 + root_display.len()))
-    );
-    let data_display = truncate_path(data_dir, 48);
-    let _ = writeln!(
-        out,
-        "{dim}\u{2502}{reset}   {dim}data{reset}  {blue}{data_display}{reset}{pad}{dim}\u{2502}{reset}",
-        pad = " ".repeat(box_width.saturating_sub(12 + data_display.len()))
-    );
-
-    // Separator
-    let _ = writeln!(
-        out,
-        "{dim}\u{251c}{}\u{2524}{reset}",
-        "\u{2500}".repeat(box_width)
-    );
-
-    // Available tools section
-    let _ = writeln!(
-        out,
-        "{dim}\u{2502}{reset} {cyan}{bold}available tools{reset}{pad}{dim}\u{2502}{reset}",
-        pad = " ".repeat(box_width.saturating_sub(16))
-    );
-    for (category, tools) in TOOL_CATEGORIES {
-        let visible_len = 2 + 8 + 1 + tools.len() + 1;
-        let pad = box_width.saturating_sub(visible_len);
-        let _ = writeln!(
-            out,
-            "{dim}\u{2502}{reset}   {green}{category:<8}{reset}{tools}{pad}{dim}\u{2502}{reset}",
-            pad = " ".repeat(pad)
+    for (label, value) in [("root", repo_name), ("data", data_dir)] {
+        let shown = truncate_path(value, PANEL_INNER - 11);
+        panel_row(
+            &mut out,
+            &format!("   {label}  {shown}"),
+            &format!("   {dim}{label}{reset}  {blue}{shown}{reset}"),
+            dim,
+            reset,
         );
     }
-
-    // Bottom border
+    panel_row(&mut out, "", "", dim, reset);
+    panel_row(
+        &mut out,
+        " commands",
+        &format!(" {cyan}{bold}commands{reset}"),
+        dim,
+        reset,
+    );
+    for (category, tools) in TOOL_CATEGORIES {
+        panel_row(
+            &mut out,
+            &format!("   {category:<8}{tools}"),
+            &format!("   {green}{category:<8}{reset}{tools}"),
+            dim,
+            reset,
+        );
+    }
     let _ = write!(
         out,
         "{dim}\u{2570}{}\u{256f}{reset}",
-        "\u{2500}".repeat(box_width)
+        "\u{2500}".repeat(PANEL_INNER)
     );
-
     out
 }
 
-/// Truncates a path from the left when it exceeds `max` characters, keeping the tail.
+/// Shortens a path to at most `max` characters by dropping its start, which is the part a person
+/// already knows. It counts characters, not bytes, so a path with accents is never cut mid-letter.
 fn truncate_path(path: &str, max: usize) -> String {
-    if path.len() <= max {
-        path.to_owned()
-    } else {
-        format!("...{}", &path[path.len() - (max - 3)..])
+    let count = path.chars().count();
+    if count <= max {
+        return path.to_owned();
     }
+    let tail: String = path.chars().skip(count - (max - 3)).collect();
+    format!("...{tail}")
 }
 
 /// Prints the full banner (header + panel) when stdout is a terminal.
@@ -198,7 +185,34 @@ pub fn print(version: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::render;
+    use super::{render, render_panel, truncate_path};
+
+    /// Every row of the panel is the same width, so its right border is one straight line.
+    #[test]
+    fn the_panel_is_rectangular() {
+        let panel = render_panel(
+            "1.3.0",
+            false,
+            "repo",
+            "/Users/ñandú/Library/Application Support/pn-ultramemory/x",
+        );
+        let widths: Vec<usize> = panel.lines().map(|line| line.chars().count()).collect();
+        assert!(
+            widths.windows(2).all(|w| w[0] == w[1]),
+            "{widths:?}\n{panel}"
+        );
+        assert!(widths[0] <= 80, "{}", widths[0]);
+    }
+
+    /// A long path with letters outside ASCII is shortened without cutting a letter in half.
+    #[test]
+    fn long_paths_with_accents_are_shortened_safely() {
+        let path = "/Users/maría/Documentos/proyectos/código/año/señal/pn-ultramemory-0123456789";
+        let short = truncate_path(path, 30);
+        assert_eq!(short.chars().count(), 30);
+        assert!(short.starts_with("...") && short.ends_with("0123456789"));
+        assert_eq!(truncate_path("corto", 30), "corto");
+    }
 
     /// Without colour the banner carries no escape sequence, so it is safe anywhere.
     #[test]

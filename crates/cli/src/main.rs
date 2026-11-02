@@ -285,7 +285,8 @@ fn run_code(
                 format: format_of(global.format),
                 delimiter: simple::delimiter_of(global.delimiter),
             };
-            println!("{}", pn_ultramemory_codec::render(&capsule, &options));
+            let text = pn_ultramemory_codec::render(&capsule, &options);
+            println!("{}", style::highlight(&text, style::colour_stdout()));
         }
         Command::Expand(args) => {
             // `to` without `from` still bounds the window: it starts at the symbol's first line.
