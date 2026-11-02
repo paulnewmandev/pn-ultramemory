@@ -105,7 +105,8 @@ impl Brain {
     ///
     /// A node is `[id, name, qualified name or "", kind, region, path, line, signature, doc,
     /// public]`, an edge is four numbers in a flat list (source, target, kind, confidence), and a
-    /// memory is `[id, kind, text, stale, by, anchor node indices, anchor names, created]`.
+    /// memory is `[id, kind, text, stale, by, anchor node indices, anchor names, created, stale
+    /// reason or null]`.
     #[must_use]
     pub fn to_value(&self) -> Value {
         self.value.clone()
@@ -302,6 +303,9 @@ impl Engine {
                     anchors,
                     about,
                     memory.created_at,
+                    memory
+                        .stale_reason
+                        .map(pn_ultramemory_core::StaleReason::as_str),
                 ])
             })
             .collect())

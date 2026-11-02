@@ -14,7 +14,7 @@
       search: 'Search symbols, files and memories', files: 'files', symbols: 'symbols',
       edges: 'connections', memories: 'memories', stale: 'stale', regions: 'Regions', view: 'View',
       tEdges: 'Fibres', tSignals: 'Signals', tMemories: 'Memories', tCortex: 'Cortex',
-      tLabels: 'Labels', tRotate: 'Rotate', tLayers: 'Layers', tDetail: 'Detail', calledBy: 'Called by', calls: 'Calls',
+      tLabels: 'Labels', tRotate: 'Rotate', tLayers: 'Layers', layerNames: ['Entry points', 'Logic', 'Data', 'Interface', 'Utility'], tDetail: 'Detail', detailLevels: ['Minimal', 'Normal', 'Expert'], calledBy: 'Called by', calls: 'Calls',
       sig: 'Signature', mems: 'Memories', copyCtx: 'Copy context for an agent',
       copyLoc: 'Copy location', copied: 'Copied to the clipboard', copyFail: 'Could not copy',
       focus: 'Fly to it', more: (n) => `+${n} more`, noMatch: 'No match',
@@ -29,12 +29,13 @@
       ctxCalledBy: 'called by', ctxCalls: 'calls', ctxNext: 'next',
       noMem: 'No memories yet: pn-ultramemory remember decision "…" --about <symbol> adds one, anchored to the code.',
       memCount: (n) => (n === 1 ? '1 memory' : `${n} memories`),
+      reasons: { symbol_deleted: 'the symbol was deleted', signature_changed: 'its signature changed', body_changed: 'its body changed', file_removed: 'its file was removed' },
     },
     es: {
       search: 'Busca símbolos, archivos y memorias', files: 'archivos', symbols: 'símbolos',
       edges: 'conexiones', memories: 'memorias', stale: 'obsoletas', regions: 'Regiones', view: 'Vista',
       tEdges: 'Fibras', tSignals: 'Señales', tMemories: 'Memorias', tCortex: 'Corteza',
-      tLabels: 'Etiquetas', tRotate: 'Girar', tLayers: 'Capas', tDetail: 'Detalle', calledBy: 'Lo llaman', calls: 'Llama a',
+      tLabels: 'Etiquetas', tRotate: 'Girar', tLayers: 'Capas', layerNames: ['Entradas', 'Lógica', 'Datos', 'Interfaz', 'Utilidades'], tDetail: 'Detalle', detailLevels: ['Mínimo', 'Normal', 'Experto'], calledBy: 'Lo llaman', calls: 'Llama a',
       sig: 'Firma', mems: 'Memorias', copyCtx: 'Copiar contexto para un agente',
       copyLoc: 'Copiar ubicación', copied: 'Copiado al portapapeles', copyFail: 'No se pudo copiar',
       focus: 'Volar hasta aquí', more: (n) => `${n} más`, noMatch: 'Sin resultados',
@@ -49,6 +50,7 @@
       ctxCalledBy: 'lo llaman', ctxCalls: 'llama a', ctxNext: 'siguiente',
       noMem: 'Aún no hay memorias: pn-ultramemory remember decision "…" --about <símbolo> añade una, anclada al código.',
       memCount: (n) => (n === 1 ? '1 memoria' : `${n} memorias`),
+      reasons: { symbol_deleted: 'el símbolo se eliminó', signature_changed: 'cambió su firma', body_changed: 'cambió su cuerpo', file_removed: 'se eliminó su archivo' },
     },
   };
   const S = STRINGS[LANG];
@@ -88,7 +90,7 @@
 
   const MEM = (DATA.memories || []).map((m) => ({
     id: m[0], kind: String(m[1] || ''), text: String(m[2] || ''), stale: !!m[3], by: String(m[4] || ''),
-    anchors: (m[5] || []).filter((a) => a < N), about: m[6] || [], pos: [0, 0, 0],
+    anchors: (m[5] || []).filter((a) => a < N), about: m[6] || [], reason: String(m[8] || ''), pos: [0, 0, 0],
   }));
   const MEM_OF = Array.from({ length: N }, () => []);
   MEM.forEach((m, k) => m.anchors.forEach((a) => MEM_OF[a].push(k)));
@@ -420,8 +422,16 @@
   // ---------------------------------------------------------------- state
   const state = {
     selected: -1, selectedMem: -1, hovered: -1, hoveredMem: -1, region: -1,
-    show: { edges: true, signals: true, memories: true, cortex: true, labels: true, rotate: true },
+    show: { edges: true, signals: true, memories: true, cortex: true, labels: true, layers: false, rotate: true },
+    // How many labels to draw: 0 minimal, 1 normal, 2 expert.
+    detailLevel: 1,
   };
+  const DETAIL_LABELS = S.detailLevels;
+  function updateDetailLevel() {
+    const sel = $('detail-level');
+    if (sel) state.detailLevel = parseInt(sel.value, 10);
+    refresh();
+  }
   // Which nodes are lit: the selection and its neighbours, or a whole region, or everything.
   const LIT = new Float32Array(N);
   function computeLit() {
@@ -556,7 +566,10 @@
   }
 
   // ---------------------------------------------------------------- camera
-  const HOME_DIST = 2.75;
+  // Far enough for the whole brain to fit across the screen: a phone held upright is narrow, so
+  // the camera steps back until the brain's width fits the horizontal field of view.
+  const homeDist = () => Math.max(2.75, 1.1 / (Math.tan(25 * Math.PI / 180) * (window.innerWidth / Math.max(1, window.innerHeight))));
+  const HOME_DIST = homeDist();
   const cam = { theta: -1.05, phi: 0.3, dist: HOME_DIST, tx: 0, ty: -0.08, tz: 0 };
   const goal = { ...cam };
   let MVP = new Float32Array(16), W = 1, H = 1, DPR = 1, SCALE = 1;
@@ -761,7 +774,7 @@
     deg.append(d1, d2); panel.appendChild(deg);
     if (state.show.layers) {
       const layerIdx = NODE_LAYER[i];
-      chips.appendChild(chip(LAYER_NAMES[layerIdx] || 'Utility', LAYER_RGB[layerIdx]));
+      chips.appendChild(chip(LAYER_NAMES[layerIdx], LAYER_RGB[layerIdx]));
     }
     if (SIG[i]) { panel.appendChild(heading(S.sig)); panel.appendChild(el('pre', '', SIG[i])); }
     if (DOC[i]) panel.appendChild(el('p', 'doc', DOC[i]));
@@ -782,9 +795,8 @@
     panel.appendChild(el('div', 'chips')).appendChild(chip(S.memory + ' #' + m.id, m.stale ? STALE_RGB : MEM_RGB, 'mem'));
     panel.appendChild(memoryCard(k));
     if (m.stale) {
-      const reasons = m.stale_reasons || [];
-      const whyText = reasons.length ? `${S.staleWhy}: ${reasons.join(', ')}` : S.staleWhy;
-      panel.appendChild(el('p', 'doc stale-reason', whyText));
+      const why = S.reasons[m.reason];
+      panel.appendChild(el('p', 'doc stale-reason', why ? `${S.staleWhy} (${why})` : S.staleWhy));
     }
     panel.appendChild(heading(S.anchored));
     if (m.anchors.length) panel.appendChild(linkList(m.anchors));
@@ -815,7 +827,7 @@
     try { history.replaceState(null, '', '#m=' + m.id); } catch (_) { /* a file URL may refuse */ }
   }
   function clearSelection() {
-    if (state.selected < 0 && state.selectedMem < 0 && state.region < 0) { flyTo(0, -0.08, 0, HOME_DIST); return; }
+    if (state.selected < 0 && state.selectedMem < 0 && state.region < 0) { flyTo(0, -0.08, 0, homeDist()); return; }
     if (state.selected >= 0 || state.selectedMem >= 0) { state.selected = -1; state.selectedMem = -1; } else { state.region = -1; }
     panel.classList.remove('open');
     refresh();
@@ -826,6 +838,19 @@
   function renderRegions() {
     const ul = $('regions');
     ul.replaceChildren();
+    $('regions-title').textContent = state.show.layers ? S.tLayers : S.regions;
+    if (state.show.layers) {
+      // The layer view: the same particles grouped by the role their path and kind suggest.
+      const counts = new Uint32Array(LAYER_NAMES.length);
+      for (let i = 0; i < N; i++) counts[NODE_LAYER[i]]++;
+      LAYER_NAMES.forEach((name, k) => {
+        if (!counts[k]) return;
+        const li = el('li');
+        li.append(dot(LAYER_RGB[k]), el('span', 'nm', name), el('span', 'n', fmt(counts[k])));
+        ul.appendChild(li);
+      });
+      return;
+    }
     regionOrder.slice(0, 60).forEach((r) => {
       const li = el('li', state.region === r ? 'on' : (state.region >= 0 ? 'off' : ''));
       li.appendChild(dot(REGION_RGB[r]));
@@ -840,28 +865,35 @@
           let x = 0, y = 0, z = 0, n = 0;
           for (let i = 0; i < N; i++) if (REGION[i] === r) { x += POS[i * 3]; y += POS[i * 3 + 1]; z += POS[i * 3 + 2]; n++; }
           if (n) flyTo(x / n, y / n, z / n, 2.1);
-        } else flyTo(0, -0.08, 0, HOME_DIST);
+        } else flyTo(0, -0.08, 0, homeDist());
       });
       ul.appendChild(li);
     });
   }
   // Layer classification: derive architectural layer from path/kind for dashboard-style coloring
-  const LAYER_NAMES = ['API', 'Service', 'Data', 'UI', 'Utility'];
-  const LAYER_RGB = [[0.2,0.6,1],[0.4,0.85,0.4],[0.95,0.65,0.2],[0.85,0.35,0.7],[0.6,0.6,0.6]];
+  const LAYER_NAMES = S.layerNames;
+  const LAYER_RGB = [[0.35, 0.7, 1], [0.4, 0.88, 0.5], [1, 0.72, 0.3], [0.92, 0.45, 0.85], [0.62, 0.64, 0.72]];
+  // Each path segment is matched as a whole word, so `crates/store/src` reads as data and
+  // `crates/cli` as an entry point without needing folders literally called `api` or `service`.
+  const LAYER_WORDS = [
+    /^(api|apis|cli|cmd|bin|mcp|server|routes?|handlers?|controllers?|endpoints?|http|grpc|rpc|hooks?|main)$/,
+    /^(engine|core|services?|domain|usecases?|logic|app|application|business|models?|entities)$/,
+    /^(store|stores|storage|db|database|data|sql|sqlite|repos?|repositor(y|ies)|persistence|migrations?|cache|schema)$/,
+    /^(ui|views?|components?|pages?|screens?|web|frontend|client|report|templates?|styles?|brain|widgets?)$/,
+  ];
   function classifyLayer(i) {
-    const p = pathOf(i).toLowerCase(), k = kindName(i).toLowerCase();
-    if (p.includes('/api/') || p.includes('/routes/') || p.includes('/controller') || k.includes('handler') || k.includes('route')) return 0;
-    if (p.includes('/service/') || p.includes('/domain/') || p.includes('/usecase') || k.includes('service') || k.includes('manager')) return 1;
-    if (p.includes('/data/') || p.includes('/store/') || p.includes('/model/') || p.includes('/db/') || k.includes('repo') || k.includes('model')) return 2;
-    if (p.includes('/ui/') || p.includes('/view/') || p.includes('/component') || p.includes('/page') || k.includes('view') || k.includes('component')) return 3;
+    const segments = pathOf(i).toLowerCase().split('/').slice(0, -1);
+    for (const seg of segments) {
+      const word = seg.replace(/^[^a-z]*|[-_.].*$/g, '');
+      for (let layer = 0; layer < LAYER_WORDS.length; layer++) if (LAYER_WORDS[layer].test(word) || LAYER_WORDS[layer].test(seg)) return layer;
+    }
     return 4;
   }
   const NODE_LAYER = Array.from({ length: N }, (_, i) => classifyLayer(i));
-  state.show.layers = false;
   const toggleNames = { edges: S.tEdges, signals: S.tSignals, memories: S.tMemories, cortex: S.tCortex, labels: S.tLabels, layers: S.tLayers, rotate: S.tRotate };
   Object.keys(toggleNames).forEach((key) => {
     const label = el('label'), box = el('input');
-    box.type = 'checkbox'; box.checked = state.show[key];
+    box.type = 'checkbox'; box.dataset.key = key; box.checked = state.show[key];
     box.addEventListener('change', () => { state.show[key] = box.checked; refresh(); });
     label.append(box, document.createTextNode(toggleNames[key]));
     $('toggles').appendChild(label);
@@ -869,7 +901,7 @@
   // Persona-adaptive detail level selector
   {
     const wrap = el('div', 'detail-wrap');
-    const lbl = el('label', '', S.tDetail || 'Detail');
+    const lbl = el('label', '', S.tDetail);
     const sel = document.createElement('select');
     sel.id = 'detail-level';
     DETAIL_LABELS.forEach((name, idx) => {
@@ -994,14 +1026,6 @@
     }
     return qi === query.length ? score : 0;
   }
-  // Persona-adaptive detail: controls label density and edge visibility based on zoom/detail level
-  state.detailLevel = 1; // 0=minimal, 1=normal, 2=expert
-  const DETAIL_LABELS = ['Minimal', 'Normal', 'Expert'];
-  function updateDetailLevel() {
-    const sel = $('detail-level');
-    if (sel) state.detailLevel = parseInt(sel.value, 10);
-    refresh();
-  }
   function runSearch() {
     const q = search.value.trim().toLowerCase();
     found = []; active = 0;
@@ -1077,7 +1101,7 @@
     if (ev.key === '/' || ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'k')) { search.focus(); search.select(); ev.preventDefault(); }
     else if (ev.key === 'Escape') clearSelection();
     else if (ev.key === 'f' && state.selected >= 0) { const i = state.selected; flyTo(POS[i * 3], POS[i * 3 + 1], POS[i * 3 + 2], 1.25); }
-    else if (ev.key === 'r') { state.show.rotate = !state.show.rotate; document.querySelectorAll('#toggles input')[5].checked = state.show.rotate; }
+    else if (ev.key === 'r') { state.show.rotate = !state.show.rotate; document.querySelector('#toggles input[data-key="rotate"]').checked = state.show.rotate; }
   });
   $('menu').addEventListener('click', () => $('legend').classList.toggle('open'));
 
@@ -1144,7 +1168,7 @@
 
   // ---------------------------------------------------------------- the loop
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotion) { simulate(SIM_STEPS); state.show.rotate = false; document.querySelectorAll('#toggles input')[5].checked = false; }
+  if (reduceMotion) { simulate(SIM_STEPS); state.show.rotate = false; document.querySelector('#toggles input[data-key="rotate"]').checked = false; }
   refresh();
   {
     const m = /^#(s|m)=(.+)$/.exec(location.hash || '');
