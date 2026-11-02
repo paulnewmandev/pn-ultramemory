@@ -18,19 +18,17 @@ files, remembers decisions anchored to the code, and lets you fly through all of
 <a href="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml"><img alt="Guards" src="https://github.com/paulnewmandev/pn-ultramemory/actions/workflows/guards.yml/badge.svg?branch=main"></a>
 <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
 <img alt="Built with Rust" src="https://img.shields.io/badge/built%20with-Rust-000000?logo=rust&logoColor=white">
-<img alt="1368 tests passing" src="https://img.shields.io/badge/tests-1368%20passing-success">
+<img alt="1390 tests passing" src="https://img.shields.io/badge/tests-1390%20passing-success">
 <img alt="Network: never" src="https://img.shields.io/badge/network-never-success">
 <img alt="Telemetry: none" src="https://img.shields.io/badge/telemetry-none-success">
 <img alt="Status: new project" src="https://img.shields.io/badge/status-new%20project-orange">
 </p>
 
 <p align="center">
-<img src="docs/cli-banner-mockup.png" alt="CLI dashboard banner showing version, workspace info and available tool categories" width="760">
+<img src="assets/screenshots/brain-demo.gif" alt="Recording of the brain view on this repository: the brain settles and turns, a search for pagerank highlights its matches, opening the compute function lights its fibres and shows its signature, callers and the decision anchored to it, then the layer view recolours the brain by role" width="860">
 </p>
 
-<p align="center">
-<img src="docs/brain-mockup.png" alt="3D brain view with responsive layout, search highlighting, layer view toggle and persona-adaptive detail levels" width="860">
-</p>
+<p align="center"><sub>A real recording of <code>pn-ultramemory brain</code> on this repository: search, open a symbol with the decision anchored to it, switch to the layer view.</sub></p>
 
 ---
 
@@ -94,6 +92,12 @@ prints the one line to add. It needs no root and changes nothing else.
 - **Let an agent do it:** point it at [AGENTS.md](AGENTS.md), written for a model to carry out
   step by step.
 
+<p align="center">
+<img src="assets/screenshots/cli-recall.png" alt="Terminal running pn-ultramemory recall where is pagerank computed with a budget of 450 tokens: a capsule of 352 tokens with the two files, the three symbols with their source, nine more names, and the decision about when PageRank is recomputed" width="760">
+</p>
+
+<p align="center"><sub>What an agent receives: one question, 352 tokens, the right code and the decision about it.</sub></p>
+
 ---
 
 ## What your agent gets
@@ -134,8 +138,16 @@ pn-ultramemory brain              # --lang es for Spanish
 ```
 
 <p align="center">
-<img src="assets/screenshots/brain-symbol.jpg" alt="One symbol opened in the brain view: its fibres highlighted, pulses travelling along them, and a side panel with its signature, documentation, a memory anchored to it, two callers and thirteen callees" width="860">
+<img src="assets/screenshots/brain-symbol.jpg" alt="The compute function opened in the brain view: its fibres to six callers highlighted, and a side panel with its signature, its documentation, the decision anchored to it and the list of callers" width="860">
 </p>
+
+<table align="center">
+<tr>
+<td align="center"><img src="assets/screenshots/brain-search.jpg" alt="Searching pagerank: constants, functions, tests and a memory, with the matching letters highlighted" width="300"><br><sub>Search: symbols, paths and memories</sub></td>
+<td align="center"><img src="assets/screenshots/brain-layers.jpg" alt="The layer view: the brain recoloured into entry points, logic, data, interface and utility, with counts in the legend" width="300"><br><sub>Layers: the same code grouped by role</sub></td>
+<td align="center"><img src="assets/screenshots/brain-mobile.jpg" alt="The brain view on a phone: the search bar on top and the whole brain fitting the narrow screen" width="120"><br><sub>On a phone</sub></td>
+</tr>
+</table>
 
 - **The shape means something.** Each folder is a region of the cortex, in mirrored pairs over
   the two hemispheres, the largest first. Tests live in the cerebellum. Fibres run underneath like
@@ -147,6 +159,10 @@ pn-ultramemory brain              # --lang es for Spanish
 - **Hand it to an agent.** *Copy context for an agent* puts the symbol, its location, its callers,
   its callees and its memories on the clipboard, with the commands to go further: a few hundred
   tokens that orient a model faster than any file.
+- **Layers and detail.** *Layers* recolours the brain by role (entry points, logic, data,
+  interface, utility), read from folder names such as `cli`, `engine`, `store` or `ui`; it is a
+  guess from paths, not an analysis. *Detail* sets how many names are drawn at once. Both work at
+  any screen size, phone included.
 - **Sealed.** One HTML file in the data directory, plain WebGL with no library. Its
   Content-Security-Policy names no source for connections, images, fonts or frames, so the browser
   itself refuses any request the page could make.
@@ -254,6 +270,10 @@ decision can distinguish "body-only edit, probably safe" from "signature gone, r
 
 ## Commands
 
+<p align="center">
+<img src="assets/screenshots/cli-stats.png" alt="Terminal running pn-ultramemory stats: a header with the version, a panel with the workspace paths and every command grouped by purpose, then the index figures" width="700">
+</p>
+
 | Command | What it does |
 |---|---|
 | `index` | Build or refresh the graph. Only files whose content changed are read again |
@@ -320,7 +340,7 @@ leaves the file byte for byte as it was.
 ```
 
 Hexagonal: the core knows nothing about SQLite, tree-sitter or the file system. Nothing merges
-unless formatting, `clippy -D warnings`, documentation, 1,368 tests and `cargo deny` pass on macOS,
+unless formatting, `clippy -D warnings`, documentation, 1,390 tests and `cargo deny` pass on macOS,
 Linux and Windows, plus four ratchets that may only shrink: licence headers, error messages that
 name a way forward, no panics in library code, and documentation that says more than the item's
 name. See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING-WORKFLOW.md](CONTRIBUTING-WORKFLOW.md)

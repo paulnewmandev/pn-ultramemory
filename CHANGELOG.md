@@ -9,6 +9,35 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
 
 ## [Unreleased]
 
+### Fixed
+
+- **The brain view loads again.** The detail-level selector was set up after the legend that uses
+  it, so the page stopped with `Cannot access 'DETAIL_LABELS' before initialization` and drew
+  nothing. The setup now runs first, and the page is checked in a real browser with no errors.
+- **The `r` key and reduced motion turn the rotation off again.** Both found the rotate switch by
+  its position, which the new *Layers* switch had moved; they now find it by name.
+- **Stale memories show their reason in the brain.** The engine now sends why a memory went stale
+  (signature changed, body changed, symbol deleted, file removed) and the panel shows it, in English
+  or Spanish, instead of a generic line.
+- **The terminal panel no longer breaks on paths with accents.** A long data path was cut by bytes,
+  which panics in the middle of a letter such as `ñ`, and padding counted bytes, which pushed the
+  right border out of line. Both now count characters, and two tests hold them to it.
+- **The Spanish README is readable again.** It had lost its blank lines and been replaced by a
+  translation of the English one; the hand-written Spanish is back, with the 1.3.0 additions.
+
+### Changed
+
+- **Layers group code by role from real folder names.** Each path segment is matched as a word
+  (`cli`, `mcp`, `engine`, `store`, `ui`, …) instead of looking only for folders named `api` or
+  `service`, which left almost every symbol of this repository under *Utility*. The legend lists the
+  layers and their counts while the view is on.
+- **The brain fits a phone held upright.** The camera steps back until the brain's width fits the
+  screen, instead of cutting both sides off.
+- **`recall` is coloured at a terminal** like every other command, and stays plain in a pipe.
+- **The terminal panel carries its title in the top border** and lists commands, not tools.
+- **The README shows the tool working:** a recording and screenshots of the real brain view and the
+  real terminal output, replacing two hand-drawn mock-ups.
+
 ## [1.3.0]
 
 ### Added
