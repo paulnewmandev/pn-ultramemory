@@ -1075,7 +1075,7 @@ fn run() -> Result<(), CliError> {
             .file_name()
             .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
         let data_dir = locations.data_dir.to_string_lossy().into_owned();
-        banner::print_full(env!("CARGO_PKG_VERSION"), &repo_name, &data_dir);
+        banner::print(env!("CARGO_PKG_VERSION"), &repo_name, &data_dir);
     }
 
     match &cli.command {

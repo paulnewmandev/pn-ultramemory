@@ -168,18 +168,11 @@ fn truncate_path(path: &str, max: usize) -> String {
 }
 
 /// Prints the full banner (header + panel) when stdout is a terminal.
-pub fn print_full(version: &str, repo_name: &str, data_dir: &str) {
+pub fn print(version: &str, repo_name: &str, data_dir: &str) {
     if wanted() {
         let colour = coloured();
         println!("{}\n", render(version, colour));
         println!("{}\n", render_panel(version, colour, repo_name, data_dir));
-    }
-}
-
-/// Prints just the header when stdout is a terminal.
-pub fn print(version: &str) {
-    if wanted() {
-        println!("{}\n", render(version, coloured()));
     }
 }
 

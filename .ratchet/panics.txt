@@ -120,7 +120,6 @@ crates/engine/src/guard/words.rs	lower as u64	fold_letter
 crates/engine/src/guard/words.rs	table[slot]	build_table
 crates/engine/src/guard/words.rs	word[i]	hash_word
 crates/engine/src/indexer.rs	self.files[index]	Workload::process
-crates/engine/src/indexer.rs	stats.symbols as usize	Engine::index_reporting
 crates/engine/src/indexer.rs	value["skipped"]	IndexReport::to_value
 crates/engine/src/indexer.rs	work[index]	Engine::index_reporting
 crates/engine/src/indexer/pipeline.rs	self.prefix[consumed]	Shared::within_window

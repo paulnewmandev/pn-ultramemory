@@ -18,12 +18,12 @@
 
 mod pipeline;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::time::Instant;
 
 use pn_ultramemory_core::{
-    FileExtract, FileId, FileInput, Language, ResolveScope, SourceFile, hash64,
+    FileExtract, FileId, FileInput, Language, ResolveScope, SourceFile, SymbolId, hash64,
 };
 use serde_json::{Value, json};
 
@@ -47,6 +47,10 @@ const LOOKAHEAD_BYTES: u64 = 32 * 1024 * 1024;
 
 /// The most threads a run uses, whatever was asked for.
 const MAX_THREADS: usize = 64;
+
+/// How many edges an incremental index must rewrite before `PageRank` is recomputed. Below this
+/// the change is local, and recomputing the whole graph would cost more than the drift it fixes.
+const PAGERANK_REFRESH_EDGES: u64 = 50;
 
 /// What an index run should do.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -293,7 +297,6 @@ impl Engine {
     ///
     /// # Errors
     /// The same failures as [`Engine::index`].
-    #[allow(clippy::too_many_lines)]
     pub fn index_reporting(
         &self,
         options: &IndexOptions,
@@ -377,51 +380,10 @@ impl Engine {
             report.edges_written = self.storage().resolve_edges(&scope)?.edges_written;
         }
 
-        // Structural scoring: recompute PageRank on full index or when edges changed
-        // significantly. Incremental updates keep the previous scores; the local signals
-        // (neighbor, coaccess) compensate for mild staleness between full recomputes.
-        if first_index || options.force || report.edges_written > 50 {
-            let edges = self.storage().all_edges()?;
-            let stats = self.storage().stats()?;
-            #[allow(clippy::cast_possible_truncation)]
-            let node_count = stats.symbols as usize;
-            if node_count > 0 && !edges.is_empty() {
-                // Build a compact index: SymbolId -> 0..node_count. The symbol ids in the
-                // store are dense after indexing, but we map explicitly to be safe.
-                let mut id_to_idx: std::collections::HashMap<i64, usize> =
-                    std::collections::HashMap::with_capacity(node_count);
-                let mut next_idx = 0_usize;
-                let mut compact_edges: Vec<(usize, usize)> = Vec::with_capacity(edges.len());
-                for (src, dst) in &edges {
-                    let src_idx = *id_to_idx.entry(src.0).or_insert_with(|| {
-                        let i = next_idx;
-                        next_idx += 1;
-                        i
-                    });
-                    let dst_idx = *id_to_idx.entry(dst.0).or_insert_with(|| {
-                        let i = next_idx;
-                        next_idx += 1;
-                        i
-                    });
-                    compact_edges.push((src_idx, dst_idx));
-                }
-                let pr_scores = pagerank::compute(&compact_edges, next_idx);
-                let scored: Vec<(pn_ultramemory_core::SymbolId, f64)> = id_to_idx
-                    .iter()
-                    .filter_map(|(&sym_id, &node_idx)| {
-                        pr_scores.get(node_idx).and_then(|&s| {
-                            if s > 0.0 {
-                                Some((pn_ultramemory_core::SymbolId(sym_id), s))
-                            } else {
-                                None
-                            }
-                        })
-                    })
-                    .collect();
-                if !scored.is_empty() {
-                    self.storage().update_pageranks(&scored)?;
-                }
-            }
+        // Structural scoring: incremental updates keep the previous scores, and the local signals
+        // (neighbours, co-access) cover the mild staleness until the next full recompute.
+        if first_index || options.force || report.edges_written > PAGERANK_REFRESH_EDGES {
+            self.refresh_pageranks()?;
         }
 
         self.storage().set_meta("last_index_at", &now.to_string())?;
@@ -432,6 +394,43 @@ impl Engine {
             elapsed_ms: report.elapsed_ms,
         });
         Ok(report)
+    }
+
+    /// Recomputes `PageRank` over every resolved edge and stores the scores.
+    ///
+    /// Symbol ids are mapped to a compact `0..n` range first, because the algorithm indexes its
+    /// arrays by node; symbols with no edge are left out and keep a score of zero.
+    ///
+    /// # Errors
+    /// Returns a storage error when the edges cannot be read or the scores cannot be written.
+    fn refresh_pageranks(&self) -> Result<(), EngineError> {
+        let edges = self.storage().all_edges()?;
+        if edges.is_empty() {
+            return Ok(());
+        }
+        let mut index_of: HashMap<i64, usize> = HashMap::new();
+        let mut ids: Vec<i64> = Vec::new();
+        let mut compact = |id: i64| {
+            *index_of.entry(id).or_insert_with(|| {
+                ids.push(id);
+                ids.len() - 1
+            })
+        };
+        let compact_edges: Vec<(usize, usize)> = edges
+            .iter()
+            .map(|(src, dst)| (compact(src.0), compact(dst.0)))
+            .collect();
+        let ranks = pagerank::compute(&compact_edges, ids.len());
+        let scored: Vec<(SymbolId, f64)> = ids
+            .iter()
+            .zip(&ranks)
+            .filter(|(_, score)| **score > 0.0)
+            .map(|(id, score)| (SymbolId(*id), *score))
+            .collect();
+        if !scored.is_empty() {
+            self.storage().update_pageranks(&scored)?;
+        }
+        Ok(())
     }
 
     /// Indexes exactly these paths, for example after documentation was written into them.
