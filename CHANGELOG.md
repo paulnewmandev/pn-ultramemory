@@ -35,6 +35,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is bu
   screen, instead of cutting both sides off.
 - **`recall` is coloured at a terminal** like every other command, and stays plain in a pipe.
 - **The terminal panel carries its title in the top border** and lists commands, not tools.
+- **PageRank is refreshed by its own method.** `index_reporting` no longer carries the whole
+  computation inline: `refresh_pageranks` maps the edges to a compact range by itself, so it needs no
+  extra count query and no truncating cast, and the threshold of 50 rewritten edges is a named
+  constant. One panic site fewer in the ratchet.
+- **External audit findings are triaged.** A run of PN-Ultra-Audit flagged ten critical and high
+  findings; every one was a test fixture or the AWS documentation example key in the redaction
+  module. `.pnauditignore` and a few inline comments record each one with its reason, scoped to the
+  file and rule, and the audit now passes its quality gate.
+- **Unused mock-up drawings are gone** (`assets/diagrams/*-mockup.svg`); nothing referenced them.
 - **The README shows the tool working:** a recording and screenshots of the real brain view and the
   real terminal output, replacing two hand-drawn mock-ups.
 
