@@ -320,6 +320,7 @@
   const canvas = $('scene');
   const gl = canvas.getContext('webgl', { antialias: true, alpha: false, preserveDrawingBuffer: false })
     || canvas.getContext('experimental-webgl');
+  // pn-audit: ignore=XSS-DOM - only ever given this page's own fixed strings (S.noGl, S.empty).
   function showMessage(html) { const m = $('message'); m.innerHTML = html; m.classList.add('open'); }
   if (!gl) { showMessage(S.noGl); return; }
 
@@ -936,6 +937,7 @@
       part(DATA.edgesTotal, S.edges), document.createElement('br'), part(MEM.length, S.memories));
     if (stale) stats.append(document.createTextNode(' · '), part(stale, S.stale));
   }
+  // pn-audit: ignore=XSS-DOM - a fixed string of this page, with <kbd> markup.
   $('hint').innerHTML = S.hint;
   {
     const note = $('note');
@@ -961,6 +963,7 @@
     sessionHistory = sessionHistory.filter((h) => h.id !== entry.id);
     sessionHistory.unshift(entry);
     if (sessionHistory.length > 12) sessionHistory.length = 12;
+    // pn-audit: ignore=MOB-STORAGE - stores symbol names visited in this tab, never a credential.
     try { sessionStorage.setItem(HIST_KEY, JSON.stringify(sessionHistory)); } catch (_) { /* quota */ }
     renderHistory();
   }

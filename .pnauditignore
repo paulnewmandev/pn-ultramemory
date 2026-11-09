@@ -1,0 +1,20 @@
+# PN-Ultra-Audit: findings checked by hand and accepted. Each line names the file and the rules;
+# everything else in these files is still audited, and suppressed findings are counted in the report.
+#
+# The redaction module's documentation and tests must contain fake secrets to prove they are hidden:
+# the AWS key there is the example published in AWS's own documentation, and the rest is in `#[cfg(test)]`.
+crates/engine/src/guard/secrets.rs     SEC-*
+# A Cargo workspace has one lockfile, at the root (Cargo.lock), shared by every member crate.
+crates/*/Cargo.toml                    DEP-NO-LOCKFILE
+xtask/Cargo.toml                       DEP-NO-LOCKFILE
+# The brain view draws a graph; it holds no wallet or key, and Math.random only paces animation.
+crates/report/src/brain/brain.js       WEB3-*
+# Fixtures for the documentation ratchet; `fit` there is a Rust function, not Jasmine's focused test.
+xtask/tests/fixtures/*                 TST-FOCUSED
+# Rust tests live in `#[cfg(test)]` modules beside the code and in each crate's tests/ folder
+# (1,390 of them), which this per-file heuristic does not match.
+crates                                 TST-MODULE-UNTESTED
+# docs/architecture.md and docs/adr/ exist; the rule does not see them.
+*                                      DOC-NO-ARCH
+# The release notes show the documented install command; install.sh verifies the SHA-256 it downloads.
+.github/workflows/release.yml          SH-CURL-PIPE

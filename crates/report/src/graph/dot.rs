@@ -174,6 +174,7 @@ mod tests {
     fn hostile_text_is_quoted() {
         let graph = Graph {
             nodes: vec![
+                // pn-audit: ignore=C-SYSTEM - an injection attempt this test proves is escaped.
                 node("x\" -> \"evil", "l\"]; system(\"rm\"); [\"", ""),
                 node("b\\", "line\nbreak", ""),
             ],

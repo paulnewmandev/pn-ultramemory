@@ -163,6 +163,7 @@ struct Writer<'c> {
 
 impl<'c> Writer<'c> {
     /// Prepares every statement.
+    // pn-audit: ignore=ARCH-FUNC-COMPLEX - one `prepare(...)?` per statement, no branching.
     fn new(conn: &'c Connection) -> Result<Self> {
         let prepare = |sql: &str| conn.prepare_cached(sql).db();
         Ok(Self {
