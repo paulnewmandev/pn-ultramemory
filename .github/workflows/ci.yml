@@ -71,4 +71,4 @@ jobs:
       - name: Version consistency
         run: sh scripts/bump-version --check
       - name: Dependency policy (licenses, advisories, sources)
-        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        uses: EmbarkStudios/cargo-deny-action@17aeb3c839e42274e2b8adf721c8c65edfdc74dd # v2.1.3
